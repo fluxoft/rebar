@@ -56,7 +56,7 @@ class Router {
 		$routeParts = array();
 		$urlParams = array();
 		$request = new Request();
-		$path = isset($request['server']['PATH_INFO']) ? $request['server']['PATH_INFO'] : '/default/main';
+		$path = isset($request['server']['PATH_INFO']) ? $request['server']['PATH_INFO'] : '/main/default';
 		if (isset($routes)) {
 			foreach ($routes as $route) {
 				if (!is_array($route) || !isset($route['path']) || !isset($route['controller']) || !isset($route['method'])) {
@@ -75,10 +75,10 @@ class Router {
 			if (strlen($path)) {
 				$pathParts = array_filter(explode('/',$path));
 				if (count($pathParts) == 1) {
-					$pathParts[] = 'index';
+					$pathParts[] = 'default';
 				}
 			} else {
-				$pathParts = array('default','index');
+				$pathParts = array('main','default');
 			}
 			$routeParts['controller'] = ucwords(array_shift($pathParts)) . 'Controller';
 			$routeParts['method'] = ucwords(array_shift($pathParts));
