@@ -1,7 +1,6 @@
 {
     "name": "fluxoft/rebar",
     "description": "Rebar: A simple but sturdy support framework.",
-    "version": "0.1.0",
     "type": "library",
     "keywords": ["framework", "mvc", "rebar"],
     "license": "MIT",
