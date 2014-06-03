@@ -1,6 +1,10 @@
 {
     "name": "fluxoft/rebar",
-    "description": "Basic but sturdy.",
+    "description": "Rebar: A simple but sturdy support framework.",
+    "version": "0.1.0",
+    "type": "library",
+    "keywords": ["framework", "mvc", "rebar"],
+    "license": "MIT",
     "authors": [
         {
             "name": "fluxoft",
