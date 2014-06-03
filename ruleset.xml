@@ -22,5 +22,4 @@
     <!-- Opening braces on the same line as the declaration -->
     <rule ref="Generic.Functions.OpeningFunctionBraceKernighanRitchie"/>
 
-
 </ruleset>

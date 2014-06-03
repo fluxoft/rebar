@@ -4,7 +4,9 @@ namespace Fluxoft\Rebar\Presenters;
 class Debug implements PresenterInterface {
 	public function Render(array $data) {
 		header('Content-type: text/plain');
+		echo "*** The page's data set: ***\n\n";
 		echo $this->renderData($data);
+		echo "\n****************************\n";
 	}
 	
 	private $tab = "    ";
