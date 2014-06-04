@@ -69,8 +69,11 @@ class Router {
 		}
 
 		if (isset($this->config['methodArgs'])) {
-			$params = $routeParts['params'];
-			$params[] = $this->config['methodArgs'];
+			$params = array();
+			$params[] = $routeParts['params'];
+			foreach ($this->config['methodArgs'] as $arg) {
+				$params[] = $arg;
+			}
 			call_user_func_array(array($controllerClass, $routeParts['method']), $params);
 		} else {
 			$controllerClass->$routeParts['method']($routeParts['params']);
