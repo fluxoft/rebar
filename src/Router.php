@@ -6,7 +6,7 @@ use Fluxoft\Rebar\Exceptions\AuthenticationException;
 
 /**
  * Router class.
- * 
+ *
  * @author Joe Hart
  *
  */
@@ -17,11 +17,14 @@ class Router {
 	protected $config = array();
 
 	/**
-	 * Right now the only supported config parameter is methodArgs, which allows for the setting of a parameter list
+	 * namespace is used to specify the namespace for the app's controllers
+	 *
+	 * methodArgs allows for the setting of a parameter list
 	 * to be sent when calling the routed controller method:
 	 *
 	 * <code>
 	 * $config = array(
+	 *     'namespace' => 'UserFiles',
 	 *     'methodArgs' => array('param1', 'param2')
 	 * );
 	 * $router = new Router($config);
@@ -34,7 +37,7 @@ class Router {
 
 	/**
 	 * Route to the appropriate controller/method combination using the requested path.
-	 * 
+	 *
 	 * Accepts an optional $routes array that should contain route arrays with path, controller, and method elements.
 	 * $routes = array(
 	 *	   array(
@@ -43,17 +46,17 @@ class Router {
 	 *         'method' => 'Container'
 	 *     )
 	 * );
-	 * 
+	 *
 	 * If $routes is not specified, or a matching route is not found, the default routing behavior is to split the path,
 	 * using the first section as the controller name, second as method, and passing the remaining in the url params.
-	 * 
+	 *
 	 * @param array $routes
 	 * @throws RouterException
 	 * @throws AuthenticationException
 	 */
 	public function Route(array $routes = null) {
 		$routeParts = $this->routeParts($routes);
-		
+
 		if (class_exists($routeParts['controller'])) {
 			/** @var $controllerClass \Fluxoft\Rebar\Controller */
 			$controllerClass = new $routeParts['controller']();
@@ -63,7 +66,7 @@ class Router {
 		if (!method_exists($controllerClass, $routeParts['method'])) {
 			throw new RouterException(sprintf('Could not find a method called %s in %s.', $routeParts['method'], $routeParts['controller']));
 		}
-		
+
 		if (!$controllerClass->Authenticate($routeParts['method'])) {
 			throw new AuthenticationException(sprintf('Authentication failed in %s::%s.', $routeParts['controller'], $routeParts['method']));
 		}
@@ -80,7 +83,7 @@ class Router {
 		}
 		$controllerClass->Display();
 	}
-	
+
 	protected function routeParts(array $routes = null) {
 		$routeParts = array();
 		$urlParams = array();
@@ -109,7 +112,9 @@ class Router {
 			} else {
 				$pathParts = array('default','index');
 			}
-			$routeParts['controller'] = ucwords(array_shift($pathParts)) . 'Controller';
+			$routeParts['controller'] = (isset($this->config['namespace']) ? '\\'.$this->config['namespace'].'\\' : '').
+				'Controllers\\'.
+				ucwords(array_shift($pathParts));
 			$routeParts['method'] = ucwords(array_shift($pathParts));
 			$urlParams = $pathParts;
 		}
@@ -117,7 +122,7 @@ class Router {
 		$routeParts['params']['get'] = $request['get'];
 		$routeParts['params']['post'] = $request['post'];
 		$routeParts['params']['url'] = $urlParams;
-		
+
 		return $routeParts;
 	}
 }
