@@ -25,16 +25,6 @@ abstract class Controller {
 	 * @var array
 	 */
 	protected $data = array();
-	/**
-	 * 
-	 * 
-	 * @var \Fluxoft\Rebar\Container
-	 */
-	protected $container = null;
-	
-	public function __construct(Container $container) {
-		$this->container = $container;
-	}
 	
 	/**
 	 * Should be overridden in child controllers to implement authentication
