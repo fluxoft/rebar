@@ -15,19 +15,14 @@ class ControllerTest extends \PHPUnit_Framework_TestCase
 	protected $container;
 
 	protected function setup() {
-		$this->container = new Container();
 	}
 
 	protected function teardown() {
-		unset($this->container);
 	}
 
 	public function testAuthenticate() {
 		$stub = $this->getMockForAbstractClass(
-			'Fluxoft\Rebar\Controller',
-			array(
-				$this->container
-			)
+			'Fluxoft\Rebar\Controller'
 		);
 		$stub->expects($this->any())
 			->method('Authenticate')
