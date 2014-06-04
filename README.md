@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/fluxoft/rebar.svg?branch=master)](https://travis-ci.org/fluxoft/rebar)
+
 http://en.wikipedia.org/wiki/Rebar
 
 This is a framework. There are many like it. This one is mine.
