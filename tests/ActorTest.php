@@ -9,7 +9,7 @@
 namespace Fluxoft\Rebar;
 
 
-class ControllerTest extends \PHPUnit_Framework_TestCase
+class ActorTest extends \PHPUnit_Framework_TestCase
 {
 	/** @var Container */
 	protected $container;
@@ -22,7 +22,7 @@ class ControllerTest extends \PHPUnit_Framework_TestCase
 
 	public function testAuthenticate() {
 		$stub = $this->getMockForAbstractClass(
-			'Fluxoft\Rebar\Controller'
+			'Fluxoft\Rebar\Actor'
 		);
 		$stub->expects($this->any())
 			->method('Authenticate')
