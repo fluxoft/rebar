@@ -1,16 +1,16 @@
 <?php
 /**
- * Fluxoft\Rebar\Controller
+ * Fluxoft\Rebar\Actor
  * 
- * Base class for all controller classes.  Provides essential shared
- * functionality to all controllers created for an application.
+ * Base class for all actor classes.  Provides essential shared
+ * functionality to all actors created for an application.
  * 
  * @author Joe Hart
  *
  */
 namespace Fluxoft\Rebar;
 
-abstract class Controller {
+abstract class Actor {
 	/**
 	 * The presenter property determines which presenter class
 	 * will be used to render the display.
@@ -27,16 +27,16 @@ abstract class Controller {
 	protected $data = array();
 	
 	/**
-	 * Should be overridden in child controllers to implement authentication
-	 * depending on which controller method is called.
+	 * Should be overridden in children to implement authentication
+	 * depending on which action is requested.
 	 * 
 	 * If not overridden, always return true.
 	 * 
-	 * @param $method
+	 * @param $action
 	 * @return bool
 	 */
-	public function Authenticate($method) {
-		return !empty($method);
+	public function Authenticate($action) {
+		return !empty($action);
 	}
 	
 	public function Display() {
@@ -60,7 +60,7 @@ abstract class Controller {
 	 * @param string $var
 	 * @param mixed $val
 	 */
-	protected function Set($var,$val) {
+	protected function Set($var, $val) {
 		$this->data[$var] = $val;
 	}
 	
