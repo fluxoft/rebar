@@ -1,19 +1,9 @@
 <?php
 namespace Fluxoft\Rebar\Db;
 
-use \Fluxoft\Rebar\Db\Exceptions\ModelException;
+use \Fluxoft\Rebar\Model as BaseModel;
 
-abstract class Model implements \Iterator, \ArrayAccess {
-	/**
-	 * Holds the internal array of property names and values.
-	 * @var array $properties
-	 */
-	protected $properties = array();
-	/**
-	 * Properties that have been changed from their original values but have not yet been written to the database.
-	 * @var array $modProperties
-	 */
-	protected $modProperties = array();
+abstract class Model extends BaseModel {
 	/**
 	 * The name of the property to be used as the unique ID.
 	 * @var string $idProperty
@@ -78,7 +68,7 @@ abstract class Model implements \Iterator, \ArrayAccess {
 				// If $id is greater than zero and the $setProperties array is zero-length,
 				// then get the values for this object's $properties from the $dbSelectTable
 				// and set them.
-				if (($id > 0) && (count($setProperties) == 0)) {
+				if (($id > 0) && (count($setProperties) === 0)) {
 					$query = 'SELECT ';
 					$i = 1;
 					foreach($this->properties as $propertyName => $propertyValue) {
@@ -113,93 +103,30 @@ abstract class Model implements \Iterator, \ArrayAccess {
 			}
 		}
 		
-		$properties = $this->properties;
 		// If $id is zero and the $setProperties array has members,
 		// then just initialize the $properties array.
 		if (($id > 0) && (count($setProperties) > 0)) {
-			if (count($setProperties) == count($this->properties)) {
-				foreach($this->properties as $propertyName => $propertyValue) {
-					$this->properties[$propertyName] = $setProperties[$propertyName];
-				}
-			}
+			parent::__construct($setProperties);
 		}
 	}
 	
 	/**
-	 * Override the magic __set() method to set the values
-	 * for members of the $properties array.
-	 *  
-	 * @param string $var
-	 * @param mixed $val
-	 */
-	public function __set($key, $value) {
-		$fnName = "set$key";
-		if (method_exists($this,$fnName)) {
-			$this->$fnName($value);
-		} else if (isset($this->properties[$key])) {
-			if ($this->properties[$key] != $value) {
-				$this->modProperties[$key] = $value;
-			}
-		} else {
-			throw new \InvalidArgumentExceptionException(sprintf('Cannot set property: \'%s\' does not exist', $key));
-		}
-	}
-	/**
-	 * Override the magic __get() method to get the value for
-	 * the specified member of the $properties array.  If a value
-	 * exists in $modProperties, return that one, as that contains
-	 * the updated value.  If the requested property does not
-	 * exist in either array, try to find a method called
-	 * "get[PropertyName].  If found, return the result of that
-	 * function.
-	 * 
-	 * @param string $var
-	 */
-	public function __get($key) {
-		$fnName = "get$key";
-		if (method_exists($this,$fnName)) {
-			return $this->$fnName();
-		} else if (isset($this->modProperties[$key])) {
-			return $this->modProperties[$key];
-		} else if (isset($this->properties[$key])) {
-			return $this->properties[$key];
-		} else {
-			throw new \InvalidArgumentExceptionException(sprintf('Cannot get property: \'%s\' does not exist', $key));
-		}
-	}
-	
-	public function __toString() {
-		$string = get_class($this) . " object {\n";
-		foreach ($this->properties as $key => $value) {
-			$string .= "  $key: " . $this->$key . "\n";
-		}
-		$string .= "}\n";
-		return $string;
-	}
-	
-	/**
-	 * The Save() method calls create() if the ID is 0 or update() is greater than 0.
+	 * The Save() method calls create() if the ID is 0 or update() if greater than 0.
 	 */
 	public function Save() {
-		// Empty classes are initialized with ID = 0
 		if ($this->properties[$this->idProperty] === 0) {
-			echo "creating\n";
+			// Empty classes are initialized with ID = 0
 			$this->create();
-		}
-		// unretrievable rows are set up as ID = -1
-		else if ($this->properties[$this->idProperty] == -1) {
-			// do nothing
-		}
-		// otherwise, it's an existing ID
-		else {
-			echo "updating\n";
+		} elseif ($this->properties[$this->idProperty] > 0) {
+			// Valid ID
 			$this->update();
 		}
 	}
 	
 	/**
 	 * Delete a database record
-	 * @param int $deleteID The ID to be deleted.
+	 * @param $deleteID
+	 * @return bool
 	 */
 	public function Delete($deleteID) {
 		$query = 'DELETE FROM '.$this->dbTable.' WHERE '.$this->propertyDbMap[$this->idProperty].' = :'.$this->propertyDbMap[$this->idProperty];
@@ -211,11 +138,11 @@ abstract class Model implements \Iterator, \ArrayAccess {
 	
 	/**
 	 * Get a set of objects.
-	 *
-	 * @param string $orderBy How results should be ordered.  Expects database column(s).
-	 * @param string $where Filter clause.
-	 * @param string|int $limit How many rows to return.  Default value 'ALL' will return all rows.
-	 * @param string $offset How many rows to skip.
+	 * @param string $where    Filter clause
+	 * @param string $orderBy  Sort order.
+	 * @param int $page        Which page of results to return.
+	 * @param string $pageSize Number of results per page.
+	 * @return array
 	 */
 	public function GetAll($where = '', $orderBy = '', $page = 1, $pageSize = '0') {
 		$propertyDbSelectMap = (count($this->propertyDbSelectMap)) ? $this->propertyDbSelectMap : $this->propertyDbMap;
@@ -259,13 +186,17 @@ abstract class Model implements \Iterator, \ArrayAccess {
 		return $return;
 	}
 	
-	// Get a count of the number of rows that would be returned
-	// if this were a query.  The query is constructed as in
-	// GetAll(), but only count(*) is fetched and returned as a
-	// scalar.  This saves on the data interchange of actually having
-	// to get the row data, improving performance for simple row
-	// count operations necessary for pagination, etc.
-	
+	/**
+	 * Get a count of the number of rows that would be returned
+	 * if this were a query.  The query is constructed as in
+	 * GetAll(), but only count(*) is fetched and returned as a
+	 * scalar.  This saves on the data interchange of actually having
+	 * to get the row data, improving performance for simple row
+	 * count operations necessary for pagination, etc.
+	 * @param string $where
+	 * @param array $whereParams
+	 * @return mixed
+	 */
 	public function Count($where = '', $whereParams = array()) {
 		$propertyDbSelectMap = (count($this->propertyDbSelectMap)) ? $this->propertyDbSelectMap : $this->propertyDbMap;
 		$dbSelectTable = (strlen($this->dbSelectTable)) ? $this->dbSelectTable : $this->dbTable;
@@ -382,12 +313,18 @@ abstract class Model implements \Iterator, \ArrayAccess {
 		foreach($dbArray as $dataKey => $dataValue) {
 			foreach($this->propertyDbSelectMap as $propertyName => $dbColumn) {
 				$startPos = 0;
-				if (strpos($dbColumn,'.')) $startPos = strpos($dbColumn,'.') + 1;
-				if (strpos($dbColumn,' ')) $startPos = strpos($dbColumn,' ') + 1;
+				if (strpos($dbColumn,'.')) {
+					$startPos = strpos($dbColumn,'.') + 1;
+				}
+				if (strpos($dbColumn,' ')) {
+					$startPos = strpos($dbColumn,' ') + 1;
+				}
 				if ($dataKey == substr($dbColumn,$startPos)) {
 					// If a null value was returned, the property will appear to be unset.
 					// Therefore, nulls must be set to empty strings here.
-					if (!isset($dataValue)) $dataValue = '';
+					if (!isset($dataValue)) {
+						$dataValue = '';
+					}
 					$this->properties[$propertyName] = $dataValue;
 				}
 			}
@@ -403,43 +340,5 @@ abstract class Model implements \Iterator, \ArrayAccess {
 			$return[] = $thisObj;
 		}
 		return $return;
-	}
-	
-	// Iterator interface implementation.
-	private $position = 0;
-	public function rewind() {
-		$this->position = 0;
-	}
-	public function current() {
-		$keys = array_keys($this->properties);
-		$propertyName = $keys[$this->position];
-		return $this->$propertyName;
-	}
-	public function key() {
-		$keys = array_keys($this->properties);
-		return $keys[$this->position];
-	}
-	public function next() {
-		++$this->position;
-	}
-	public function valid() {
-		if ($this->position > count($this->properties)-1) {
-			return false;
-		}
-		else return true;
-	}
-	
-	// ArrayAccess implementation.
-	public function offsetExists($offset) {
-		return isset($this->properties[$offset]);
-	}
-	public function offsetGet($offset) {
-		return $this->$offset;
-	}
-	public function offsetSet($offset, $value) {
-		$this->$offset = value;
-	}
-	public function offsetUnset($offset) {
-		$this->properties[$offset] = null;
 	}
 }
