@@ -87,7 +87,7 @@ class Router {
 	protected function routeParts(array $routes = null) {
 		$routeParts = array();
 		$urlParams = array();
-		$request = new Request();
+		$request = new Http\Request();
 		$path = isset($request['server']['PATH_INFO']) ? $request['server']['PATH_INFO'] : '/main/index';
 		if (isset($routes)) {
 			foreach ($routes as $route) {
