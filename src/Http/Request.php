@@ -15,6 +15,10 @@ class Request {
 		return $this->env['REQUEST_METHOD'];
 	}
 
+	public function GetPathInfo() {
+		return $this->env['PATH_INFO'];
+	}
+
 	public function Params($key = null) {
 		$union = array_merge($this->Get(), $this->Post());
 		if ($key) {
@@ -38,6 +42,15 @@ class Request {
 		} else {
 			return $_POST;
 		}
+	}
+	public function Put($key = null) {
+		return $this->Post($key);
+	}
+	public function Delete($key = null) {
+		return $this->Post($key);
+	}
+	public function Patch($key = null) {
+		return $this->Post($key);
 	}
 }
 	

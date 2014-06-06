@@ -67,7 +67,7 @@ class Environment implements \ArrayAccess {
 			//Is the application running under HTTPS or HTTP protocol?
 			$env['rebar.protocol'] = empty($_SERVER['HTTPS']) || $_SERVER['HTTPS'] === 'off' ? 'http' : 'https';
 
-			//Input stream (readable one time only; not available for mutipart/form-data requests)
+			//Input stream (readable one time only; not available for multi-part/form-data requests)
 			$rawInput = @file_get_contents('php://input');
 			if ( !$rawInput ) {
 				$rawInput = '';

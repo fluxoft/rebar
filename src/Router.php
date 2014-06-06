@@ -3,6 +3,7 @@ namespace Fluxoft\Rebar;
 
 use Fluxoft\Rebar\Exceptions\RouterException;
 use Fluxoft\Rebar\Exceptions\AuthenticationException;
+use Fluxoft\Rebar\Http\Request;
 
 /**
  * Router class.
@@ -17,22 +18,35 @@ class Router {
 	protected $config = array();
 
 	/**
+	 * @var array
+	 */
+	protected $routes = array();
+
+	/**
 	 * namespace is used to specify the namespace for the app's controllers
 	 *
 	 * methodArgs allows for the setting of a parameter list
 	 * to be sent when calling the routed controller method:
 	 *
+	 * Custom routes that would not be handled by the default routing behavior can be passed in as a $routes array.
+	 *
 	 * <code>
 	 * $config = array(
+	 *     'rootPath' => '/
 	 *     'namespace' => 'UserFiles',
 	 *     'methodArgs' => array('param1', 'param2')
+	 * );
+	 * $routes = array(
+	 *     '
 	 * );
 	 * $router = new Router($config);
 	 * </code>
 	 * @param array $config
+	 * @param array $routes
 	 */
-	public function __construct(array $config = null) {
+	public function __construct(array $config = array(), array $routes = array()) {
 		$this->config = $config;
+		$this->routes = $routes;
 	}
 
 	/**
@@ -50,56 +64,54 @@ class Router {
 	 * If $routes is not specified, or a matching route is not found, the default routing behavior is to split the path,
 	 * using the first section as the controller name, second as method, and passing the remaining in the url params.
 	 *
-	 * @param array $routes
+	 * @param Request $request
 	 * @throws RouterException
 	 * @throws AuthenticationException
 	 */
-	public function Route(array $routes = null) {
-		$routeParts = $this->routeParts($routes);
+	public function Route(Request $request) {
+		$route = $this->getRoute($request->GetPathInfo());
 
-		if (class_exists($routeParts['controller'])) {
-			/** @var $controllerClass \Fluxoft\Rebar\Controller */
-			$controllerClass = new $routeParts['controller']();
+		if (class_exists($route['actor'])) {
+			/** @var $controllerClass \Fluxoft\Rebar\Actor */
+			$actor = new $route['actor']();
 		} else {
-			throw new RouterException(sprintf('"%s" was not found.', $routeParts['controller']));
+			throw new RouterException(sprintf('"%s" was not found.', $route['actor']));
 		}
-		if (!method_exists($controllerClass, $routeParts['method'])) {
-			throw new RouterException(sprintf('Could not find a method called %s in %s.', $routeParts['method'], $routeParts['controller']));
+		if (!method_exists($actor, $route['action'])) {
+			throw new RouterException(sprintf('Could not find a method called %s in %s.', $route['action'], $route['actor']));
 		}
 
-		if (!$controllerClass->Authenticate($routeParts['method'])) {
-			throw new AuthenticationException(sprintf('Authentication failed in %s::%s.', $routeParts['controller'], $routeParts['method']));
+		if (!$actor->Authenticate($route['action'])) {
+			throw new AuthenticationException(sprintf('Authentication failed in %s::%s.', $route['actor'], $route['action']));
 		}
 
 		if (isset($this->config['methodArgs'])) {
 			$params = array();
-			$params[] = $routeParts['params'];
+			$params[] = $request;
+			$params[] = $route['url'];
 			foreach ($this->config['methodArgs'] as $arg) {
 				$params[] = $arg;
 			}
-			call_user_func_array(array($controllerClass, $routeParts['method']), $params);
+			call_user_func_array(array($actor, $route['action']), $params);
 		} else {
-			$controllerClass->$routeParts['method']($routeParts['params']);
+			$actor->$route['action']($request, $route['url']);
 		}
-		$controllerClass->Display();
+		$actor->Display();
 	}
 
-	protected function routeParts(array $routes = null) {
+	protected function getRoute($path) {
 		$routeParts = array();
-		$urlParams = array();
-		$request = new Http\Request();
-		$path = isset($request['server']['PATH_INFO']) ? $request['server']['PATH_INFO'] : '/main/index';
-		if (isset($routes)) {
-			foreach ($routes as $route) {
-				if (!is_array($route) || !isset($route['path']) || !isset($route['controller']) || !isset($route['method'])) {
-					throw new RouterException('Routes must be arrays containing path, controller, and method keys.');
+		if (isset($this->routes)) {
+			foreach ($this->routes as $route) {
+				if (!is_array($route) || !isset($route['path']) || !isset($route['actor']) || !isset($route['action'])) {
+					throw new RouterException('Routes must be arrays containing path, actor, and action keys.');
 				}
 				$pattern = '/^'.str_replace('/', '\/', $route['path']).'(\/[A-Za-z0-9\-.]+)*\/*$/';
 				if (preg_match($pattern, $path)) {
-					$routeParts['controller'] = $route['controller'];
-					$routeParts['method'] = $route['method'];
-					$paramsPath = substr($path, strlen($route['path']));
-					$urlParams = array_filter(explode('/',$paramsPath));
+					$routeParts['actor'] = $route['actor'];
+					$routeParts['action'] = $route['action'];
+					$paramsPath = substr($path, strlen($route['path']) + 1);
+					$routeParts['url'] = array_filter(explode('/',$paramsPath));
 				}
 			}
 		}
@@ -110,18 +122,14 @@ class Router {
 					$pathParts[] = 'index';
 				}
 			} else {
-				$pathParts = array('default','index');
+				$pathParts = array('main','index');
 			}
-			$routeParts['controller'] = (isset($this->config['namespace']) ? '\\'.$this->config['namespace'].'\\' : '').
+			$routeParts['actor'] = (isset($this->config['namespace']) ? '\\'.$this->config['namespace'].'\\' : '').
 				'Controllers\\'.
 				ucwords(array_shift($pathParts));
-			$routeParts['method'] = ucwords(array_shift($pathParts));
-			$urlParams = $pathParts;
+			$routeParts['action'] = ucwords(array_shift($pathParts));
+			$routeParts['url'] = $pathParts;
 		}
-		$routeParts['params']['request'] = $request['request'];
-		$routeParts['params']['get'] = $request['get'];
-		$routeParts['params']['post'] = $request['post'];
-		$routeParts['params']['url'] = $urlParams;
 
 		return $routeParts;
 	}
