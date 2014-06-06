@@ -17,6 +17,6 @@
         "phpunit/phpunit": "4.1.*"
     },
     "autoload": {
-        "psr-4": { "Fluxoft\\Rebar\\": "src" }
+        "psr-4": { "Fluxoft\\Rebar\\": "src/" }
     }
 }
