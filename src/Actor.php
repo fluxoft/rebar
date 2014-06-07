@@ -10,6 +10,9 @@
  */
 namespace Fluxoft\Rebar;
 
+use Fluxoft\Rebar\Http\Request;
+use Fluxoft\Rebar\Http\Response;
+
 abstract class Actor {
 	/**
 	 * The presenter property determines which presenter class
@@ -25,6 +28,14 @@ abstract class Actor {
 	 * @var array
 	 */
 	protected $data = array();
+
+	protected $request;
+	protected $response;
+
+	public function __construct(Request $request, Response $response) {
+		$this->request = $request;
+		$this->response = $response;
+	}
 	
 	/**
 	 * Should be overridden in children to implement authentication
@@ -44,7 +55,7 @@ abstract class Actor {
 			$this->presenter = new Presenters\Debug();
 		}
 		if ($this->presenter instanceof Presenters\PresenterInterface) {
-			$this->presenter->Render($this->GetData());
+			$this->presenter->Render($this->response, $this->GetData());
 		} else {
 			throw new \Exception('Invalid presenter class.');
 		}

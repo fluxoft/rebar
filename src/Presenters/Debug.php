@@ -1,8 +1,10 @@
 <?php
 namespace Fluxoft\Rebar\Presenters;
 
+use Fluxoft\Rebar\Http\Response;
+
 class Debug implements PresenterInterface {
-	public function Render(array $data) {
+	public function Render(Response $response, array $data) {
 		header('Content-type: text/plain');
 		echo "*** The page's data set: ***\n\n";
 		echo $this->renderData($data);

@@ -7,9 +7,42 @@ class Environment implements \ArrayAccess {
 	 */
 	protected $properties;
 
-	public function __construct(array $defaultProperties = null) {
-		if ($defaultProperties) {
-			$this->properties = $defaultProperties;
+	/**
+	 * @var \Fluxoft\Rebar\Http\Environment
+	 */
+	protected static $environment = null;
+
+	public static function GetInstance() {
+		if (is_null(self::$environment)) {
+			self::$environment = new self();
+		}
+		return self::$environment;
+	}
+
+	public static function GetMock(array $userSettings = array()) {
+		$defaults = array(
+			'REQUEST_METHOD' => 'GET',
+			'SCRIPT_NAME' => '',
+			'PATH_INFO' => '',
+			'QUERY_STRING' => '',
+			'SERVER_NAME' => 'localhost',
+			'SERVER_PORT' => 80,
+			'ACCEPT' => 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+			'ACCEPT_LANGUAGE' => 'en-US,en;q=0.8',
+			'ACCEPT_CHARSET' => 'ISO-8859-1,utf-8;q=0.7,*;q=0.3',
+			'USER_AGENT' => 'Slim Framework',
+			'REMOTE_ADDR' => '127.0.0.1',
+			'rebar.protocol' => 'http',
+			'rebar.input' => ''
+		);
+		self::$environment = new self(array_merge($defaults, $userSettings));
+
+		return self::$environment;
+	}
+
+	private function __construct(array $settings = null) {
+		if ($settings) {
+			$this->properties = $settings;
 		} else {
 			$env = array();
 
@@ -65,14 +98,14 @@ class Environment implements \ArrayAccess {
 			}
 
 			//Is the application running under HTTPS or HTTP protocol?
-			$env['rebar.protocol'] = empty($_SERVER['HTTPS']) || $_SERVER['HTTPS'] === 'off' ? 'http' : 'https';
+			$env['protocol'] = empty($_SERVER['HTTPS']) || $_SERVER['HTTPS'] === 'off' ? 'http' : 'https';
 
 			//Input stream (readable one time only; not available for multi-part/form-data requests)
 			$rawInput = @file_get_contents('php://input');
 			if ( !$rawInput ) {
 				$rawInput = '';
 			}
-			$env['rebar.input'] = $rawInput;
+			$env['input'] = $rawInput;
 
 			$this->properties = $env;
 		}

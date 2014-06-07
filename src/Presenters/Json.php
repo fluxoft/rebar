@@ -1,12 +1,14 @@
 <?php
 namespace Fluxoft\Rebar\Presenters;
 
+use Fluxoft\Rebar\Http\Response;
+
 class Json implements PresenterInterface {
 	protected $callback;
 	public function __construct($callback = '') {
 		$this->callback = $callback;
 	}
-	public function Render(array $data) {
+	public function Render(Response $response, array $data) {
 		$jsonString = $this->jsonEncode($data);
 		if (isset($_GET['callback'])) {
 			header('Content-type: text/javascript');

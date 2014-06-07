@@ -4,6 +4,7 @@ namespace Fluxoft\Rebar;
 use Fluxoft\Rebar\Exceptions\RouterException;
 use Fluxoft\Rebar\Exceptions\AuthenticationException;
 use Fluxoft\Rebar\Http\Request;
+use Fluxoft\Rebar\Http\Response;
 
 /**
  * Router class.
@@ -68,12 +69,12 @@ class Router {
 	 * @throws RouterException
 	 * @throws AuthenticationException
 	 */
-	public function Route(Request $request) {
+	public function Route(Request $request, Response $response) {
 		$route = $this->getRoute($request->GetPathInfo());
 
 		if (class_exists($route['actor'])) {
 			/** @var $controllerClass \Fluxoft\Rebar\Actor */
-			$actor = new $route['actor']();
+			$actor = new $route['actor']($request, $response);
 		} else {
 			throw new RouterException(sprintf('"%s" was not found.', $route['actor']));
 		}
@@ -87,7 +88,6 @@ class Router {
 
 		if (isset($this->config['methodArgs'])) {
 			$params = array();
-			$params[] = $request;
 			$params[] = $route['url'];
 			foreach ($this->config['methodArgs'] as $arg) {
 				$params[] = $arg;
