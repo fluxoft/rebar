@@ -66,6 +66,7 @@ class Router {
 	 * using the first section as the controller name, second as method, and passing the remaining in the url params.
 	 *
 	 * @param Request $request
+	 * @param Response $response
 	 * @throws RouterException
 	 * @throws AuthenticationException
 	 */
