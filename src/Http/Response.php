@@ -69,15 +69,31 @@ class Response {
 		$status = 200,
 		$body = '',
 		array $headers = array(
-			'Content-type' => 'text/plain'
+			'Content-type' => 'text/html'
 		)
 	) {
 		$this->status = $status;
 	}
 
+	public function AddHeader($type, $content) {
+		$this->headers[$type] = $content;
+	}
+
 	public function Send() {
 		header('HTTP/1.1 '.$this->messages[$this->status]);
+		if (!empty($this->headers)) {
+			foreach ($this->headers as $type => $content) {
+				header("$type: $content");
+			}
+		}
 		echo $this->body;
+	}
+
+	public function Redirect($location) {
+		$this->status = 302;
+		$this->AddHeader('Location', $location);
+		$this->body = '';
+		$this->Send();
 	}
 
 
@@ -85,7 +101,11 @@ class Response {
 		return $this->status;
 	}
 	private function setStatus($value) {
-		$this->status = $value;
+		if (isset($this->messages[$value])) {
+			$this->status = $value;
+		} else {
+			throw new Exceptions\InvalidStatusException(sprintf('Status %s is not supported.', $value));
+		}
 	}
 	private function getBody() {
 		return $this->body;

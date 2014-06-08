@@ -5,10 +5,11 @@ use Fluxoft\Rebar\Http\Response;
 
 class Debug implements PresenterInterface {
 	public function Render(Response $response, array $data) {
-		header('Content-type: text/plain');
-		echo "*** The page's data set: ***\n\n";
-		echo $this->renderData($data);
-		echo "\n****************************\n";
+		$response->AddHeader('Content-type', 'text/plain');
+		$response->Body .= "*** The page's data set: ***\n\n";
+		$response->Body .= $this->renderData($data);
+		$response->Body .= "\n****************************\n";
+		$response->Send();
 	}
 	
 	private $tab = "    ";

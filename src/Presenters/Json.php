@@ -5,18 +5,19 @@ use Fluxoft\Rebar\Http\Response;
 
 class Json implements PresenterInterface {
 	protected $callback;
-	public function __construct($callback = '') {
+	public function __construct($callback = null) {
 		$this->callback = $callback;
 	}
 	public function Render(Response $response, array $data) {
 		$jsonString = $this->jsonEncode($data);
-		if (isset($_GET['callback'])) {
-			header('Content-type: text/javascript');
-			echo $_GET['callback'].'('.$jsonString.');';
+		if ($this->callback) {
+			$response->AddHeader('Content-type', 'text/javascript');
+			$response->Body = $this->callback.'('.$jsonString.');';
 		} else {
-			header('Content-type: application/json');
-			echo $jsonString;
+			$response->AddHeader('Content-type', 'application/json');
+			$response->Body = $jsonString;
 		}
+		$response->Send();
 	}
 	
 	private function jsonEncode($data) {
