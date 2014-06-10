@@ -74,7 +74,7 @@ class Router {
 		$route = $this->getRoute($request->GetPathInfo());
 
 		if (class_exists($route['actor'])) {
-			/** @var $controllerClass \Fluxoft\Rebar\Actor */
+			/** @var $actor \Fluxoft\Rebar\Actor */
 			$actor = new $route['actor']($request, $response);
 		} else {
 			throw new RouterException(sprintf('"%s" was not found.', $route['actor']));
@@ -126,7 +126,7 @@ class Router {
 				$pathParts = array('main','index');
 			}
 			$routeParts['actor'] = (isset($this->config['namespace']) ? '\\'.$this->config['namespace'].'\\' : '').
-				'Controllers\\'.
+				'Actors\\'.
 				ucwords(array_shift($pathParts));
 			$routeParts['action'] = ucwords(array_shift($pathParts));
 			$routeParts['url'] = $pathParts;
