@@ -117,7 +117,7 @@ class Router {
 			}
 		}
 		if (empty($routeParts)) {
-			if (strlen($path)) {
+			if (strlen($path) > 1) { // disregard leading slash
 				$pathParts = array_filter(explode('/',$path));
 				if (count($pathParts) == 1) {
 					$pathParts[] = 'index';
@@ -125,9 +125,11 @@ class Router {
 			} else {
 				$pathParts = array('main','index');
 			}
-			$routeParts['actor'] = (isset($this->config['namespace']) ? '\\'.$this->config['namespace'].'\\' : '').
-				'Actors\\'.
-				ucwords(array_shift($pathParts));
+			if (isset($this->config['namespace'])) {
+				$routeParts['actor'] = '\\'.$this->config['namespace'].'\\'.ucwords(array_shift($pathParts));
+			} else {
+				$routeParts['actor'] = ucwords(array_shift($pathParts));
+			}
 			$routeParts['action'] = ucwords(array_shift($pathParts));
 			$routeParts['url'] = $pathParts;
 		}
