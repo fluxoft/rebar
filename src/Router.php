@@ -89,7 +89,9 @@ class Router {
 
 		if (isset($this->config['methodArgs'])) {
 			$params = array();
-			$params[] = $route['url'];
+			foreach ($route['url'] as $urlParam) {
+				$params[] = $urlParam;
+			}
 			foreach ($this->config['methodArgs'] as $arg) {
 				$params[] = $arg;
 			}
