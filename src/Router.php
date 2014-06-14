@@ -127,8 +127,8 @@ class Router {
 			} else {
 				$pathParts = array('main','index');
 			}
-			if (isset($this->config['namespace'])) {
-				$routeParts['actor'] = '\\'.$this->config['namespace'].'\\'.ucwords(array_shift($pathParts));
+			if (isset($this->config['actorsNamespace'])) {
+				$routeParts['actor'] = '\\'.$this->config['actorsNamespace'].'\\'.ucwords(array_shift($pathParts));
 			} else {
 				$routeParts['actor'] = ucwords(array_shift($pathParts));
 			}
