@@ -89,14 +89,40 @@ class Router {
 
 		if (isset($this->config['methodArgs'])) {
 			$params = array();
-			foreach ($route['url'] as $urlParam) {
-				$params[] = $urlParam;
-			}
 			foreach ($this->config['methodArgs'] as $arg) {
 				$params[] = $arg;
 			}
+			foreach ($route['url'] as $urlParam) {
+				$params[] = $urlParam;
+			}
 			call_user_func_array(array($actor, $route['action']), $params);
 		} else {
+			switch (count($route['url'])) {
+				case 0:
+					$actor->$route['action']();
+					break;
+				case 1:
+					$actor->$route['action'](
+						$route['url'][0]
+					);
+					break;
+				case 2:
+					$actor->$route['action'](
+						$route['url'][0],
+						$route['url'][1]
+					);
+					break;
+				case 3:
+					$actor->$route['action'](
+						$route['url'][0],
+						$route['url'][1],
+						$route['url'][2]
+					);
+					break;
+				default:
+					call_user_func_array($actor, $route['action'], $route['url']);
+					break;
+			}
 			$actor->$route['action']($request, $route['url']);
 		}
 		$actor->Display();
