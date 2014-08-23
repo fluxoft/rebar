@@ -21,9 +21,10 @@ class UserFactory extends ModelFactory {
 	public function __construct(
 		$userModel,
 		Provider $reader,
-		Provider $writer
+		Provider $writer,
+		$modelNamespace = ''
 	) {
-		$this->userModel = $userModel;
+		$this->userModel = $modelNamespace.$userModel;
 		parent::__construct($reader, $writer);
 	}
 

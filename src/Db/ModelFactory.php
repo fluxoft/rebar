@@ -12,13 +12,20 @@ class ModelFactory {
 	 * @var \Fluxoft\Rebar\Db\Providers\Provider
 	 */
 	protected $writer = null;
+
+	/**
+	 * @var string Optional namespace for models.
+	 */
+	protected $modelNamespace;
 	
 	public function __construct(
 		Providers\Provider $reader,
-		Providers\Provider $writer
+		Providers\Provider $writer,
+		$modelNamespace = ''
 	) {
 		$this->reader = $reader;
 		$this->writer = $writer;
+		$this->modelNamespace = $modelNamespace;
 	}
 
 	/**
@@ -28,6 +35,7 @@ class ModelFactory {
 	 * @return Model
 	 */
 	public function GetOneById($modelClass, $id) {
+		$modelClass = $this->modelNamespace.$modelClass;
 		return new $modelClass($this->reader, $this->writer, $id);
 	}
 
@@ -38,6 +46,7 @@ class ModelFactory {
 	 * @return Model
 	 */
 	public function GetOneWhere($modelClass, $where) {
+		$modelClass = $this->modelNamespace.$modelClass;
 		$model = new $modelClass($this->reader, $this->writer);
 		$modelSet = $model->GetAll($where, '', 1, 1);
 		return $modelSet[0];
@@ -54,6 +63,7 @@ class ModelFactory {
 	 * @return array Model
 	 */
 	public function GetSet($modelClass, $filter = '', $sort = '', $page = 1, $pageSize = 0) {
+		$modelClass = $this->modelNamespace.$modelClass;
 		$model = new $modelClass($this->reader, $this->writer);
 		return $model->GetAll($filter, $sort, $page, $pageSize);
 	}
@@ -64,6 +74,7 @@ class ModelFactory {
 	 * @param mixed $id
 	 */
 	public function DeleteById($modelClass, $id) {
+		$modelClass = $this->modelNamespace.$modelClass;
 		$model = new $modelClass($this->reader, $this->writer);
 		$model->Delete($id);
 	}
