@@ -22,12 +22,12 @@ abstract class Model extends BaseModel {
 	/**
 	 * If the model needs to select from joined tables, this array stores those aliased table names.
 	 * @var array $propertyDbSelectMap
-	*/
+	 */
 	protected $propertyDbSelectMap = array();
 	/**
 	 * The name of the table represented by this model.
 	 * @var string $dbTable
-	*/
+	 */
 	protected $dbTable = '';
 	/**
 	 * If the model is selecting from joined tables, this should define the join syntax.
@@ -54,12 +54,13 @@ abstract class Model extends BaseModel {
 		$id = 0,
 		array $setProperties = array()
 	) {
+		$this->factory = $factory;
 		$this->reader = $factory->Reader;
 		$this->writer = $factory->Writer;
-		
+
 		$this->propertyDbSelectMap = (count($this->propertyDbSelectMap)) ? $this->propertyDbSelectMap : $this->propertyDbMap;
 		$this->dbSelectTable = (strlen($this->dbSelectTable)) ? $this->dbSelectTable : $this->dbTable;
-		
+
 		// sanity check for making new object
 		if (
 			(count($this->properties) > 0) &&
@@ -83,10 +84,10 @@ abstract class Model extends BaseModel {
 					}
 					$query .= ' FROM '.$this->dbSelectTable;
 					$query .= ' WHERE '.$this->propertyDbSelectMap[$this->idProperty].' = :id';
-		
+
 					$params = array(':id' => $id);
 					$returnSet = $this->reader->SelectSet($query, $params);
-						
+
 					if ($returnSet) {
 						//foreach($returnSet[0] as $dataKey => $dataValue) {
 						foreach($returnSet as $row) {
@@ -105,14 +106,14 @@ abstract class Model extends BaseModel {
 				}
 			}
 		}
-		
+
 		// If $id is zero and the $setProperties array has members,
 		// then just initialize the $properties array.
 		if (($id > 0) && (count($setProperties) > 0)) {
 			parent::__construct($setProperties);
 		}
 	}
-	
+
 	/**
 	 * The Save() method calls create() if the ID is 0 or update() if greater than 0.
 	 */
@@ -125,7 +126,7 @@ abstract class Model extends BaseModel {
 			$this->update();
 		}
 	}
-	
+
 	/**
 	 * Delete a database record
 	 * @param $deleteID
@@ -138,7 +139,7 @@ abstract class Model extends BaseModel {
 		$this->properties[$this->idProperty] = 0;
 		return $return;
 	}
-	
+
 	/**
 	 * Get a set of objects.
 	 * @param string $where    Filter clause
@@ -151,7 +152,7 @@ abstract class Model extends BaseModel {
 		$propertyDbSelectMap = (count($this->propertyDbSelectMap)) ? $this->propertyDbSelectMap : $this->propertyDbMap;
 		$dbSelectTable = (strlen($this->dbSelectTable)) ? $this->dbSelectTable : $this->dbTable;
 		$properties = array_keys($propertyDbSelectMap);
-			
+
 		$query = 'SELECT ';
 		$i = 1;
 		foreach($properties as $propertyName) {
@@ -188,7 +189,7 @@ abstract class Model extends BaseModel {
 		$return = $this->returnObjectSet($returnSet);
 		return $return;
 	}
-	
+
 	/**
 	 * Get a count of the number of rows that would be returned
 	 * if this were a query.  The query is constructed as in
@@ -203,7 +204,7 @@ abstract class Model extends BaseModel {
 	public function Count($where = '', $whereParams = array()) {
 		$propertyDbSelectMap = (count($this->propertyDbSelectMap)) ? $this->propertyDbSelectMap : $this->propertyDbMap;
 		$dbSelectTable = (strlen($this->dbSelectTable)) ? $this->dbSelectTable : $this->dbTable;
-			
+
 		$query = 'SELECT count(*) count FROM ' . $dbSelectTable;
 		if (strlen($where) > 0) {
 			foreach($propertyDbSelectMap as $propertyName => $dbColumn) {
@@ -215,7 +216,7 @@ abstract class Model extends BaseModel {
 		$params = $whereParams;
 		return $this->reader->SelectValue($query, $params);
 	}
-	
+
 	/**
 	 * The Create() method inserts a new record into the database and updates
 	 * the object's ID property with the value of the new unique ID.
@@ -304,14 +305,14 @@ abstract class Model extends BaseModel {
 			}
 		}
 	}
-	
+
 	protected function assignProperty($property, $value) {
 		$this->modProperties[$property] = $value;
 	}
 	protected function retrieveProperty($property) {
 		return isset($this->modProperties[$property]) ? $this->modProperties[$property] : $this->properties[$property];
 	}
-	
+
 	private function assignProperties(array $dbArray) {
 		foreach($dbArray as $dataKey => $dataValue) {
 			foreach($this->propertyDbSelectMap as $propertyName => $dbColumn) {
@@ -333,12 +334,12 @@ abstract class Model extends BaseModel {
 			}
 		}
 	}
-	
+
 	private function returnObjectSet($dataSet) {
 		$return = array();
 		$className = get_class($this);
 		foreach($dataSet as $row) {
-			$thisObj = new $className($this->reader, $this->writer);
+			$thisObj = new $className($this->factory);
 			$thisObj->assignProperties($row);
 			$return[] = $thisObj;
 		}

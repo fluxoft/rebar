@@ -21,7 +21,7 @@ class ModelFactory {
 	 * @var string Optional namespace for models.
 	 */
 	protected $modelNamespace;
-	
+
 	public function __construct(
 		Providers\Provider $reader,
 		Providers\Provider $writer,
@@ -97,4 +97,4 @@ class ModelFactory {
 		}
 		return $rtn;
 	}
-} 
+}
