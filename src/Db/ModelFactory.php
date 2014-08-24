@@ -1,6 +1,10 @@
 <?php
 namespace Fluxoft\Rebar\Db;
 
+/**
+ * @property \Fluxoft\Rebar\Db\Providers\Provider Reader
+ * @property \Fluxoft\Rebar\Db\Providers\Provider Writer
+ */
 class ModelFactory {
 	/**
 	 * The provider used to read from the database.
@@ -36,7 +40,7 @@ class ModelFactory {
 	 */
 	public function GetOneById($modelClass, $id) {
 		$modelClass = $this->modelNamespace.$modelClass;
-		return new $modelClass($this->reader, $this->writer, $id);
+		return new $modelClass($this, $id);
 	}
 
 	/**
@@ -47,7 +51,7 @@ class ModelFactory {
 	 */
 	public function GetOneWhere($modelClass, $where) {
 		$modelClass = $this->modelNamespace.$modelClass;
-		$model = new $modelClass($this->reader, $this->writer);
+		$model = new $modelClass($this);
 		$modelSet = $model->GetAll($where, '', 1, 1);
 		return $modelSet[0];
 	}
@@ -64,7 +68,7 @@ class ModelFactory {
 	 */
 	public function GetSet($modelClass, $filter = '', $sort = '', $page = 1, $pageSize = 0) {
 		$modelClass = $this->modelNamespace.$modelClass;
-		$model = new $modelClass($this->reader, $this->writer);
+		$model = new $modelClass($this);
 		return $model->GetAll($filter, $sort, $page, $pageSize);
 	}
 
@@ -75,7 +79,22 @@ class ModelFactory {
 	 */
 	public function DeleteById($modelClass, $id) {
 		$modelClass = $this->modelNamespace.$modelClass;
-		$model = new $modelClass($this->reader, $this->writer);
+		$model = new $modelClass($this);
 		$model->Delete($id);
+	}
+
+	public function __get($var) {
+		switch ($var) {
+			case 'Reader':
+				$rtn = $this->reader;
+				break;
+			case 'Writer':
+				$rtn = $this->writer;
+				break;
+			default:
+				throw new \InvalidArgumentException(sprintf('Cannot get property "%s"', $var));
+				break;
+		}
+		return $rtn;
 	}
 } 

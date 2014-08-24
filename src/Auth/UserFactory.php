@@ -36,7 +36,7 @@ class UserFactory extends ModelFactory {
 	 */
 	public function GetAuthenticatedUser($username, $password) {
 		/** @var $userClass \Fluxoft\Rebar\Auth\UserModel */
-		$userClass = new $this->userModel($this->reader, $this->writer);
+		$userClass = new $this->userModel($this);
 		return $userClass->CheckLogin($username, $password);
 	}
 

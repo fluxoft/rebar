@@ -35,6 +35,10 @@ abstract class Model extends BaseModel {
 	 */
 	protected $dbSelectTable = '';
 	/**
+	 * @var \Fluxoft\Rebar\Db\ModelFactory
+	 */
+	protected $factory;
+	/**
 	 * The provider used to read from the database.
 	 * @var \Fluxoft\Rebar\Db\Providers\Provider
 	 */
@@ -44,15 +48,14 @@ abstract class Model extends BaseModel {
 	 * @var \Fluxoft\Rebar\Db\Providers\Provider
 	 */
 	protected $writer = null;
-	
+
 	public function __construct(
-			\Fluxoft\Rebar\Db\Providers\Provider $reader,
-			\Fluxoft\Rebar\Db\Providers\Provider $writer,
-			$id = 0,
-			array $setProperties = array()
+		ModelFactory $factory,
+		$id = 0,
+		array $setProperties = array()
 	) {
-		$this->reader = $reader;
-		$this->writer = $writer;
+		$this->reader = $factory->Reader;
+		$this->writer = $factory->Writer;
 		
 		$this->propertyDbSelectMap = (count($this->propertyDbSelectMap)) ? $this->propertyDbSelectMap : $this->propertyDbMap;
 		$this->dbSelectTable = (strlen($this->dbSelectTable)) ? $this->dbSelectTable : $this->dbTable;
