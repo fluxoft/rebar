@@ -39,7 +39,9 @@ class ModelFactory {
 	 * @return Model
 	 */
 	public function GetOneById($modelClass, $id) {
-		$modelClass = $this->modelNamespace.$modelClass;
+		$modelClass = (strstr($modelClass, $this->modelNamespace)) ?
+			$modelClass :
+			$this->modelNamespace.$modelClass;
 		return new $modelClass($this, $id);
 	}
 
@@ -50,7 +52,9 @@ class ModelFactory {
 	 * @return Model
 	 */
 	public function GetOneWhere($modelClass, $where) {
-		$modelClass = $this->modelNamespace.$modelClass;
+		$modelClass = (strstr($modelClass, $this->modelNamespace)) ?
+			$modelClass :
+			$this->modelNamespace.$modelClass;
 		$model = new $modelClass($this);
 		$modelSet = $model->GetAll($where, '', 1, 1);
 		return $modelSet[0];
@@ -67,7 +71,9 @@ class ModelFactory {
 	 * @return array Model
 	 */
 	public function GetSet($modelClass, $filter = '', $sort = '', $page = 1, $pageSize = 0) {
-		$modelClass = $this->modelNamespace.$modelClass;
+		$modelClass = (strstr($modelClass, $this->modelNamespace)) ?
+			$modelClass :
+			$this->modelNamespace.$modelClass;
 		$model = new $modelClass($this);
 		return $model->GetAll($filter, $sort, $page, $pageSize);
 	}
@@ -78,7 +84,9 @@ class ModelFactory {
 	 * @param mixed $id
 	 */
 	public function DeleteById($modelClass, $id) {
-		$modelClass = $this->modelNamespace.$modelClass;
+		$modelClass = (strstr($modelClass, $this->modelNamespace)) ?
+			$modelClass :
+			$this->modelNamespace.$modelClass;
 		$model = new $modelClass($this);
 		$model->Delete($id);
 	}
