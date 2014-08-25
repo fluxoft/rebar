@@ -52,7 +52,7 @@ abstract class Model implements \Iterator, \ArrayAccess {
 	 *
 	 * @param $key
 	 * @return mixed
-	 * @throws \InvalidArgumentExceptionException
+	 * @throws \InvalidArgumentException
 	 */
 	public function __get($key) {
 		$fnName = "get$key";
@@ -63,7 +63,7 @@ abstract class Model implements \Iterator, \ArrayAccess {
 		} else if (isset($this->properties[$key])) {
 			return $this->properties[$key];
 		} else {
-			throw new \InvalidArgumentExceptionException(sprintf('Cannot get property: \'%s\' does not exist', $key));
+			throw new \InvalidArgumentException(sprintf('Cannot get property: \'%s\' does not exist', $key));
 		}
 	}
 
