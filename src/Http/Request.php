@@ -23,6 +23,25 @@ class Request implements \ArrayAccess {
 		$this->properties = $props;
 	}
 
+	public function __get($var) {
+		switch ($var) {
+			case 'Method':
+			case 'PathInfo':
+			case 'Get':
+				$rtn = $this->properties[$offset];
+				break;
+			case 'Post':
+			case 'Put':
+			case 'Delete':
+			case 'Patch':
+				$rtn = $this->properties['Post'];
+				break;
+			default:
+				throw new \InvalidArgumentException(sprintf('Value "%s" is not defined.', $offset));
+		}
+		return $rtn;
+	}
+
 	// ArrayAccess
 	public function offsetExists($offset) {
 		switch ($offset) {
@@ -57,7 +76,7 @@ class Request implements \ArrayAccess {
 			default:
 				throw new \InvalidArgumentException(sprintf('Value "%s" is not defined.', $offset));
 		}
-		return $rtn;
+		return $this->$offset;
 	}
 	public function offsetSet($offset, $value) {
 		throw new \InvalidArgumentException('Read-only object.');
