@@ -71,7 +71,7 @@ class Router {
 	 * @throws AuthenticationException
 	 */
 	public function Route(Request $request, Response $response) {
-		$route = $this->getRoute($request->GetPathInfo());
+		$route = $this->getRoute($request->PathInfo);
 
 		if (class_exists($route['actor'])) {
 			/** @var $actor \Fluxoft\Rebar\Actor */

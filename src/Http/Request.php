@@ -1,56 +1,69 @@
 <?php
 namespace Fluxoft\Rebar\Http;
 
-class Request {
+/**
+ * Class Request
+ * @package Fluxoft\Rebar\Http
+ */
+class Request implements \ArrayAccess {
 	/**
-	 * @var Environment
+	 * @var array
 	 */
-	protected $env;
+	protected $properties;
 
+	/**
+	 * @param Environment $environment
+	 */
 	public function __construct(Environment $environment) {
-		$this->env = $environment;
+		$props = array();
+		$props['Method'] = $environment['REQUEST_METHOD'];
+		$props['PathInfo'] = $environment['PATH_INFO'];
+		$props['Get'] = $_GET;
+		$props['Post'] = $_POST;
+		$this->properties = $props;
 	}
 
-	public function GetMethod() {
-		return $this->env['REQUEST_METHOD'];
-	}
-
-	public function GetPathInfo() {
-		return $this->env['PATH_INFO'];
-	}
-
-	public function Params($key = null) {
-		$union = array_merge($this->Get(), $this->Post());
-		if ($key) {
-			return (isset($union[$key])) ? $union[$key] : null;
-		} else {
-			return $union;
+	// ArrayAccess
+	public function offsetExists($offset) {
+		switch ($offset) {
+			case 'Method':
+			case 'PathInfo':
+			case 'Get':
+			case 'Post':
+			case 'Put':
+			case 'Delete':
+			case 'Patch':
+				$rtn = true;
+				break;
+			default:
+				$rtn = false;
+				break;
 		}
+		return $rtn;
 	}
-
-	public function Get($key = null) {
-		if ($key) {
-			return (isset($_GET[$key])) ? $_GET[$key] : null;
-		} else {
-			return $_GET;
+	public function offsetGet($offset) {
+		switch ($offset) {
+			case 'Method':
+			case 'PathInfo':
+			case 'Get':
+				$rtn = $this->properties[$offset];
+				break;
+			case 'Post':
+			case 'Put':
+			case 'Delete':
+			case 'Patch':
+				$rtn = $this->properties['Post'];
+				break;
+			default:
+				throw new \InvalidArgumentException(sprintf('Value "%s" is not defined.', $offset));
 		}
+		return $rtn;
 	}
-
-	public function Post($key = null) {
-		if ($key) {
-			return (isset($_POST[$key])) ? $_POST[$key] : null;
-		} else {
-			return $_POST;
-		}
+	public function offsetSet($offset, $value) {
+		throw new \InvalidArgumentException('Read-only object.');
 	}
-	public function Put($key = null) {
-		return $this->Post($key);
-	}
-	public function Delete($key = null) {
-		return $this->Post($key);
-	}
-	public function Patch($key = null) {
-		return $this->Post($key);
+	public function offsetUnset($offset) {
+		throw new \InvalidArgumentException('Read-only object.');
 	}
 }
 	

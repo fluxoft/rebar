@@ -30,7 +30,7 @@ class Environment implements \ArrayAccess {
 			'ACCEPT' => 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
 			'ACCEPT_LANGUAGE' => 'en-US,en;q=0.8',
 			'ACCEPT_CHARSET' => 'ISO-8859-1,utf-8;q=0.7,*;q=0.3',
-			'USER_AGENT' => 'Slim Framework',
+			'USER_AGENT' => 'Rebar',
 			'REMOTE_ADDR' => '127.0.0.1',
 			'rebar.protocol' => 'http',
 			'rebar.input' => ''
@@ -98,14 +98,14 @@ class Environment implements \ArrayAccess {
 			}
 
 			//Is the application running under HTTPS or HTTP protocol?
-			$env['protocol'] = empty($_SERVER['HTTPS']) || $_SERVER['HTTPS'] === 'off' ? 'http' : 'https';
+			$env['rebar.protocol'] = empty($_SERVER['HTTPS']) || $_SERVER['HTTPS'] === 'off' ? 'http' : 'https';
 
 			//Input stream (readable one time only; not available for multi-part/form-data requests)
 			$rawInput = @file_get_contents('php://input');
 			if ( !$rawInput ) {
 				$rawInput = '';
 			}
-			$env['input'] = $rawInput;
+			$env['rebar.input'] = $rawInput;
 
 			$this->properties = $env;
 		}
