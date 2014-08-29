@@ -1,6 +1,7 @@
 <?php
 namespace Fluxoft\Rebar;
 
+use Fluxoft\Rebar\Auth\Web;
 use Fluxoft\Rebar\Exceptions\RouterException;
 use Fluxoft\Rebar\Exceptions\AuthenticationException;
 use Fluxoft\Rebar\Http\Request;
@@ -13,6 +14,10 @@ use Fluxoft\Rebar\Http\Response;
  *
  */
 class Router {
+	/**
+	 * @var \Fluxoft\Rebar\Auth\Web
+	 */
+	protected $webAuth;
 	/**
 	 * @var array
 	 */
@@ -32,6 +37,7 @@ class Router {
 	 * Custom routes that would not be handled by the default routing behavior can be passed in as a $routes array.
 	 *
 	 * <code>
+	 * $webAuth = new \Fluxoft\Rebar\Auth\Web(...);
 	 * $config = array(
 	 *     'rootPath' => '/
 	 *     'namespace' => 'UserFiles',
@@ -40,12 +46,14 @@ class Router {
 	 * $routes = array(
 	 *     '
 	 * );
-	 * $router = new Router($config);
+	 * $router = new Router($webAuth, $config, $routes);
 	 * </code>
+	 * @param \Fluxoft\Rebar\Auth\Web
 	 * @param array $config
 	 * @param array $routes
 	 */
-	public function __construct(array $config = array(), array $routes = array()) {
+	public function __construct(Web $webAuth, array $config = array(), array $routes = array()) {
+		$this->webAuth = $webAuth;
 		$this->config = $config;
 		$this->routes = $routes;
 	}
@@ -83,47 +91,44 @@ class Router {
 			throw new RouterException(sprintf('Could not find a method called %s in %s.', $route['action'], $route['actor']));
 		}
 
-		if (!$actor->Authenticate($route['action'])) {
+		if (!$actor->Authenticate($this->webAuth, $route['action'])) {
 			throw new AuthenticationException(sprintf('Authentication failed in %s::%s.', $route['actor'], $route['action']));
 		}
 
+		$actionParams = array();
 		if (isset($this->config['methodArgs'])) {
-			$params = array();
 			foreach ($this->config['methodArgs'] as $arg) {
-				$params[] = $arg;
+				$actionParams[] = $arg;
 			}
-			foreach ($route['url'] as $urlParam) {
-				$params[] = $urlParam;
-			}
-			call_user_func_array(array($actor, $route['action']), $params);
-		} else {
-			switch (count($route['url'])) {
-				case 0:
-					$actor->$route['action']();
-					break;
-				case 1:
-					$actor->$route['action'](
-						$route['url'][0]
-					);
-					break;
-				case 2:
-					$actor->$route['action'](
-						$route['url'][0],
-						$route['url'][1]
-					);
-					break;
-				case 3:
-					$actor->$route['action'](
-						$route['url'][0],
-						$route['url'][1],
-						$route['url'][2]
-					);
-					break;
-				default:
-					call_user_func_array($actor, $route['action'], $route['url']);
-					break;
-			}
-			$actor->$route['action']($request, $route['url']);
+		}
+		foreach ($route['url'] as $urlParam) {
+			$actionParams[] = $urlParam;
+		}
+		switch (count($actionParams)) {
+			case 0:
+				$actor->$route['action']();
+				break;
+			case 1:
+				$actor->$route['action'](
+					$actionParams[0]
+				);
+				break;
+			case 2:
+				$actor->$route['action'](
+					$actionParams[0],
+					$actionParams[1]
+				);
+				break;
+			case 3:
+				$actor->$route['action'](
+					$actionParams[0],
+					$actionParams[1],
+					$actionParams[2]
+				);
+				break;
+			default:
+				call_user_func_array($actor, $route['action'], $actionParams);
+				break;
 		}
 		$actor->Display();
 	}

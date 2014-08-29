@@ -28,6 +28,14 @@ class Web {
 		$this->setConfig($config);
 	}
 
+	public function IsLoggedIn() {
+		$loggedIn = false;
+		if (isset($_SESSION['LoggedIn']) && $_SESSION['LoggedIn'] === true) {
+			$loggedIn = true;
+		}
+		return $loggedIn;
+	}
+
 	public function AutoLogin () {
 		$return = array();
 
