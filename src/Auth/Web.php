@@ -21,7 +21,9 @@ class Web {
 		UserFactory $userFactory,
 		array $config = null
 	) {
-		session_start();
+		if (session_id() == '') {
+			session_start();
+		}
 		$this->userFactory = $userFactory;
 		$this->setConfig($config);
 	}
