@@ -28,9 +28,9 @@ abstract class UserModel extends Model {
 			throw new UserNotFoundException(sprintf('Username %s not found.', $username));
 		} else {
 			$row = $rows[0];
-			if ($this->validatePassword($password, $row[$this->authPasswordColumn])) {
+			if ($this->validatePassword($password, $row[$this->propertyDbSelectMap[$this->authPasswordColumn]])) {
 				$userClass = get_class($this);
-				return new $userClass($this->reader, $this->writer, $row[$this->propertyDbMap[$this->idProperty]]);
+				return new $userClass($this->factory, $row[$this->propertyDbMap[$this->idProperty]]);
 			} else {
 				throw new InvalidPasswordException('Incorrect password.');
 			}
