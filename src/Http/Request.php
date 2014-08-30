@@ -4,6 +4,13 @@ namespace Fluxoft\Rebar\Http;
 /**
  * Class Request
  * @package Fluxoft\Rebar\Http
+ * @property mixed Method
+ * @property mixed PathInfo
+ * @property mixed Get
+ * @property mixed Post
+ * @property mixed Patch
+ * @property mixed Put
+ * @property mixed Delete
  */
 class Request implements \ArrayAccess {
 	/**
@@ -16,7 +23,7 @@ class Request implements \ArrayAccess {
 	 */
 	public function __construct(Environment $environment) {
 		$props = array();
-		$props['Method'] = $environment['REQUEST_METHOD'];
+		$props['Method'] = strtoupper($environment['REQUEST_METHOD']);
 		$props['PathInfo'] = $environment['PATH_INFO'];
 		$props['Get'] = $_GET;
 		$props['Post'] = $_POST;
@@ -28,7 +35,7 @@ class Request implements \ArrayAccess {
 			case 'Method':
 			case 'PathInfo':
 			case 'Get':
-				$rtn = $this->properties[$offset];
+				$rtn = $this->properties[$var];
 				break;
 			case 'Post':
 			case 'Put':
@@ -37,7 +44,7 @@ class Request implements \ArrayAccess {
 				$rtn = $this->properties['Post'];
 				break;
 			default:
-				throw new \InvalidArgumentException(sprintf('Value "%s" is not defined.', $offset));
+				throw new \InvalidArgumentException(sprintf('Value "%s" is not defined.', $var));
 		}
 		return $rtn;
 	}
@@ -85,4 +92,3 @@ class Request implements \ArrayAccess {
 		throw new \InvalidArgumentException('Read-only object.');
 	}
 }
-	

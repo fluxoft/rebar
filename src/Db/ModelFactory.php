@@ -33,6 +33,15 @@ class ModelFactory {
 	}
 
 	/**
+	 * Return a new (blank) model.
+	 * @param $modelClass
+	 * @return Model
+	 */
+	public function GetNew($modelClass) {
+		return $this->GetOneById($modelClass, 0);
+	}
+
+	/**
 	 * Return a Model of class $modelClass with ID property of $id.
 	 * @param string $modelClass
 	 * @param string $id
