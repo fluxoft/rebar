@@ -222,37 +222,17 @@ abstract class Model extends BaseModel {
 	 * the object's ID property with the value of the new unique ID.
 	 */
 	private function create() {
-		$query = 'INSERT INTO '.$this->dbTable.' (';
-		$i = 2;
-		foreach($this->propertyDbMap as $propertyName => $dbColumn) {
-			if ($propertyName != $this->idProperty) {
-				$query .= $dbColumn;
-				if ($i < count($this->propertyDbMap)) {
-					$query .= ', ';
-				}
-				$i++;
-			}
+		$insertParams = array();
+		foreach($this->modProperties as $propertyName => $propertyValue) {
+			$insertParams[$this->propertyDbMap[$propertyName]] = $propertyValue;
 		}
-		$query .= ') VALUES (';
-		$i = 2;
-		foreach($this->propertyDbMap as $propertyName => $dbColumn) {
-			if ($propertyName != $this->idProperty) {
-				$query .= ':'.$dbColumn;
-				if ($i < count($this->propertyDbMap)) {
-					$query .= ', ';
-				}
-				$i++;
-			}
-		}
-		$query .= ')';
-		$params = array();
-		foreach($this->propertyDbMap as $propertyName => $dbColumn) {
-			if ($propertyName != $this->idProperty) {
-				$params[$dbColumn] = $this->modProperties[$propertyName];
-			}
-		}
+		$query = 'INSERT INTO '.$this->dbTable.' ('.
+			implode(',',array_keys($insertParams)).
+			') VALUES ('.
+			':'.implode(',:',array_keys($insertParams)).
+			')';
 		try {
-			$this->properties[$this->idProperty] = $this->writer->Insert($query, $params, $this->idSequence);
+			$this->properties[$this->idProperty] = $this->writer->Insert($query, $insertParams, $this->idSequence);
 			// copy $modProperties to $properties and then reset $modProperties
 			foreach ($this->modProperties as $property => $value) {
 				$this->properties[$property] = $value;
