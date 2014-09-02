@@ -296,14 +296,14 @@ abstract class Model extends BaseModel {
 	private function assignProperties(array $dbArray) {
 		foreach($dbArray as $dataKey => $dataValue) {
 			foreach($this->propertyDbSelectMap as $propertyName => $dbColumn) {
-				$startPos = 0;
-				if (strpos($dbColumn,'.')) {
-					$startPos = strpos($dbColumn,'.') + 1;
+				$dataKeyDef = $dbColumn;
+				if (strpos($dbColumn, '.')) {
+					$dataKeyDef = substr($dbColumn, strpos($dbColumn, '.') + 1);
 				}
-				if (strpos($dbColumn,' ')) {
-					$startPos = strpos($dbColumn,' ') + 1;
+				if (strrpos($dbColumn, ' ')) {
+					$dataKeyDef = substr($dbColumn, strrpos($dbColumn, ' ') + 1);
 				}
-				if ($dataKey == substr($dbColumn,$startPos)) {
+				if ($dataKey === $dataKeyDef) {
 					// If a null value was returned, the property will appear to be unset.
 					// Therefore, nulls must be set to empty strings here.
 					if (!isset($dataValue)) {
