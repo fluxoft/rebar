@@ -10,7 +10,7 @@
  */
 namespace Fluxoft\Rebar;
 
-use Fluxoft\Rebar\Auth\Web;
+use Fluxoft\Rebar\Auth\AuthInterface;
 use Fluxoft\Rebar\Http\Request;
 use Fluxoft\Rebar\Http\Response;
 
@@ -48,7 +48,7 @@ abstract class Actor {
 	 * @param $action
 	 * @return bool
 	 */
-	public function Authenticate(Web $webAuth, $action) {
+	public function Authenticate(AuthInterface $auth, $action) {
 		return !empty($action);
 	}
 
@@ -87,4 +87,3 @@ abstract class Actor {
 		return $this->data;
 	}
 }
-	

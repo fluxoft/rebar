@@ -13,7 +13,7 @@ use Fluxoft\Rebar\Auth\Exceptions\InvalidPasswordException;
 use Fluxoft\Rebar\Auth\Exceptions\InvalidTokenException;
 use Fluxoft\Rebar\Auth\Exceptions\UserNotFoundException;
 
-class Web {
+class Web implements AuthInterface {
 	protected $userFactory;
 	protected $config;
 
