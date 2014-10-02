@@ -6,15 +6,16 @@ use \Fluxoft\Rebar\Db\Exceptions\ProviderException;
 abstract class Provider {
 	protected $connection = null;
 	protected $sequence = null;
-	
+
 	public function __construct(\PDO $connection) {
 		$this->connection = $connection;
 	}
+
 	public function __destruct() {
 		unset($this->connection);
 	}
-	
-	public function Insert ($query, array $params = null, $sequence = null) {
+
+	public function Insert($query, array $params = null, $sequence = null) {
 		$newID = 0;
 		$this->connection->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
 		try {
@@ -24,11 +25,13 @@ abstract class Provider {
 		} catch (\PDOException $e) {
 			throw new ProviderException($e->getMessage());
 		}
-		if ($newID === 0) $newID = $this->connection->lastInsertId($this->sequence);
+		if ($newID === 0) {
+			$newID = $this->connection->lastInsertId($this->sequence);
+		}
 		return $newID;
 	}
-	
-	public function Update ($query, array $params = null) {
+
+	public function Update($query, array $params = null) {
 		$return = true;
 		$this->connection->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
 		try {
@@ -40,12 +43,13 @@ abstract class Provider {
 		}
 		return $return;
 	}
-	
-	public function Delete ($query, array $params = null) {
+
+	public function Delete($query, array $params = null) {
 		return $this->Update($query, $params);
 	}
-	
-	public function SelectSet ($query, array $params = null) {
+
+	public function SelectSet($query, array $params = null) {
+		$return = array();
 		$this->connection->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
 		try {
 			$stmt = $this->connection->prepare($query);
@@ -57,8 +61,9 @@ abstract class Provider {
 		}
 		return $return;
 	}
-	
-	public function SelectValue ($query, array $params = null) {
+
+	public function SelectValue($query, array $params = null) {
+		$return = null;
 		$this->connection->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
 		try {
 			$stmt = $this->connection->prepare($query);
