@@ -142,7 +142,11 @@ class Router {
 				}
 				$pattern = '/^'.str_replace('/', '\/', $route['path']).'(\/[A-Za-z0-9\-.]+)*\/*$/';
 				if (preg_match($pattern, $path)) {
-					$routeParts['actor'] = $route['actor'];
+					if (isset($this->config['actorsNamespace'])) {
+						$routeParts['actor'] = '\\'.$this->config['actorsNamespace'].'\\'.$route['actor'];
+					} else {
+						$routeParts['actor'] = $route['actor'];
+					}
 					$routeParts['action'] = $route['action'];
 					$paramsPath = substr($path, strlen($route['path']) + 1);
 					$routeParts['url'] = array_filter(explode('/',$paramsPath));
