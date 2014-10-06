@@ -4,6 +4,12 @@ namespace Fluxoft\Rebar\Presenters;
 
 use Fluxoft\Rebar\Http\Response;
 
+/**
+ * Class Phtml
+ * @package Fluxoft\Rebar\Presenters
+ * @property string Layout
+ * @property string Template
+ */
 class Phtml implements PresenterInterface {
 	protected $templatePath;
 	protected $template;
