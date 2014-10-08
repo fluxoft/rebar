@@ -186,7 +186,18 @@ abstract class Model extends BaseModel {
 			$query .= ' LIMIT '.$limit.' OFFSET '.$offset;
 		}
 		$returnSet = $this->reader->SelectSet($query);
-		$return = $this->returnObjectSet($returnSet);
+		$return = $this->GetObjectSet($returnSet);
+		return $return;
+	}
+
+	public function GetObjectSet($dataSet) {
+		$return = array();
+		$className = get_class($this);
+		foreach($dataSet as $row) {
+			$thisObj = new $className($this->factory);
+			$thisObj->assignProperties($row);
+			$return[] = $thisObj;
+		}
 		return $return;
 	}
 
@@ -313,16 +324,5 @@ abstract class Model extends BaseModel {
 				}
 			}
 		}
-	}
-
-	private function returnObjectSet($dataSet) {
-		$return = array();
-		$className = get_class($this);
-		foreach($dataSet as $row) {
-			$thisObj = new $className($this->factory);
-			$thisObj->assignProperties($row);
-			$return[] = $thisObj;
-		}
-		return $return;
 	}
 }

@@ -88,6 +88,23 @@ class ModelFactory {
 	}
 
 	/**
+	 * Given the name of a model and an array of data rows, will return a set of objects
+	 * populated with the data set. Used for easily retrieving a set of objects from the
+	 * results returned by a custom query.
+	 * @param $modelClass
+	 * @param array $dataSet
+	 * @return Model[]
+	 */
+	public function GetSetFromDataSet($modelClass, array $dataSet) {
+		$modelClass = (strstr($modelClass, $this->modelNamespace)) ?
+			$modelClass :
+			$this->modelNamespace.$modelClass;
+		/** @var Model $model */
+		$model = new $modelClass($this);
+		return $model->GetObjectSet($dataSet);
+	}
+
+	/**
 	 * Delete the Model of type $modelClass with ID property of $id.
 	 * @param string $modelClass
 	 * @param mixed $id
