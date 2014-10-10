@@ -34,7 +34,7 @@ abstract class Actor {
 	protected $response;
 	protected $auth;
 
-	public function __construct(Request $request, Response $response, AuthInterface $auth = null) {
+	public function __construct(Request $request, Response $response, AuthInterface $auth) {
 		$this->request = $request;
 		$this->response = $response;
 		$this->auth = $auth;
@@ -46,6 +46,7 @@ abstract class Actor {
 	 *
 	 * If not overridden, always return true.
 	 *
+	 * @param \Fluxoft\Rebar\Auth\AuthInterface $auth
 	 * @param $action
 	 * @return bool
 	 */

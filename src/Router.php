@@ -83,7 +83,7 @@ class Router {
 
 		if (class_exists($route['actor'])) {
 			/** @var $actor \Fluxoft\Rebar\Actor */
-			$actor = new $route['actor']($request, $response);
+			$actor = new $route['actor']($request, $response, $this->webAuth);
 		} else {
 			throw new RouterException(sprintf('"%s" was not found.', $route['actor']));
 		}
@@ -91,7 +91,7 @@ class Router {
 			throw new RouterException(sprintf('Could not find a method called %s in %s.', $route['action'], $route['actor']));
 		}
 
-		if (!$actor->Authenticate($this->webAuth, $route['action'])) {
+		if (!$actor->Authenticate($route['action'])) {
 			throw new AuthenticationException(sprintf('Authentication failed in %s::%s.', $route['actor'], $route['action']));
 		}
 
