@@ -25,7 +25,7 @@ class UserFactory extends ModelFactory {
 		$modelNamespace = ''
 	) {
 		$this->userModel = $modelNamespace.$userModel;
-		parent::__construct($reader, $writer);
+		parent::__construct($reader, $writer, $modelNamespace);
 	}
 
 	/**
