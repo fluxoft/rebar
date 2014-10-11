@@ -9,6 +9,7 @@ class ActorTest extends \PHPUnit_Framework_TestCase
 
 	protected $request;
 	protected $response;
+	protected $auth;
 
 	protected function setup() {
 		$this->request = $this->getMockBuilder('\Fluxoft\Rebar\Http\Request')
@@ -17,11 +18,15 @@ class ActorTest extends \PHPUnit_Framework_TestCase
 		$this->response = $this->getMockBuilder('\Fluxoft\Rebar\Http\Response')
 			->disableOriginalConstructor()
 			->getMock();
+		$this->auth = $this->getMockBuilder('\Fluxoft\Rebar\Auth\Web')
+			->disableOriginalConstructor()
+			->getMock();
 	}
 
 	protected function teardown() {
 		unset($this->request);
 		unset($this->response);
+		unset($this->auth);
 	}
 
 	public function testAuthenticate() {
@@ -29,7 +34,8 @@ class ActorTest extends \PHPUnit_Framework_TestCase
 			'Fluxoft\Rebar\Actor',
 			array(
 				$this->request,
-				$this->response
+				$this->response,
+				$this->auth
 			)
 		);
 		$stub->expects($this->any())
