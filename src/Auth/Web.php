@@ -8,10 +8,10 @@
 
 namespace Fluxoft\Rebar\Auth;
 
-
 use Fluxoft\Rebar\Auth\Exceptions\InvalidPasswordException;
 use Fluxoft\Rebar\Auth\Exceptions\InvalidTokenException;
 use Fluxoft\Rebar\Auth\Exceptions\UserNotFoundException;
+use Fluxoft\Rebar\Exceptions\AuthenticationException;
 
 class Web implements AuthInterface {
 	protected $userFactory;
@@ -28,26 +28,31 @@ class Web implements AuthInterface {
 		$this->setConfig($config);
 	}
 
-	public function IsLoggedIn() {
-		$loggedIn = false;
-		if (isset($_SESSION['LoggedIn']) && $_SESSION['LoggedIn'] === true) {
-			$loggedIn = true;
+	public function GetAuthenticatedUser () {
+		$autoLogin = $this->AutoLogin();
+		if (isset($autoLogin['success'])) {
+
+		} else {
+			throw new AuthenticationException('Could not authenticate user.');
 		}
-		return $loggedIn;
 	}
 
-	public function AutoLogin () {
+	public function IsLoggedIn() {
+		return (isset($_SESSION['LoggedIn']) && $_SESSION['LoggedIn'] === true);
+	}
+
+	public function AutoLogin ($tokenString = '') {
 		$return = array();
 
 		// if the user is already logged in, this can all be skipped
-		if (isset($_SESSION['LoggedIn']) && $_SESSION['LoggedIn']) {
+		if ($this->IsLoggedIn()) {
 			$return['success'] = 'User is already logged in.';
 		} else {
 			if ($this->config['RemoteAuth']['Enabled'] === true) {
 				// todo: add remote validation
 				$return['success'] = 'Remote validation.';
 			} else {
-				$return = $this->ValidateLoginToken();
+				$return = $this->ValidateLoginToken($tokenString);
 			}
 		}
 
@@ -120,7 +125,7 @@ class Web implements AuthInterface {
 		$return = array();
 		$user = null;
 		try {
-			$user = $this->userFactory->GetAuthenticatedUser($username, $password);
+			$user = $this->userFactory->GetByUsernameAndPassword($username, $password);
 		} catch (InvalidPasswordException $e) {
 			$return['error'] = $e->getMessage();
 		} catch (UserNotFoundException $e) {
@@ -144,12 +149,12 @@ class Web implements AuthInterface {
 
 		if (isset($_COOKIE['AuthToken'])) {
 			$token = new Token(0, '', '', $_COOKIE['AuthToken']);
-
-			//todo: if remote, remove this userID/seriesID from db
+			/** @var \Fluxoft\Rebar\Auth\UserModel $user */
+			$user = $this->userFactory->GetByToken($token);
+			$user->DeleteAuthTokens($token->SeriesID);
 
 			// now destroy the cookies by setting their expiration date to the past
-			setcookie('AuthToken',null,1,'/',$this->config['RememberMe']['CookieDomain']);
-			setcookie('RememberMe',null,1,'/',$this->config['RememberMe']['CookieDomain']);
+			$this->killAuthTokenCookie();
 		}
 
 		// destroy the session
@@ -189,26 +194,35 @@ class Web implements AuthInterface {
 
 	private function saveAuthTokenCookie(Token $token, $persist = true) {
 		$expire = strtotime('+' . $this->config['RememberMe']['Days'] . ' days');
-		$domain = $this->config['RememberMe']['CookieDomain'];
-		setcookie('AuthToken', (string) $token, 0, '/', $domain);
+		$domain = $this->config['CookieDomain'];
+		$authTokenSet = setcookie('AuthToken', (string) $token, 0, '/', $domain);
+		$rememberMeSet = false;
 		if ($persist && $this->config['RememberMe']['Enabled']) {
-			setcookie('RememberMe', (string) $token, $expire, '/', $domain);
+			$rememberMeSet = setcookie('RememberMe', (string) $token, $expire, '/', $domain);
 		}
+		echo "authTokenSet: $authTokenSet\n";
+		if ($rememberMeSet) {
+			echo "rememberMeSet: $rememberMeSet\n";
+		}
+		print_r($_COOKIE);
+		print_r($token);
+		echo "the time is now ".strtotime('now')."\n";
+		echo "Saving cookie for $domain set to expire on $expire with value ".(string) $token."\n";
 	}
 
 	private function killAuthTokenCookie() {
-		$domain = $this->config['RememberMe']['CookieDomain'];
-		setcookie('AuthToken', '', 0, '/', $domain);
-		setcookie('RememberMe', '', 0, '/', $domain);
+		$domain = $this->config['CookieDomain'];
+		setcookie('AuthToken', null, 0, '/', $domain);
+		setcookie('RememberMe', null, 0, '/', $domain);
 	}
 
 	private function setConfig (array $config = null) {
 		$defaultConfig = array(
 			'LoginRedirect' => '/auth/login',
+			'CookieDomain' => '.'.getenv('HTTP_HOST'),
 			'RememberMe' => array(
 				'Enabled' => false,
-				'Days' => 7,
-				'CookieDomain' => '.'.getenv('HTTP_HOST')
+				'Days' => 7
 			),
 			'RemoteAuth' => array(
 				'Enabled' => false,
@@ -221,6 +235,9 @@ class Web implements AuthInterface {
 		if (is_array($config)) {
 			if (isset($config['LoginRedirect'])) {
 				$defaultConfig['LoginRedirect'] = $config['LoginRedirect'];
+			}
+			if (isset($config['CookieDomain'])) {
+				$defaultConfig['CookieDomain'] = $config['CookieDomain'];
 			}
 			if (isset($config['RememberMe'])) {
 				$defaultConfig['RememberMe'] = array_merge($defaultConfig['RememberMe'], $config['RememberMe']);

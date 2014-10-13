@@ -13,34 +13,18 @@ use Fluxoft\Rebar\Db\Providers\Provider;
 
 class UserFactory extends ModelFactory {
 	/**
-	 * The name of the UserModel class.
-	 * @var string $userModel
-	 */
-	protected $userModel;
-
-	public function __construct(
-		$userModel,
-		Provider $reader,
-		Provider $writer,
-		$modelNamespace = ''
-	) {
-		$this->userModel = $modelNamespace.$userModel;
-		parent::__construct($reader, $writer, $modelNamespace);
-	}
-
-	/**
 	 * Return a UserModel class for the user matching $username and $password.
 	 * @param $username
 	 * @param $password
 	 * @return \Fluxoft\Rebar\Auth\UserModel
 	 */
-	public function GetAuthenticatedUser($username, $password) {
+	public function GetByUsernameAndPassword($username, $password) {
 		/** @var $userClass \Fluxoft\Rebar\Auth\UserModel */
-		$userClass = new $this->userModel($this);
+		$userClass = new $this->namespacedModel($this);
 		return $userClass->CheckLogin($username, $password);
 	}
 
 	public function GetByToken(Token $token) {
-		return $this->GetOneById($this->userModel, $token->UserID);
+		return parent::GetOneById($token->UserID);
 	}
 } 

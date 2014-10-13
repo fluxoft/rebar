@@ -6,8 +6,8 @@ use Fluxoft\Rebar\Auth\Exceptions\InvalidPasswordException;
 use Fluxoft\Rebar\Db\Model;
 
 abstract class UserModel extends Model {
-	protected $authUsernameColumn = 'Email';
-	protected $authPasswordColumn = 'Password';
+	protected $authUsernameProperty = 'Email';
+	protected $authPasswordProperty = 'Password';
 
 	public function GetID () {
 		return $this->properties[$this->idProperty];
@@ -16,10 +16,10 @@ abstract class UserModel extends Model {
 	public function CheckLogin ($username, $password) {
 		$query = 'SELECT '.
 			$this->propertyDbSelectMap[$this->idProperty].', '.
-			$this->authPasswordColumn.' '.
+			$this->propertyDbSelectMap[$this->authPasswordProperty].' '.
 			'FROM '.$this->dbSelectTable.' '.
 			'WHERE '.
-			$this->propertyDbSelectMap[$this->authUsernameColumn].' = :username';
+			$this->propertyDbSelectMap[$this->authUsernameProperty].' = :username';
 		$params = array(
 			'username' => $username
 		);
@@ -28,7 +28,7 @@ abstract class UserModel extends Model {
 			throw new UserNotFoundException(sprintf('Username %s not found.', $username));
 		} else {
 			$row = $rows[0];
-			if ($this->validatePassword($password, $row[$this->propertyDbSelectMap[$this->authPasswordColumn]])) {
+			if ($this->validatePassword($password, $row[$this->propertyDbSelectMap[$this->authPasswordProperty]])) {
 				$userClass = get_class($this);
 				return new $userClass($this->factory, $row[$this->propertyDbMap[$this->idProperty]]);
 			} else {
@@ -124,7 +124,7 @@ abstract class UserModel extends Model {
 
 	protected function setPassword ($password) {
 		$hash = $this->generateHash($password);
-		$this->modProperties[$this->authPasswordColumn] = $hash;
+		$this->modProperties[$this->authPasswordProperty] = $hash;
 	}
 	protected function getPassword () {
 		// do not return the actual password as a property.
@@ -162,26 +162,9 @@ abstract class UserModel extends Model {
 	* function.
 	*/
 	private function validatePassword ($password, $hash) {
-		/* Regenerating the with an available hash as the options parameter should
+		/* Regenerating the hash with an available hash as the options parameter should
 		 * produce the same hash if the same password is passed.
 		*/
 		return crypt($password, $hash) === $hash;
-	}
-
-	private static function GUID() {
-		if (function_exists('com_create_guid')){
-			return com_create_guid();
-		}else{
-			$charid = strtoupper(md5(uniqid(rand(), true)));
-			$hyphen = chr(45);// "-"
-			$uuid = chr(123)// "{"
-				.substr($charid, 0, 8).$hyphen
-				.substr($charid, 8, 4).$hyphen
-				.substr($charid,12, 4).$hyphen
-				.substr($charid,16, 4).$hyphen
-				.substr($charid,20,12)
-				.chr(125);// "}"
-			return $uuid;
-		}
 	}
 }

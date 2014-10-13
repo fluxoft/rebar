@@ -63,10 +63,12 @@ abstract class Model extends BaseModel {
 
 		// sanity check for making new object
 		if (
-			(count($this->properties) > 0) &&
 			(count($this->propertyDbMap) > 0) &&
 			(strlen($this->dbTable) > 0)
 		) {
+			if (count($this->properties) === 0) {
+				$this->properties = array_fill_keys(array_keys($this->propertyDbMap), '');
+			}
 			// select map must have the same number of elements as properties
 			if ((count($this->properties) == count($this->propertyDbSelectMap))) {
 				// If $id is greater than zero and the $setProperties array is zero-length,

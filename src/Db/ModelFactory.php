@@ -1,6 +1,8 @@
 <?php
 namespace Fluxoft\Rebar\Db;
 
+use Fluxoft\Rebar\Db\Exceptions\ModelException;
+
 /**
  * @property \Fluxoft\Rebar\Db\Providers\Provider Reader
  * @property \Fluxoft\Rebar\Db\Providers\Provider Writer
@@ -17,54 +19,65 @@ class ModelFactory {
 	 */
 	protected $writer = null;
 
-	/**
-	 * @var string Optional namespace for models.
-	 */
-	protected $modelNamespace;
+	/** @var string the name of the model for which this factory will return instances. */
+	protected $model;
+	/** @var string Optional namespace for models. */
+	protected $namespace;
+	/** @var string Concatenated namespace and model. */
+	protected $namespacedModel;
 
 	public function __construct(
 		Providers\Provider $reader,
 		Providers\Provider $writer,
-		$modelNamespace = ''
+		$model,
+		$namespace = ''
 	) {
 		$this->reader = $reader;
 		$this->writer = $writer;
-		$this->modelNamespace = $modelNamespace;
+		$this->model = $model;
+		$this->namespace = $namespace;
+		$this->namespacedModel = $namespace.$model;
 	}
 
 	/**
 	 * Return a new (blank) model.
-	 * @param $modelClass
 	 * @return Model
 	 */
-	public function GetNew($modelClass) {
-		return $this->GetOneById($modelClass, 0);
+	public function GetNew() {
+		return $this->GetOneById($this->namespacedModel, 0);
 	}
 
 	/**
-	 * Return a Model of class $modelClass with ID property of $id.
-	 * @param string $modelClass
-	 * @param string $id
-	 * @return Model
+	 * Return a Model with ID property of $id.
+	 * @param $id
+	 * @return mixed
+	 * @throws ModelException
 	 */
-	public function GetOneById($modelClass, $id) {
-		$modelClass = (strstr($modelClass, $this->modelNamespace)) ?
-			$modelClass :
-			$this->modelNamespace.$modelClass;
-		return new $modelClass($this, $id);
+	public function GetOneById($id) {
+		if (!class_exists($this->namespacedModel)) {
+			throw new ModelException(sprintf(
+				'The model %s was not found.',
+				$this->namespacedModel
+			));
+		}
+		return new $this->namespacedModel($this, $id);
 	}
 
 	/**
 	 * Return a single Model of class $modelClass selected with $where.
-	 * @param string $modelClass
 	 * @param string $where
 	 * @return Model
+	 * @throws ModelException
 	 */
-	public function GetOneWhere($modelClass, $where) {
-		$modelClass = (strstr($modelClass, $this->modelNamespace)) ?
-			$modelClass :
-			$this->modelNamespace.$modelClass;
-		$model = new $modelClass($this);
+	public function GetOneWhere($where) {
+		if (!class_exists($this->namespacedModel)) {
+			throw new ModelException(sprintf(
+				'The model %s was not found.',
+				$this->namespacedModel
+			));
+		}
+		/** @var Model $model */
+		$model = new $this->namespacedModel($this);
 		$modelSet = $model->GetAll($where, '', 1, 1);
 		return $modelSet[0];
 	}
@@ -72,18 +85,22 @@ class ModelFactory {
 	/**
 	 * Return an array of Model objects of type $modelClass selected with $filter, sorted by $sort,
 	 * and limited to page $page where pages are $pageSize long.
-	 * @param string $modelClass
 	 * @param string $filter
 	 * @param string $sort
 	 * @param int $page
 	 * @param int $pageSize
 	 * @return array Model
+	 * @throws ModelException
 	 */
-	public function GetSet($modelClass, $filter = '', $sort = '', $page = 1, $pageSize = 0) {
-		$modelClass = (strstr($modelClass, $this->modelNamespace)) ?
-			$modelClass :
-			$this->modelNamespace.$modelClass;
-		$model = new $modelClass($this);
+	public function GetSet($filter = '', $sort = '', $page = 1, $pageSize = 0) {
+		if (!class_exists($this->namespacedModel)) {
+			throw new ModelException(sprintf(
+				'The model %s was not found.',
+				$this->namespacedModel
+			));
+		}
+		/** @var Model $model */
+		$model = new $this->namespacedModel($this);
 		return $model->GetAll($filter, $sort, $page, $pageSize);
 	}
 
@@ -91,29 +108,36 @@ class ModelFactory {
 	 * Given the name of a model and an array of data rows, will return a set of objects
 	 * populated with the data set. Used for easily retrieving a set of objects from the
 	 * results returned by a custom query.
-	 * @param $modelClass
 	 * @param array $dataSet
 	 * @return Model[]
+	 * @throws ModelException
 	 */
-	public function GetSetFromDataSet($modelClass, array $dataSet) {
-		$modelClass = (strstr($modelClass, $this->modelNamespace)) ?
-			$modelClass :
-			$this->modelNamespace.$modelClass;
+	public function GetSetFromDataSet(array $dataSet) {
+		if (!class_exists($this->namespacedModel)) {
+			throw new ModelException(sprintf(
+				'The model %s was not found.',
+				$this->namespacedModel
+			));
+		}
 		/** @var Model $model */
-		$model = new $modelClass($this);
+		$model = new $this->namespacedModel($this);
 		return $model->GetObjectSet($dataSet);
 	}
 
 	/**
 	 * Delete the Model of type $modelClass with ID property of $id.
-	 * @param string $modelClass
 	 * @param mixed $id
+	 * @throws ModelException
 	 */
-	public function DeleteById($modelClass, $id) {
-		$modelClass = (strstr($modelClass, $this->modelNamespace)) ?
-			$modelClass :
-			$this->modelNamespace.$modelClass;
-		$model = new $modelClass($this);
+	public function DeleteById($id) {
+		if (!class_exists($this->namespacedModel)) {
+			throw new ModelException(sprintf(
+				'The model %s was not found.',
+				$this->namespacedModel
+			));
+		}
+		/** @var Model $model */
+		$model = new $this->namespacedModel($this);
 		$model->Delete($id);
 	}
 
