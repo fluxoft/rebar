@@ -174,6 +174,9 @@ class Web implements AuthInterface {
 	}
 
 	private function killSession() {
+		if (!isset($_SESSION)) {
+			session_start();
+		}
 		$_SESSION = array();
 
 		if (ini_get('session.use_cookies')) {
@@ -195,19 +198,10 @@ class Web implements AuthInterface {
 	private function saveAuthTokenCookie(Token $token, $persist = true) {
 		$expire = strtotime('+' . $this->config['RememberMe']['Days'] . ' days');
 		$domain = $this->config['CookieDomain'];
-		$authTokenSet = setcookie('AuthToken', (string) $token, 0, '/', $domain);
-		$rememberMeSet = false;
+		setcookie('AuthToken', (string) $token, 0, '/', $domain);
 		if ($persist && $this->config['RememberMe']['Enabled']) {
-			$rememberMeSet = setcookie('RememberMe', (string) $token, $expire, '/', $domain);
+			setcookie('RememberMe', (string) $token, $expire, '/', $domain);
 		}
-		echo "authTokenSet: $authTokenSet\n";
-		if ($rememberMeSet) {
-			echo "rememberMeSet: $rememberMeSet\n";
-		}
-		print_r($_COOKIE);
-		print_r($token);
-		echo "the time is now ".strtotime('now')."\n";
-		echo "Saving cookie for $domain set to expire on $expire with value ".(string) $token."\n";
 	}
 
 	private function killAuthTokenCookie() {
