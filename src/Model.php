@@ -14,10 +14,12 @@ abstract class Model implements \Iterator, \ArrayAccess {
 	protected $modProperties = array();
 
 	public function __construct(array $properties = array()) {
-		if (count($properties) === count($this->properties)) {
+		if (count(array_intersect_key($this->properties, $properties)) === count($this->properties)) {
 			foreach($this->properties as $propertyName => $propertyValue) {
 				$this->properties[$propertyName] = $properties[$propertyName];
 			}
+		} else {
+			throw new \InvalidArgumentException('Property list does not match configured model property list.');
 		}
 	}
 

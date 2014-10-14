@@ -1,6 +1,7 @@
 <?php
 namespace Fluxoft\Rebar\Db;
 
+use Fluxoft\Rebar\Db\Exceptions\ModelException;
 use \Fluxoft\Rebar\Model as BaseModel;
 
 abstract class Model extends BaseModel {
@@ -54,65 +55,67 @@ abstract class Model extends BaseModel {
 		$id = 0,
 		array $setProperties = array()
 	) {
+		// sanity check for making new object
+		if (count($this->propertyDbMap) === 0 || strlen($this->dbTable)) {
+			throw new ModelException('Db Model must include propertyDbMap and dbTable properties.');
+		}
+		// if only propertyDbMap was configured, use the keys to make a starter properties array
+		if (count($this->properties) === 0) {
+			$this->properties = array_fill_keys(array_keys($this->propertyDbMap), '');
+		}
+
+		// if select-specific properties were not set, copy them from the generics
+		$this->propertyDbSelectMap = (count($this->propertyDbSelectMap)) ? $this->propertyDbSelectMap : $this->propertyDbMap;
+		$this->dbSelectTable = (strlen($this->dbSelectTable)) ? $this->dbSelectTable : $this->dbTable;
+
+		// select map must have the same number of elements as properties
+		if ((count($this->properties) !== count($this->propertyDbSelectMap))) {
+			throw new ModelException(sprintf('Model misconfiguration error. Property array mismatch.'));
+		}
+
 		$this->factory = $factory;
 		$this->reader = $factory->Reader;
 		$this->writer = $factory->Writer;
 
-		$this->propertyDbSelectMap = (count($this->propertyDbSelectMap)) ? $this->propertyDbSelectMap : $this->propertyDbMap;
-		$this->dbSelectTable = (strlen($this->dbSelectTable)) ? $this->dbSelectTable : $this->dbTable;
-
-		// sanity check for making new object
-		if (
-			(count($this->propertyDbMap) > 0) &&
-			(strlen($this->dbTable) > 0)
-		) {
-			if (count($this->properties) === 0) {
-				$this->properties = array_fill_keys(array_keys($this->propertyDbMap), '');
-			}
-			// select map must have the same number of elements as properties
-			if ((count($this->properties) == count($this->propertyDbSelectMap))) {
+		if (($id > 0)) {
+			if (count($setProperties) > 0) {
+				// If $id is not zero and the $setProperties array has members,
+				// then just initialize the $properties array.
+				parent::__construct($setProperties);
+			} else {
 				// If $id is greater than zero and the $setProperties array is zero-length,
 				// then get the values for this object's $properties from the $dbSelectTable
 				// and set them.
-				if (($id > 0) && (count($setProperties) === 0)) {
-					$query = 'SELECT ';
-					$i = 1;
-					foreach($this->properties as $propertyName => $propertyValue) {
-						$query .= $this->propertyDbSelectMap[$propertyName];
-						if ($i < count($this->properties)) {
-							$query .= ', ';
-						}
-						$i++;
+				$query = 'SELECT ';
+				$i = 1;
+				foreach($this->properties as $propertyName => $propertyValue) {
+					$query .= $this->propertyDbSelectMap[$propertyName];
+					if ($i < count($this->properties)) {
+						$query .= ', ';
 					}
-					$query .= ' FROM '.$this->dbSelectTable;
-					$query .= ' WHERE '.$this->propertyDbSelectMap[$this->idProperty].' = :id';
-
-					$params = array(':id' => $id);
-					$returnSet = $this->reader->SelectSet($query, $params);
-
-					if ($returnSet) {
-						//foreach($returnSet[0] as $dataKey => $dataValue) {
-						foreach($returnSet as $row) {
-							$this->assignProperties($row);
-						}
-					} else {
-						$this->properties[$this->idProperty] = -1;
-					}
+					$i++;
 				}
-				// If $id is 0 and the array is zero-length, then just make sure the $idProperty
-				// is set to 0, in case the $properties array in the child class isn't set that way.
-				// This becomes important in the Save() function to determine whether a new db
-				// record needs to be created.  The other default values
-				else {
-					$this->properties[$this->idProperty] = 0;
+				$query .= ' FROM '.$this->dbSelectTable;
+				$query .= ' WHERE '.$this->propertyDbSelectMap[$this->idProperty].' = :id';
+
+				$params = array(':id' => $id);
+				$returnSet = $this->reader->SelectSet($query, $params);
+
+				if ($returnSet) {
+					//foreach($returnSet[0] as $dataKey => $dataValue) {
+					foreach($returnSet as $row) {
+						$this->assignProperties($row);
+					}
+				} else {
+					$this->properties[$this->idProperty] = -1;
 				}
 			}
-		}
-
-		// If $id is zero and the $setProperties array has members,
-		// then just initialize the $properties array.
-		if (($id > 0) && (count($setProperties) > 0)) {
-			parent::__construct($setProperties);
+		} else {
+			// If $id is 0 (or less), then just make sure the $idProperty
+			// is set to 0, in case the $properties array in the child class isn't set that way.
+			// This becomes important in the Save() function to determine whether a new db
+			// record needs to be created.  The other default values from $properties are preserved.
+			$this->properties[$this->idProperty] = 0;
 		}
 	}
 
@@ -150,7 +153,7 @@ abstract class Model extends BaseModel {
 	 * @param string $pageSize Number of results per page.
 	 * @return array
 	 */
-	public function GetAll($where = '', $orderBy = '', $page = 1, $pageSize = '0') {
+	public function GetSet($where = '', $orderBy = '', $page = 1, $pageSize = '0') {
 		$propertyDbSelectMap = (count($this->propertyDbSelectMap)) ? $this->propertyDbSelectMap : $this->propertyDbMap;
 		$dbSelectTable = (strlen($this->dbSelectTable)) ? $this->dbSelectTable : $this->dbTable;
 		$properties = array_keys($propertyDbSelectMap);
@@ -187,18 +190,21 @@ abstract class Model extends BaseModel {
 			$offset = (($page - 1) * $pageSize);
 			$query .= ' LIMIT '.$limit.' OFFSET '.$offset;
 		}
-		$returnSet = $this->reader->SelectSet($query);
-		$return = $this->GetObjectSet($returnSet);
+		return $this->GetFromDataSet($this->reader->SelectSet($query));
+	}
+
+	public function GetFromDataRow($dataRow) {
+		/** @var \Fluxoft\Rebar\Db\Model $className */
+		$className = get_class($this);
+		$return = new $className($this->factory);
+		$return->assignProperties($dataRow);
 		return $return;
 	}
 
-	public function GetObjectSet($dataSet) {
+	public function GetFromDataSet($dataSet) {
 		$return = array();
-		$className = get_class($this);
 		foreach($dataSet as $row) {
-			$thisObj = new $className($this->factory);
-			$thisObj->assignProperties($row);
-			$return[] = $thisObj;
+			$return[] = $this->GetFromDataRow($row);
 		}
 		return $return;
 	}
@@ -228,6 +234,35 @@ abstract class Model extends BaseModel {
 		$query .= ';';
 		$params = $whereParams;
 		return $this->reader->SelectValue($query, $params);
+	}
+
+	protected function assignProperty($property, $value) {
+		$this->modProperties[$property] = $value;
+	}
+	protected function retrieveProperty($property) {
+		return isset($this->modProperties[$property]) ? $this->modProperties[$property] : $this->properties[$property];
+	}
+
+	private function assignProperties(array $dbArray) {
+		foreach($dbArray as $dataKey => $dataValue) {
+			foreach($this->propertyDbSelectMap as $propertyName => $dbColumn) {
+				$dataKeyDef = $dbColumn;
+				if (strpos($dbColumn, '.')) {
+					$dataKeyDef = substr($dbColumn, strpos($dbColumn, '.') + 1);
+				}
+				if (strrpos($dbColumn, ' ')) {
+					$dataKeyDef = substr($dbColumn, strrpos($dbColumn, ' ') + 1);
+				}
+				if ($dataKey === $dataKeyDef) {
+					// If a null value was returned, the property will appear to be unset.
+					// Therefore, nulls must be set to empty strings here.
+					if (!isset($dataValue)) {
+						$dataValue = '';
+					}
+					$this->properties[$propertyName] = $dataValue;
+				}
+			}
+		}
 	}
 
 	/**
@@ -294,35 +329,6 @@ abstract class Model extends BaseModel {
 					$this->modProperties = array();
 				} catch (\PDOException $e) {
 					throw $e;
-				}
-			}
-		}
-	}
-
-	protected function assignProperty($property, $value) {
-		$this->modProperties[$property] = $value;
-	}
-	protected function retrieveProperty($property) {
-		return isset($this->modProperties[$property]) ? $this->modProperties[$property] : $this->properties[$property];
-	}
-
-	private function assignProperties(array $dbArray) {
-		foreach($dbArray as $dataKey => $dataValue) {
-			foreach($this->propertyDbSelectMap as $propertyName => $dbColumn) {
-				$dataKeyDef = $dbColumn;
-				if (strpos($dbColumn, '.')) {
-					$dataKeyDef = substr($dbColumn, strpos($dbColumn, '.') + 1);
-				}
-				if (strrpos($dbColumn, ' ')) {
-					$dataKeyDef = substr($dbColumn, strrpos($dbColumn, ' ') + 1);
-				}
-				if ($dataKey === $dataKeyDef) {
-					// If a null value was returned, the property will appear to be unset.
-					// Therefore, nulls must be set to empty strings here.
-					if (!isset($dataValue)) {
-						$dataValue = '';
-					}
-					$this->properties[$propertyName] = $dataValue;
 				}
 			}
 		}

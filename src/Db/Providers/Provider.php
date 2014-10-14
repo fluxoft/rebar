@@ -5,7 +5,6 @@ use \Fluxoft\Rebar\Db\Exceptions\ProviderException;
 
 abstract class Provider {
 	protected $connection = null;
-	protected $sequence = null;
 
 	public function __construct(\PDO $connection) {
 		$this->connection = $connection;
@@ -26,7 +25,7 @@ abstract class Provider {
 			throw new ProviderException($e->getMessage());
 		}
 		if ($newID === 0) {
-			$newID = $this->connection->lastInsertId($this->sequence);
+			$newID = $this->connection->lastInsertId($sequence);
 		}
 		return $newID;
 	}

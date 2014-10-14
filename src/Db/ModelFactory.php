@@ -78,7 +78,7 @@ class ModelFactory {
 		}
 		/** @var Model $model */
 		$model = new $this->namespacedModel($this);
-		$modelSet = $model->GetAll($where, '', 1, 1);
+		$modelSet = $model->GetSet($where, '', 1, 1);
 		return $modelSet[0];
 	}
 
@@ -121,7 +121,7 @@ class ModelFactory {
 		}
 		/** @var Model $model */
 		$model = new $this->namespacedModel($this);
-		return $model->GetObjectSet($dataSet);
+		return $model->GetFromDataSet($dataSet);
 	}
 
 	/**
