@@ -101,7 +101,7 @@ class ModelFactory {
 		}
 		/** @var Model $model */
 		$model = new $this->namespacedModel($this);
-		return $model->GetAll($filter, $sort, $page, $pageSize);
+		return $model->GetSet($filter, $sort, $page, $pageSize);
 	}
 
 	/**

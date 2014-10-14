@@ -56,7 +56,7 @@ abstract class Model extends BaseModel {
 		array $setProperties = array()
 	) {
 		// sanity check for making new object
-		if (count($this->propertyDbMap) === 0 || strlen($this->dbTable)) {
+		if (count($this->propertyDbMap) === 0 || strlen($this->dbTable) === 0) {
 			throw new ModelException('Db Model must include propertyDbMap and dbTable properties.');
 		}
 		// if only propertyDbMap was configured, use the keys to make a starter properties array
