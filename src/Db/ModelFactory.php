@@ -105,6 +105,24 @@ class ModelFactory {
 	}
 
 	/**
+	 * Return a count of the models found when queried with $filter.
+	 * @param string $filter
+	 * @return mixed
+	 * @throws ModelException
+	 */
+	public function CountWhere($filter = '') {
+		if (!class_exists($this->namespacedModel)) {
+			throw new ModelException(sprintf(
+				'The model %s was not found.',
+				$this->namespacedModel
+			));
+		}
+		/** @var Model $model */
+		$model = new $this->namespacedModel($this);
+		return $model->Count($filter);
+	}
+
+	/**
 	 * Given the name of a model and an array of data rows, will return a set of objects
 	 * populated with the data set. Used for easily retrieving a set of objects from the
 	 * results returned by a custom query.
