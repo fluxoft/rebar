@@ -29,18 +29,18 @@ abstract class Model implements \Iterator, \ArrayAccess {
 	 *
 	 * @param $key
 	 * @param $value
-	 * @throws \InvalidArgumentExceptionException
+	 * @throws \InvalidArgumentException
 	 */
 	public function __set($key, $value) {
 		$fnName = "set$key";
-		if (method_exists($this,$fnName)) {
+		if (method_exists($this, $fnName)) {
 			$this->$fnName($value);
-		} else if (isset($this->properties[$key])) {
+		} elseif (isset($this->properties[$key])) {
 			if ($this->properties[$key] != $value) {
 				$this->modProperties[$key] = $value;
 			}
 		} else {
-			throw new \InvalidArgumentExceptionException(sprintf('Cannot set property: \'%s\' does not exist', $key));
+			throw new \InvalidArgumentException(sprintf('Cannot set property: \'%s\' does not exist', $key));
 		}
 	}
 	/**
@@ -58,11 +58,11 @@ abstract class Model implements \Iterator, \ArrayAccess {
 	 */
 	public function __get($key) {
 		$fnName = "get$key";
-		if (method_exists($this,$fnName)) {
+		if (method_exists($this, $fnName)) {
 			return $this->$fnName();
-		} else if (isset($this->modProperties[$key])) {
+		} elseif (isset($this->modProperties[$key])) {
 			return $this->modProperties[$key];
-		} else if (isset($this->properties[$key])) {
+		} elseif (isset($this->properties[$key])) {
 			return $this->properties[$key];
 		} else {
 			throw new \InvalidArgumentException(sprintf('Cannot get property: \'%s\' does not exist', $key));
@@ -84,7 +84,7 @@ abstract class Model implements \Iterator, \ArrayAccess {
 		$this->position = 0;
 	}
 	public function current() {
-		$keys = array_keys($this->properties);
+		$keys         = array_keys($this->properties);
 		$propertyName = $keys[$this->position];
 		return $this->$propertyName;
 	}
@@ -107,7 +107,7 @@ abstract class Model implements \Iterator, \ArrayAccess {
 		return $this->$offset;
 	}
 	public function offsetSet($offset, $value) {
-		$this->$offset = value;
+		$this->$offset = $value;
 	}
 	public function offsetUnset($offset) {
 		$this->properties[$offset] = null;

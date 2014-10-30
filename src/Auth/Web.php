@@ -31,7 +31,7 @@ class Web implements AuthInterface {
 	public function GetAuthenticatedUser () {
 		$autoLogin = $this->AutoLogin();
 		if (isset($autoLogin['success'])) {
-
+			return $this->userFactory->GetOneById($_SESSION['UserID']);
 		} else {
 			throw new AuthenticationException('Could not authenticate user.');
 		}
@@ -101,7 +101,7 @@ class Web implements AuthInterface {
 				$this->saveSession($checkUser);
 				$this->saveAuthTokenCookie($newToken);
 				$return['success'] = 'Successfully validated authentication token. New token issued.';
-				$return['token'] = $newToken;
+				$return['token']   = $newToken;
 			} else {
 				// If there were no matches in the database for the given set of
 				// credentials presented in the cookie, this may be a fraudulent
@@ -123,7 +123,7 @@ class Web implements AuthInterface {
 
 	public function Login($username, $password, $remember = false) {
 		$return = array();
-		$user = null;
+		$user   = null;
 		try {
 			$user = $this->userFactory->GetByUsernameAndPassword($username, $password);
 		} catch (InvalidPasswordException $e) {
@@ -163,7 +163,7 @@ class Web implements AuthInterface {
 
 	private function saveSession(UserModel $user) {
 		$_SESSION['LoggedIn'] = true;
-		$_SESSION['UserID'] = $user->GetID();
+		$_SESSION['UserID']   = $user->GetID();
 		if (!empty($this->config['SessionExtras'])) {
 			foreach ($this->config['SessionExtras'] as $extra) {
 				if (isset($user[$extra])) {

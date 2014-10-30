@@ -72,7 +72,9 @@ class Response {
 			'Content-type' => 'text/html'
 		)
 	) {
-		$this->status = $status;
+		$this->status  = $status;
+		$this->body    = $body;
+		$this->headers = $headers;
 	}
 
 	public function AddHeader($type, $content) {
@@ -96,21 +98,20 @@ class Response {
 		$this->Send();
 	}
 
-
-	private function getStatus() {
+	protected function getStatus() {
 		return $this->status;
 	}
-	private function setStatus($value) {
+	protected function setStatus($value) {
 		if (isset($this->messages[$value])) {
 			$this->status = $value;
 		} else {
 			throw new Exceptions\InvalidStatusException(sprintf('Status %s is not supported.', $value));
 		}
 	}
-	private function getBody() {
+	protected function getBody() {
 		return $this->body;
 	}
-	private function setBody($value) {
+	protected function setBody($value) {
 		$this->body = $value;
 	}
 
@@ -119,7 +120,7 @@ class Response {
 		if (method_exists($this, $fn)) {
 			return $this->$fn();
 		} else {
-			throw new \InvalidArgumentExceptionException(sprintf('Cannot get property: \'%s\' does not exist', $key));
+			throw new \InvalidArgumentException(sprintf('Cannot get property: \'%s\' does not exist', $key));
 		}
 	}
 	public function __set($key, $value) {
@@ -127,7 +128,7 @@ class Response {
 		if (method_exists($this, $fn)) {
 			$this->$fn($value);
 		} else {
-			throw new \InvalidArgumentExceptionException(sprintf('Cannot set property: \'%s\' does not exist', $key));
+			throw new \InvalidArgumentException(sprintf('Cannot set property: \'%s\' does not exist', $key));
 		}
 	}
 }

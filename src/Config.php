@@ -7,7 +7,7 @@ class Config implements \ArrayAccess {
 	private $config = array();
 	public function __construct($iniFile) {
 		if (file_exists($iniFile)) {
-			$this->config = parse_ini_file($iniFile,true);
+			$this->config = parse_ini_file($iniFile, true);
 		} else {
 			throw new FileNotFoundException(sprintf('The ini file was not found: %s', $iniFile));
 		}

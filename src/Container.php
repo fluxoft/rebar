@@ -9,7 +9,7 @@
 namespace Fluxoft\Rebar;
 
 class Container implements \ArrayAccess {
-	protected $values = array();
+	protected $values  = array();
 	protected $objects = array();
 	
 	public function __isset($key) {
@@ -38,7 +38,7 @@ class Container implements \ArrayAccess {
 				return $this->values[$offset];
 			} else {
 				$this->objects[$offset] = true;
-				$this->values[$offset] = $this->values[$offset]($this);
+				$this->values[$offset]  = $this->values[$offset]($this);
 				return $this->values[$offset];
 			}
 		} else {
@@ -47,7 +47,7 @@ class Container implements \ArrayAccess {
 	}
 	public function offsetSet($offset, $value) {
 		$this->objects[$offset] = false;
-		$this->values[$offset] = $value;
+		$this->values[$offset]  = $value;
 	}
 	public function offsetUnset($offset) {
 		unset($this->values[$offset]);

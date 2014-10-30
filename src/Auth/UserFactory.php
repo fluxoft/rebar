@@ -9,7 +9,6 @@
 namespace Fluxoft\Rebar\Auth;
 
 use Fluxoft\Rebar\Db\ModelFactory;
-use Fluxoft\Rebar\Db\Providers\Provider;
 
 class UserFactory extends ModelFactory {
 	/**

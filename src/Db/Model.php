@@ -66,7 +66,7 @@ abstract class Model extends BaseModel {
 
 		// if select-specific properties were not set, copy them from the generics
 		$this->propertyDbSelectMap = (count($this->propertyDbSelectMap)) ? $this->propertyDbSelectMap : $this->propertyDbMap;
-		$this->dbSelectTable = (strlen($this->dbSelectTable)) ? $this->dbSelectTable : $this->dbTable;
+		$this->dbSelectTable       = (strlen($this->dbSelectTable)) ? $this->dbSelectTable : $this->dbTable;
 
 		// select map must have the same number of elements as properties
 		if ((count($this->properties) !== count($this->propertyDbSelectMap))) {
@@ -74,8 +74,8 @@ abstract class Model extends BaseModel {
 		}
 
 		$this->factory = $factory;
-		$this->reader = $factory->Reader;
-		$this->writer = $factory->Writer;
+		$this->reader  = $factory->Reader;
+		$this->writer  = $factory->Writer;
 
 		if (($id > 0)) {
 			if (count($setProperties) > 0) {
@@ -87,7 +87,7 @@ abstract class Model extends BaseModel {
 				// then get the values for this object's $properties from the $dbSelectTable
 				// and set them.
 				$query = 'SELECT ';
-				$i = 1;
+				$i     = 1;
 				foreach($this->properties as $propertyName => $propertyValue) {
 					$query .= $this->propertyDbSelectMap[$propertyName];
 					if ($i < count($this->properties)) {
@@ -98,7 +98,7 @@ abstract class Model extends BaseModel {
 				$query .= ' FROM '.$this->dbSelectTable;
 				$query .= ' WHERE '.$this->propertyDbSelectMap[$this->idProperty].' = :id';
 
-				$params = array(':id' => $id);
+				$params    = array(':id' => $id);
 				$returnSet = $this->reader->SelectSet($query, $params);
 
 				if ($returnSet) {
@@ -138,9 +138,10 @@ abstract class Model extends BaseModel {
 	 * @return bool
 	 */
 	public function Delete($deleteID) {
-		$query = 'DELETE FROM '.$this->dbTable.' WHERE '.$this->propertyDbMap[$this->idProperty].' = :'.$this->propertyDbMap[$this->idProperty];
-		$params = array(':'.$this->propertyDbMap[$this->idProperty] => $deleteID);
-		$return = $this->writer->Delete($query, $params);
+		$query                               = 'DELETE FROM ' . $this->dbTable . ' WHERE ' .
+			$this->propertyDbMap[$this->idProperty].' = :'.$this->propertyDbMap[$this->idProperty];
+		$params                              = array(':'.$this->propertyDbMap[$this->idProperty] => $deleteID);
+		$return                              = $this->writer->Delete($query, $params);
 		$this->properties[$this->idProperty] = 0;
 		return $return;
 	}
@@ -155,11 +156,11 @@ abstract class Model extends BaseModel {
 	 */
 	public function GetSet($where = '', $orderBy = '', $page = 1, $pageSize = '0') {
 		$propertyDbSelectMap = (count($this->propertyDbSelectMap)) ? $this->propertyDbSelectMap : $this->propertyDbMap;
-		$dbSelectTable = (strlen($this->dbSelectTable)) ? $this->dbSelectTable : $this->dbTable;
-		$properties = array_keys($propertyDbSelectMap);
+		$dbSelectTable       = (strlen($this->dbSelectTable)) ? $this->dbSelectTable : $this->dbTable;
+		$properties          = array_keys($propertyDbSelectMap);
 
 		$query = 'SELECT ';
-		$i = 1;
+		$i     = 1;
 		foreach($properties as $propertyName) {
 			$query .= $propertyDbSelectMap[$propertyName];
 			if ($i < count($properties)) {
@@ -170,23 +171,25 @@ abstract class Model extends BaseModel {
 		$query .= ' FROM '.$dbSelectTable;
 		if (strlen($where) > 0) {
 			foreach($propertyDbSelectMap as $propertyName => $whereColumn) {
-				$whereColumn = (strpos($whereColumn,' ')) ? substr($whereColumn, 0, strpos($whereColumn,' ')) : $whereColumn;
-				$where = str_replace('{'.$propertyName.'}',$whereColumn,$where);
+				$whereColumn = (strpos($whereColumn, ' ')) ?
+					substr($whereColumn, 0, strpos($whereColumn, ' ')) :
+					$whereColumn;
+				$where       = str_replace('{'.$propertyName.'}', $whereColumn, $where);
 			}
 			$query .= ' WHERE '.$where;
 		}
 		if (strlen($orderBy) > 0) {
 			foreach($propertyDbSelectMap as $propertyName => $dbColumn) {
-				if (strpos($dbColumn,' ')) {
-					$dbColumn = substr($dbColumn,0,strpos($dbColumn,' '));
-					$startPos = strpos($dbColumn,' ') + 1;
+				if (strpos($dbColumn, ' ')) {
+					$dbColumn = substr($dbColumn, 0, strpos($dbColumn, ' '));
+					// $startPos = strpos($dbColumn, ' ') + 1;
 				}
-				$orderBy = str_replace('{'.$propertyName.'}',$dbColumn,$orderBy);
+				$orderBy = str_replace('{'.$propertyName.'}', $dbColumn, $orderBy);
 			}
 			$query .= ' ORDER BY '.$orderBy;
 		}
 		if ($pageSize > 0) {
-			$limit = $pageSize;
+			$limit  = $pageSize;
 			$offset = (($page - 1) * $pageSize);
 			$query .= ' LIMIT '.$limit.' OFFSET '.$offset;
 		}
@@ -194,8 +197,8 @@ abstract class Model extends BaseModel {
 	}
 
 	public function GetFromDataRow($dataRow) {
-		/** @var \Fluxoft\Rebar\Db\Model $className */
 		$className = get_class($this);
+		/** @var \Fluxoft\Rebar\Db\Model $return */
 		$return = new $className($this->factory);
 		$return->assignProperties($dataRow);
 		return $return;
@@ -222,12 +225,12 @@ abstract class Model extends BaseModel {
 	 */
 	public function Count($where = '', $whereParams = array()) {
 		$propertyDbSelectMap = (count($this->propertyDbSelectMap)) ? $this->propertyDbSelectMap : $this->propertyDbMap;
-		$dbSelectTable = (strlen($this->dbSelectTable)) ? $this->dbSelectTable : $this->dbTable;
+		$dbSelectTable       = (strlen($this->dbSelectTable)) ? $this->dbSelectTable : $this->dbTable;
 
 		$query = 'SELECT count(*) count FROM ' . $dbSelectTable;
 		if (strlen($where) > 0) {
 			foreach($propertyDbSelectMap as $propertyName => $dbColumn) {
-				$where = str_replace('{'.$propertyName.'}',$dbColumn,$where);
+				$where = str_replace('{'.$propertyName.'}', $dbColumn, $where);
 			}
 			$query .= ' WHERE '.$where;
 		}
@@ -275,9 +278,8 @@ abstract class Model extends BaseModel {
 			$insertParams[$this->propertyDbMap[$propertyName]] = $propertyValue;
 		}
 		$query = 'INSERT INTO '.$this->dbTable.' ('.
-			implode(',',array_keys($insertParams)).
-			') VALUES ('.
-			':'.implode(',:',array_keys($insertParams)).
+			implode(',', array_keys($insertParams)).
+			') VALUES (:'.implode(',:', array_keys($insertParams)).
 			')';
 		try {
 			$this->properties[$this->idProperty] = $this->writer->Insert($query, $insertParams, $this->idSequence);
@@ -295,10 +297,10 @@ abstract class Model extends BaseModel {
 	 * matching the ID property with the values of the $modProperties array.
 	 */
 	private function update() {
-		$query = 'UPDATE '.$this->dbTable.' SET ';
+		$query  = 'UPDATE '.$this->dbTable.' SET ';
 		$params = array();
-		$i = 1;
-		$run = true;
+		$i      = 1;
+		$run    = true;
 		// if there are no values set in $modProperties, there is no point to any of this
 		if (count($this->modProperties) > 0) {
 			foreach ($this->modProperties as $propertyName => $value) {
@@ -308,16 +310,17 @@ abstract class Model extends BaseModel {
 					$run = false;
 				} else {
 					$dbColumn = $this->propertyDbMap[$propertyName];
-					$query .= $dbColumn.' = :'.$dbColumn;
+					$query   .= $dbColumn.' = :'.$dbColumn;
 					if ($i < count($this->modProperties)) {
 						$query .= ', ';
 					}
 					$params[':'.$dbColumn] = $value;
-					$run = true;
+					$run                   = true;
 				}
 				$i++;
 			}
-			$query .= ' WHERE '.$this->propertyDbMap[$this->idProperty].' = :'.$this->propertyDbMap[$this->idProperty];
+			$query                                              .=
+				' WHERE '.$this->propertyDbMap[$this->idProperty].' = :'.$this->propertyDbMap[$this->idProperty];
 			$params[':'.$this->propertyDbMap[$this->idProperty]] = $this->properties[$this->idProperty];
 			if ($run) {
 				try {

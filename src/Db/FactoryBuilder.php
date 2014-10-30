@@ -34,9 +34,9 @@ class FactoryBuilder {
 		$namespace = '',
 		$factoryClasses = array()
 	) {
-		$this->reader = $reader;
-		$this->writer = $writer;
-		$this->namespace = $namespace;
+		$this->reader         = $reader;
+		$this->writer         = $writer;
+		$this->namespace      = $namespace;
 		$this->factoryClasses = $factoryClasses;
 	}
 

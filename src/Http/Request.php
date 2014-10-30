@@ -22,12 +22,12 @@ class Request implements \ArrayAccess {
 	 * @param Environment $environment
 	 */
 	public function __construct(Environment $environment) {
-		$props = array();
-		$props['Method'] = strtoupper($environment['REQUEST_METHOD']);
+		$props             = array();
+		$props['Method']   = strtoupper($environment['REQUEST_METHOD']);
 		$props['PathInfo'] = $environment['PATH_INFO'];
-		$props['Get'] = $_GET;
-		$props['Post'] = $_POST;
-		$this->properties = $props;
+		$props['Get']      = $_GET;
+		$props['Post']     = $_POST;
+		$this->properties  = $props;
 	}
 
 	public function __get($var) {
@@ -83,7 +83,7 @@ class Request implements \ArrayAccess {
 			default:
 				throw new \InvalidArgumentException(sprintf('Value "%s" is not defined.', $offset));
 		}
-		return $this->$offset;
+		return $rtn;
 	}
 	public function offsetSet($offset, $value) {
 		throw new \InvalidArgumentException('Read-only object.');

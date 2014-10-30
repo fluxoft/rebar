@@ -54,8 +54,8 @@ class Router {
 	 */
 	public function __construct(Web $webAuth, array $config = array(), array $routes = array()) {
 		$this->webAuth = $webAuth;
-		$this->config = $config;
-		$this->routes = $routes;
+		$this->config  = $config;
+		$this->routes  = $routes;
 	}
 
 	/**
@@ -148,14 +148,14 @@ class Router {
 						$routeParts['actor'] = $route['actor'];
 					}
 					$routeParts['action'] = $route['action'];
-					$paramsPath = substr($path, strlen($route['path']) + 1);
-					$routeParts['url'] = array_filter(explode('/',$paramsPath));
+					$paramsPath           = substr($path, strlen($route['path']) + 1);
+					$routeParts['url']    = array_filter(explode('/', $paramsPath));
 				}
 			}
 		}
 		if (empty($routeParts)) {
 			if (strlen($path) > 1) { // disregard leading slash
-				$pathParts = array_filter(explode('/',$path));
+				$pathParts = array_filter(explode('/', $path));
 				if (count($pathParts) == 1) {
 					$pathParts[] = 'index';
 				}
@@ -168,7 +168,7 @@ class Router {
 				$routeParts['actor'] = ucwords(array_shift($pathParts));
 			}
 			$routeParts['action'] = ucwords(array_shift($pathParts));
-			$routeParts['url'] = $pathParts;
+			$routeParts['url']    = $pathParts;
 		}
 
 		return $routeParts;

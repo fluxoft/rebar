@@ -20,7 +20,7 @@ class Environment implements \ArrayAccess {
 	}
 
 	public static function GetMock(array $userSettings = array()) {
-		$defaults = array(
+		$defaults          = array(
 			'REQUEST_METHOD' => 'GET',
 			'SCRIPT_NAME' => '',
 			'PATH_INFO' => '',
@@ -72,10 +72,12 @@ class Environment implements \ArrayAccess {
 			}
 			$env['PATH_INFO'] = substr_replace($_SERVER['REQUEST_URI'], '', 0, strlen($env['SCRIPT_NAME']));
 			if (strpos($env['PATH_INFO'], '?') !== false) {
-				$env['PATH_INFO'] = substr_replace($env['PATH_INFO'], '', strpos($env['PATH_INFO'], '?')); //query string is not removed automatically
+				$env['PATH_INFO'] = substr_replace(
+					$env['PATH_INFO'], '', strpos($env['PATH_INFO'], '?')
+				); //query string is not removed automatically
 			}
 			$env['SCRIPT_NAME'] = rtrim($env['SCRIPT_NAME'], '/');
-			$env['PATH_INFO'] = '/' . ltrim($env['PATH_INFO'], '/');
+			$env['PATH_INFO']   = '/' . ltrim($env['PATH_INFO'], '/');
 
 			//The portion of the request URI following the '?'
 			$env['QUERY_STRING'] = isset($_SERVER['QUERY_STRING']) ? $_SERVER['QUERY_STRING'] : '';
@@ -87,12 +89,19 @@ class Environment implements \ArrayAccess {
 			$env['SERVER_PORT'] = $_SERVER['SERVER_PORT'];
 
 			//HTTP request headers
-			$specialHeaders = array('CONTENT_TYPE', 'CONTENT_LENGTH', 'PHP_AUTH_USER', 'PHP_AUTH_PW', 'PHP_AUTH_DIGEST', 'AUTH_TYPE');
-			foreach ( $_SERVER as $key => $value ) {
+			$specialHeaders = array(
+				'CONTENT_TYPE',
+				'CONTENT_LENGTH',
+				'PHP_AUTH_USER',
+				'PHP_AUTH_PW',
+				'PHP_AUTH_DIGEST',
+				'AUTH_TYPE'
+			);
+			foreach ($_SERVER as $key => $value) {
 				$value = is_string($value) ? trim($value) : $value;
-				if ( strpos($key, 'HTTP_') === 0 ) {
+				if (strpos($key, 'HTTP_') === 0) {
 					$env[substr($key, 5)] = $value;
-				} else if ( strpos($key, 'X_') === 0 || in_array($key, $specialHeaders) ) {
+				} elseif (strpos($key, 'X_') === 0 || in_array($key, $specialHeaders)) {
 					$env[$key] = $value;
 				}
 			}
@@ -101,8 +110,8 @@ class Environment implements \ArrayAccess {
 			$env['rebar.protocol'] = empty($_SERVER['HTTPS']) || $_SERVER['HTTPS'] === 'off' ? 'http' : 'https';
 
 			//Input stream (readable one time only; not available for multi-part/form-data requests)
-			$rawInput = @file_get_contents('php://input');
-			if ( !$rawInput ) {
+			$rawInput = file_get_contents('php://input');
+			if ($rawInput === false) {
 				$rawInput = '';
 			}
 			$env['rebar.input'] = $rawInput;

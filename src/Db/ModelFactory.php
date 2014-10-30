@@ -32,10 +32,10 @@ class ModelFactory {
 		$model,
 		$namespace = ''
 	) {
-		$this->reader = $reader;
-		$this->writer = $writer;
-		$this->model = $model;
-		$this->namespace = $namespace;
+		$this->reader          = $reader;
+		$this->writer          = $writer;
+		$this->model           = $model;
+		$this->namespace       = $namespace;
 		$this->namespacedModel = $namespace.$model;
 	}
 
@@ -77,7 +77,7 @@ class ModelFactory {
 			));
 		}
 		/** @var Model $model */
-		$model = new $this->namespacedModel($this);
+		$model    = new $this->namespacedModel($this);
 		$modelSet = $model->GetSet($where, '', 1, 1);
 		return $modelSet[0];
 	}

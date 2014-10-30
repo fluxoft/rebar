@@ -23,19 +23,19 @@ class Json implements PresenterInterface {
 	private function jsonEncode($data) {
 		if (!is_array($data) && !is_object($data)) {
 			return json_encode($data);
-		} else if (is_object($data)) {
+		} elseif (is_object($data)) {
 			$bits = array();
 			foreach($data as $key => $value) {
 				$bits[] = "\"$key\":".$this->jsonEncode($value);
 			}
-			return "{".implode(",",$bits)."}";
+			return "{".implode(",", $bits)."}";
 		} else {
 			$bits = array();
 			if ($this->isIndexed($data)) {
 				foreach ($data as $key => $value) {
 					$bits[] = $this->jsonEncode($value);
 				}
-				return "[".implode(",",$bits)."]";
+				return "[".implode(",", $bits)."]";
 			} else {
 				foreach($data as $key => $value) {
 					$bits[] = "\"$key\":".$this->jsonEncode($value);

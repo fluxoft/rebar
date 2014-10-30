@@ -21,7 +21,8 @@ class Phtml implements PresenterInterface {
 		$layout = ''
 	) {
 		$this->templatePath = $templatePath;
-		$this->template = $template;
+		$this->template     = $template;
+		$this->layout       = $layout;
 	}
 
 	public function Render(Response $response, array $data) {
@@ -31,9 +32,12 @@ class Phtml implements PresenterInterface {
 
 		if (strlen($this->layout) > 0) {
 			$pageTemplate = $this->template;
-			include $this->templatePath.$this->layout;
+			$include = $this->templatePath.$this->layout;
 		} else {
-			include $this->templatePath.$this->template;
+			$include = $this->templatePath.$this->template;
+		}
+		if (file_exists($include)) {
+			include ($include);
 		}
 	}
 
