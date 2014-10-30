@@ -40,7 +40,7 @@ class Json implements PresenterInterface {
 				foreach($data as $key => $value) {
 					$bits[] = "\"$key\":".$this->jsonEncode($value);
 				}
-				return "{".implode(",",$bits)."}";
+				return "{".implode(",", $bits)."}";
 			}
 		}
 	}
