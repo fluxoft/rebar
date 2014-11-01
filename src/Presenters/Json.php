@@ -45,9 +45,9 @@ class Json implements PresenterInterface {
 		}
 	}
 	
-	// this retarded little bit here is needed because PHP doesn't
+	// this bit of foolishness is needed because PHP doesn't
 	// differentiate between a hash and an array:
 	private function isIndexed($array) {
-		return (bool)(array_values($array) === $array);
+		return (bool) (array_values($array) === $array);
 	}
 }

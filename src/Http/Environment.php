@@ -136,4 +136,4 @@ class Environment implements \ArrayAccess {
 	public function offsetUnset($offset) {
 		throw new \InvalidArgumentException('Read-only object.');
 	}
-} 
+}
