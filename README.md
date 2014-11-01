@@ -13,26 +13,12 @@ Check back in a couple months and maybe there will be a stable release. (How did
 
 Why Another Framework?
 ----------------------
-The idea behind this framework is that it should be simple to use and quick to deploy, but have as few moving parts as
-possible, so that it's easily understood and maintained when I inevitably have to come back to revisit something a year
-or more from now.
+Short answer: why not? Slightly longer answer: I wanted something that was an extremely lightweight solution
+for knocking together a quick and dirty website that would allow me to easily add various components as
+needed. Rebar should be a simple, easy-to-use framework that adds strength while offering flexibility.
 
-If you're like me, you're thinking, "So is it MVC?" Nope, it's RAMP.
-
-RAMP?
------
-It seemed to me to be in vogue now to make up a new development paradigm every couple months, so I jumped on the train
-with everybody else. But here's my problem. As a guy who grew up playing with GI Joe action figures, my primary
-objection to the acronym soup that has arisen as a result of people defining and redefining web patterns is that the
-authors are not spending enough time trying to come up with acronyms that spell out real words. For instance, where is
-the equivalent to the H.I.S.S. or the M.O.B.A.T. (which are the Cobra and G.I. Joe tanks, respectively) in these
-development patterns?
-
-R.A.M.P. == Request Router, Actor, Model, Presenter
-
-A request is routed to an actor, which takes actions that may involve models, and then presents the data in some form.
-
-Plus, it's a ramp! Pretend you're Evel Knievel and jump a canyon!
+It should have as few moving parts as possible, so that it's easily understood and maintained when I 
+inevitably have to revisit something a year from now.
 
 How Does It Work?
 -----------------
@@ -71,3 +57,8 @@ url (Array) => [
     1 => 456
 ]
 ```
+
+I really wouldn't recommend anyone use this for anything other than maybe to play around a bit at this
+point, as I am freely breaking backward-compatibility on a whim from time to time. Watch this space; if
+I ever get to a point where I think this is "done" enough that other people could feel safe using it, I
+will release a 1.x release and start caring about backwards compatibility. For now, I'm just experimenting.
