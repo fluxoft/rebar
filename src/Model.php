@@ -112,4 +112,4 @@ abstract class Model implements \Iterator, \ArrayAccess {
 	public function offsetUnset($offset) {
 		$this->properties[$offset] = null;
 	}
-} 
+}
