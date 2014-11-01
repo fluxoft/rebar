@@ -52,8 +52,7 @@ class Router {
 	 * @param array $config
 	 * @param array $routes
 	 */
-	public function __construct(Web $webAuth, array $config = array(), array $routes = array()) {
-		$this->webAuth = $webAuth;
+	public function __construct(array $config = array(), array $routes = array()) {
 		$this->config  = $config;
 		$this->routes  = $routes;
 	}
@@ -81,18 +80,18 @@ class Router {
 	public function Route(Request $request, Response $response) {
 		$route = $this->getRoute($request->PathInfo);
 
-		if (class_exists($route['actor'])) {
-			/** @var $actor \Fluxoft\Rebar\Actor */
-			$actor = new $route['actor']($request, $response, $this->webAuth);
+		if (class_exists($route['controller'])) {
+			/** @var $controller \Fluxoft\Rebar\Controller */
+			$controller = new $route['controller']($request, $response, $this->webAuth);
 		} else {
-			throw new RouterException(sprintf('"%s" was not found.', $route['actor']));
+			throw new RouterException(sprintf('"%s" was not found.', $route['controller']));
 		}
-		if (!method_exists($actor, $route['action'])) {
-			throw new RouterException(sprintf('Could not find a method called %s in %s.', $route['action'], $route['actor']));
-		}
-
-		if (!$actor->Authenticate($route['action'])) {
-			throw new AuthenticationException(sprintf('Authentication failed in %s::%s.', $route['actor'], $route['action']));
+		if (!method_exists($controller, $route['action'])) {
+			throw new RouterException(sprintf(
+				'Could not find a method called %s in %s.',
+				$route['action'],
+				$route['controller']
+			));
 		}
 
 		$actionParams = array();
@@ -106,46 +105,46 @@ class Router {
 		}
 		switch (count($actionParams)) {
 			case 0:
-				$actor->$route['action']();
+				$controller->$route['action']();
 				break;
 			case 1:
-				$actor->$route['action'](
+				$controller->$route['action'](
 					$actionParams[0]
 				);
 				break;
 			case 2:
-				$actor->$route['action'](
+				$controller->$route['action'](
 					$actionParams[0],
 					$actionParams[1]
 				);
 				break;
 			case 3:
-				$actor->$route['action'](
+				$controller->$route['action'](
 					$actionParams[0],
 					$actionParams[1],
 					$actionParams[2]
 				);
 				break;
 			default:
-				call_user_func_array($actor, $route['action'], $actionParams);
+				call_user_func_array($controller, $route['action'], $actionParams);
 				break;
 		}
-		$actor->Display();
+		$controller->Display();
 	}
 
 	protected function getRoute($path) {
 		$routeParts = array();
 		if (isset($this->routes)) {
 			foreach ($this->routes as $route) {
-				if (!is_array($route) || !isset($route['path']) || !isset($route['actor']) || !isset($route['action'])) {
-					throw new RouterException('Routes must be arrays containing path, actor, and action keys.');
+				if (!is_array($route) || !isset($route['path']) || !isset($route['controller']) || !isset($route['action'])) {
+					throw new RouterException('Routes must be arrays containing path, controller, and action keys.');
 				}
 				$pattern = '/^'.str_replace('/', '\/', $route['path']).'(\/[A-Za-z0-9\-.]+)*\/*$/';
 				if (preg_match($pattern, $path)) {
-					if (isset($this->config['actorsNamespace'])) {
-						$routeParts['actor'] = '\\'.$this->config['actorsNamespace'].'\\'.$route['actor'];
+					if (isset($this->config['controllersNamespace'])) {
+						$routeParts['controller'] = '\\'.$this->config['controllersNamespace'].'\\'.$route['controller'];
 					} else {
-						$routeParts['actor'] = $route['actor'];
+						$routeParts['controller'] = $route['controller'];
 					}
 					$routeParts['action'] = $route['action'];
 					$paramsPath           = substr($path, strlen($route['path']) + 1);
@@ -162,10 +161,10 @@ class Router {
 			} else {
 				$pathParts = array('main','index');
 			}
-			if (isset($this->config['actorsNamespace'])) {
-				$routeParts['actor'] = '\\'.$this->config['actorsNamespace'].'\\'.ucwords(array_shift($pathParts));
+			if (isset($this->config['controllersNamespace'])) {
+				$routeParts['controller'] = '\\'.$this->config['controllersNamespace'].'\\'.ucwords(array_shift($pathParts));
 			} else {
-				$routeParts['actor'] = ucwords(array_shift($pathParts));
+				$routeParts['controller'] = ucwords(array_shift($pathParts));
 			}
 			$routeParts['action'] = ucwords(array_shift($pathParts));
 			$routeParts['url']    = $pathParts;
