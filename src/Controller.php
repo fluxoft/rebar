@@ -1,20 +1,19 @@
 <?php
 /**
- * Fluxoft\Rebar\Actor
+ * Fluxoft\Rebar\Controller
  *
- * Base class for all actor classes.  Provides essential shared
- * functionality to all actors created for an application.
+ * Base class for all controller classes.  Provides essential shared
+ * functionality to all controllers created for an application.
  *
  * @author Joe Hart
  *
  */
 namespace Fluxoft\Rebar;
 
-use Fluxoft\Rebar\Auth\AuthInterface;
 use Fluxoft\Rebar\Http\Request;
 use Fluxoft\Rebar\Http\Response;
 
-abstract class Actor {
+abstract class Controller {
 	/**
 	 * The presenter property determines which presenter class
 	 * will be used to render the display.
@@ -32,26 +31,10 @@ abstract class Actor {
 
 	protected $request;
 	protected $response;
-	protected $auth;
 
-	public function __construct(Request $request, Response $response, AuthInterface $auth) {
+	public function __construct(Request $request, Response $response) {
 		$this->request  = $request;
 		$this->response = $response;
-		$this->auth     = $auth;
-	}
-
-	/**
-	 * Should be overridden in children to implement authentication
-	 * depending on which action is requested.
-	 *
-	 * If not overridden, always return true.
-	 *
-	 * @param \Fluxoft\Rebar\Auth\AuthInterface $auth
-	 * @param $action
-	 * @return bool
-	 */
-	public function Authenticate($action) {
-		return !empty($action);
 	}
 
 	public function Display() {
