@@ -4,12 +4,8 @@ namespace Fluxoft\Rebar;
 
 class ControllerTest extends \PHPUnit_Framework_TestCase
 {
-	/** @var Container */
-	protected $container;
-
 	protected $request;
 	protected $response;
-	protected $auth;
 
 	protected function setup() {
 		$this->request  = $this->getMockBuilder('\Fluxoft\Rebar\Http\Request')
@@ -25,8 +21,16 @@ class ControllerTest extends \PHPUnit_Framework_TestCase
 		unset($this->response);
 	}
 
-	public function testRoute() {
-		$this->assertNotEquals('foo', 'bar');
+	public function testDisplay() {
+		$stub = $this->getMockForAbstractClass(
+			'\\Fluxoft\\Rebar\\Controller',
+			array(
+				$this->request,
+				$this->response
+			)
+		);
+
+		$stub->Display();
 	}
 }
  

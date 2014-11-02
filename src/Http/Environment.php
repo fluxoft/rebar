@@ -21,9 +21,9 @@ class Environment implements \ArrayAccess {
 
 	public static function GetMock(array $userSettings = array()) {
 		$defaults          = array(
-			'REQUEST_METHOD' => 'GET',
+			'method' => 'GET',
 			'SCRIPT_NAME' => '',
-			'PATH_INFO' => '',
+			'pathInfo' => '',
 			'QUERY_STRING' => '',
 			'SERVER_NAME' => 'localhost',
 			'SERVER_PORT' => 80,
@@ -47,7 +47,7 @@ class Environment implements \ArrayAccess {
 			$env = array();
 
 			// The HTTP request method
-			$env['REQUEST_METHOD'] = $_SERVER['REQUEST_METHOD'];
+			$env['method'] = strtoupper($_SERVER['REQUEST_METHOD']);
 
 			// The IP address making the request.
 			$env['REMOTE_ADDR'] = $_SERVER['REMOTE_ADDR'];
@@ -58,26 +58,26 @@ class Environment implements \ArrayAccess {
 			 * This pulls two paths:
 			 * SCRIPT_NAME is the real physical path to the application, be it in the root directory or a subdirectory
 			 * of the public document root.
-			 * PATH_INFO is the virtual path to the requested resource within the application context.
+			 * pathInfo is the virtual path to the requested resource within the application context.
 			 *
 			 * With .htaccess, SCRIPT_NAME will be the absolute path minus file name. Without .htaccess it will also
 			 * include the file name. If it is "/" it is set to an empty string (cannot have a trailing slash).
 			 *
-			 * PATH_INFO will be an absolute path with a leading slash, used for application routing.
+			 * pathInfo will be an absolute path with a leading slash, used for application routing.
 			 */
 			if (strpos($_SERVER['REQUEST_URI'], $_SERVER['SCRIPT_NAME']) === 0) {
 				$env['SCRIPT_NAME'] = $_SERVER['SCRIPT_NAME']; //Without URL rewrite
 			} else {
 				$env['SCRIPT_NAME'] = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'])); //With URL rewrite
 			}
-			$env['PATH_INFO'] = substr_replace($_SERVER['REQUEST_URI'], '', 0, strlen($env['SCRIPT_NAME']));
-			if (strpos($env['PATH_INFO'], '?') !== false) {
-				$env['PATH_INFO'] = substr_replace(
-					$env['PATH_INFO'], '', strpos($env['PATH_INFO'], '?')
+			$env['pathInfo'] = substr_replace($_SERVER['REQUEST_URI'], '', 0, strlen($env['SCRIPT_NAME']));
+			if (strpos($env['pathInfo'], '?') !== false) {
+				$env['pathInfo'] = substr_replace(
+					$env['pathInfo'], '', strpos($env['pathInfo'], '?')
 				); //query string is not removed automatically
 			}
 			$env['SCRIPT_NAME'] = rtrim($env['SCRIPT_NAME'], '/');
-			$env['PATH_INFO']   = '/' . ltrim($env['PATH_INFO'], '/');
+			$env['pathInfo']   = '/' . ltrim($env['pathInfo'], '/');
 
 			//The portion of the request URI following the '?'
 			$env['QUERY_STRING'] = isset($_SERVER['QUERY_STRING']) ? $_SERVER['QUERY_STRING'] : '';
@@ -115,6 +115,35 @@ class Environment implements \ArrayAccess {
 				$rawInput = '';
 			}
 			$env['rebar.input'] = $rawInput;
+
+			$env['headers'] = getallheaders();
+
+			// GET and POST arrays
+			$env['get']    = $_GET;
+			$env['post']   = array();
+			$env['put']    = array();
+			$env['patch']  = array();
+			$env['delete'] = array();
+
+			if (isset($env['headers']['X-HTTP-Method-Override'])) {
+				$env['post'] = array();
+				switch ($env['headers']['X-HTTP-Method-Override']) {
+					case 'PUT':
+						$env['method'] = 'PUT';
+						$env['put']    = $_POST;
+						break;
+					case 'PATCH':
+						$env['method'] = 'PATCH';
+						$env['patch']  = $_POST;
+						break;
+					case 'DELETE':
+						$env['method'] = 'DELETE';
+						$env['delete'] = $_POST;
+						break;
+				}
+			} else {
+				$env['post'] = $_POST;
+			}
 
 			$this->properties = $env;
 		}

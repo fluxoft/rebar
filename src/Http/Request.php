@@ -6,89 +6,72 @@ namespace Fluxoft\Rebar\Http;
  * @package Fluxoft\Rebar\Http
  * @property mixed Method
  * @property mixed PathInfo
- * @property mixed Get
- * @property mixed Post
- * @property mixed Patch
- * @property mixed Put
- * @property mixed Delete
+ * @property mixed Headers
+ * @property mixed Environment
  */
-class Request implements \ArrayAccess {
-	/**
-	 * @var array
-	 */
+class Request {
+	/** @var array */
 	protected $properties;
+	/** @var \Fluxoft\Rebar\Http\Environment */
+	protected $environment;
+	/** @var ParameterSet  */
+	protected $getParamSet;
+	/** @var ParameterSet  */
+	protected $postParamSet;
+	/** @var ParameterSet  */
+	protected $putParamSet;
+	/** @var ParameterSet  */
+	protected $patchParamSet;
+	/** @var ParameterSet  */
+	protected $deleteParamSet;
 
 	/**
 	 * @param Environment $environment
 	 */
 	public function __construct(Environment $environment) {
 		$props             = array();
-		$props['Method']   = strtoupper($environment['REQUEST_METHOD']);
+		$props['Method']   = $environment['method'];
 		$props['PathInfo'] = $environment['PATH_INFO'];
-		$props['Get']      = $_GET;
-		$props['Post']     = $_POST;
+		$props['Headers']  = $environment['headers'];
 		$this->properties  = $props;
+		$this->environment = $environment;
+
+		$this->getParamSet    = new ParameterSet($environment['get']);
+		$this->postParamSet   = new ParameterSet($environment['post']);
+		$this->putParamSet    = new ParameterSet($environment['put']);
+		$this->patchParamSet  = new ParameterSet($environment['patch']);
+		$this->deleteParamSet = new ParameterSet($environment['delete']);
+	}
+
+	public function Get($var = null, $default = null) {
+		return $this->getParamSet->Get($var, $default);
+	}
+	public function Post($var = null, $default = null) {
+		return $this->postParamSet->Get($var, $default);
+	}
+	public function Patch($var = null, $default = null) {
+		return $this->patchParamSet->Get($var, $default);
+	}
+	public function Put($var = null, $default = null) {
+		return $this->putParamSet->Get($var, $default);
+	}
+	public function Delete($var = null, $default = null) {
+		return $this->deleteParamSet->Get($var, $default);
 	}
 
 	public function __get($var) {
 		switch ($var) {
 			case 'Method':
 			case 'PathInfo':
-			case 'Get':
+			case 'Headers':
 				$rtn = $this->properties[$var];
 				break;
-			case 'Post':
-			case 'Put':
-			case 'Delete':
-			case 'Patch':
-				$rtn = $this->properties['Post'];
+			case 'Environment':
+				$rtn = $this->environment;
 				break;
 			default:
 				throw new \InvalidArgumentException(sprintf('Value "%s" is not defined.', $var));
 		}
 		return $rtn;
-	}
-
-	// ArrayAccess
-	public function offsetExists($offset) {
-		switch ($offset) {
-			case 'Method':
-			case 'PathInfo':
-			case 'Get':
-			case 'Post':
-			case 'Put':
-			case 'Delete':
-			case 'Patch':
-				$rtn = true;
-				break;
-			default:
-				$rtn = false;
-				break;
-		}
-		return $rtn;
-	}
-	public function offsetGet($offset) {
-		switch ($offset) {
-			case 'Method':
-			case 'PathInfo':
-			case 'Get':
-				$rtn = $this->properties[$offset];
-				break;
-			case 'Post':
-			case 'Put':
-			case 'Delete':
-			case 'Patch':
-				$rtn = $this->properties['Post'];
-				break;
-			default:
-				throw new \InvalidArgumentException(sprintf('Value "%s" is not defined.', $offset));
-		}
-		return $rtn;
-	}
-	public function offsetSet($offset, $value) {
-		throw new \InvalidArgumentException('Read-only object.');
-	}
-	public function offsetUnset($offset) {
-		throw new \InvalidArgumentException('Read-only object.');
 	}
 }
