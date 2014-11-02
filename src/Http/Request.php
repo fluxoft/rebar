@@ -1,6 +1,8 @@
 <?php
 namespace Fluxoft\Rebar\Http;
 
+use Fluxoft\Rebar\Model;
+
 /**
  * Class Request
  * @package Fluxoft\Rebar\Http
@@ -9,11 +11,7 @@ namespace Fluxoft\Rebar\Http;
  * @property mixed Headers
  * @property mixed Environment
  */
-class Request {
-	/** @var array */
-	protected $properties;
-	/** @var \Fluxoft\Rebar\Http\Environment */
-	protected $environment;
+class Request extends Model {
 	/** @var ParameterSet  */
 	protected $getParamSet;
 	/** @var ParameterSet  */
@@ -29,12 +27,10 @@ class Request {
 	 * @param Environment $environment
 	 */
 	public function __construct(Environment $environment) {
-		$props             = array();
-		$props['Method']   = $environment['method'];
-		$props['PathInfo'] = $environment['PATH_INFO'];
-		$props['Headers']  = $environment['headers'];
-		$this->properties  = $props;
-		$this->environment = $environment;
+		$this->properties['Method']      = $environment['method'];
+		$this->properties['PathInfo']    = $environment['pathInfo'];
+		$this->properties['Headers']     = $environment['headers'];
+		$this->properties['Environment'] = $environment;
 
 		$this->getParamSet    = new ParameterSet($environment['get']);
 		$this->postParamSet   = new ParameterSet($environment['post']);
@@ -57,21 +53,5 @@ class Request {
 	}
 	public function Delete($var = null, $default = null) {
 		return $this->deleteParamSet->Get($var, $default);
-	}
-
-	public function __get($var) {
-		switch ($var) {
-			case 'Method':
-			case 'PathInfo':
-			case 'Headers':
-				$rtn = $this->properties[$var];
-				break;
-			case 'Environment':
-				$rtn = $this->environment;
-				break;
-			default:
-				throw new \InvalidArgumentException(sprintf('Value "%s" is not defined.', $var));
-		}
-		return $rtn;
 	}
 }

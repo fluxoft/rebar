@@ -14,12 +14,14 @@ abstract class Model implements \Iterator, \ArrayAccess {
 	protected $modProperties = array();
 
 	public function __construct(array $properties = array()) {
-		if (count(array_intersect_key($this->properties, $properties)) === count($this->properties)) {
-			foreach($this->properties as $propertyName => $propertyValue) {
-				$this->properties[$propertyName] = $properties[$propertyName];
+		if (!empty($properties)) {
+			if (count(array_intersect_key($this->properties, $properties)) === count($this->properties)) {
+				foreach ($this->properties as $propertyName => $propertyValue) {
+					$this->properties[$propertyName] = $properties[$propertyName];
+				}
+			} else {
+				throw new \InvalidArgumentException('Property list does not match configured model property list.');
 			}
-		} else {
-			throw new \InvalidArgumentException('Property list does not match configured model property list.');
 		}
 	}
 
@@ -69,6 +71,30 @@ abstract class Model implements \Iterator, \ArrayAccess {
 		}
 	}
 
+	public function __isset($key) {
+		$fnName = "get$key";
+		if (method_exists($this, $fnName)) {
+			return ($this->$fnName() !== null);
+		} elseif (isset($this->modProperties[$key]) || isset($this->properties[$key])) {
+			return true;
+		} else {
+			throw new \InvalidArgumentException(sprintf('Property %s does not exist', $key));
+		}
+	}
+
+	public function __unset($key) {
+		$fnName = "set$key";
+		if (method_exists($this, $fnName)) {
+			$this->$fnName(null);
+		} elseif (isset($this->modProperties[$key])) {
+			unset($this->modProperties[$key]);
+		} elseif (isset($this->properties[$key])) {
+			$this->properties[$key] = null;
+		} else {
+			throw new \InvalidArgumentException(sprintf('Cannot unset property %s', $key));
+		}
+	}
+
 	public function __toString() {
 		$string = get_class($this) . " object {\n";
 		foreach ($this->properties as $key => $value) {
@@ -101,7 +127,7 @@ abstract class Model implements \Iterator, \ArrayAccess {
 
 	// ArrayAccess implementation.
 	public function offsetExists($offset) {
-		return isset($this->properties[$offset]);
+		return isset($this->$offset);
 	}
 	public function offsetGet($offset) {
 		return $this->$offset;
@@ -110,6 +136,6 @@ abstract class Model implements \Iterator, \ArrayAccess {
 		$this->$offset = $value;
 	}
 	public function offsetUnset($offset) {
-		$this->properties[$offset] = null;
+		unset($this->$offset);
 	}
 }

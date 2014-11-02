@@ -77,7 +77,7 @@ class Environment implements \ArrayAccess {
 				); //query string is not removed automatically
 			}
 			$env['SCRIPT_NAME'] = rtrim($env['SCRIPT_NAME'], '/');
-			$env['pathInfo']   = '/' . ltrim($env['pathInfo'], '/');
+			$env['pathInfo']    = '/' . ltrim($env['pathInfo'], '/');
 
 			//The portion of the request URI following the '?'
 			$env['QUERY_STRING'] = isset($_SERVER['QUERY_STRING']) ? $_SERVER['QUERY_STRING'] : '';
@@ -147,6 +147,22 @@ class Environment implements \ArrayAccess {
 
 			$this->properties = $env;
 		}
+	}
+
+	public function __toString() {
+		$string = get_class($this) . " object {\n";
+		foreach ($this->properties as $key => $value) {
+			$string .= "  $key: " . $this->$key . "\n";
+		}
+		$string .= "}\n";
+		return $string;
+	}
+
+	public function __get($var) {
+		return $this->properties[$var];
+	}
+	public function __set($var, $value) {
+		throw new \InvalidArgumentException(sprintf('Read-only object.'));
 	}
 
 	// ArrayAccess
