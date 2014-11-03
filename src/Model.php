@@ -38,7 +38,7 @@ abstract class Model implements \Iterator, \ArrayAccess {
 		if (method_exists($this, $fnName)) {
 			$this->$fnName($value);
 		} elseif (isset($this->properties[$key])) {
-			if ($this->properties[$key] != $value) {
+			if ($this->properties[$key] !== $value) {
 				$this->modProperties[$key] = $value;
 			}
 		} else {
