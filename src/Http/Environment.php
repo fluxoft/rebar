@@ -116,7 +116,7 @@ class Environment implements \ArrayAccess {
 			}
 			$env['rebar.input'] = $rawInput;
 
-			$env['headers'] = getallheaders();
+			$env['headers'] = $this->getAllHeaders();
 
 			// GET and POST arrays
 			$env['get']    = $_GET;
@@ -146,6 +146,24 @@ class Environment implements \ArrayAccess {
 			}
 
 			$this->properties = $env;
+		}
+	}
+
+	private function getAllHeaders() {
+		if (function_exists('getallheaders')) {
+			return getallheaders();
+		} else {
+			$out = array();
+			foreach ($_SERVER as $key => $value) {
+				if (substr($key, 0, 5) == "HTTP_") {
+					$key = str_replace(" ", "-", ucwords(strtolower(str_replace("_", " ", substr($key, 5)))));
+
+					$out[$key] = $value;
+				} else {
+					$out[$key] = $value;
+				}
+			}
+			return $out;
 		}
 	}
 
