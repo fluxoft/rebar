@@ -18,7 +18,7 @@ class ParameterSet implements \ArrayAccess {
 			if (isset($this->params[$key])) {
 				return $this->params[$key];
 			} else {
-				return (isset($default)) ? $default : 'not set';
+				return (isset($default)) ? $default : null;
 			}
 		} else {
 			return $this->params;
