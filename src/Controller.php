@@ -42,7 +42,7 @@ abstract class Controller {
 			$this->presenter = new Presenters\Debug();
 		}
 		if ($this->presenter instanceof Presenters\PresenterInterface) {
-			$this->presenter->Render($this->response, $this->GetData());
+			$this->presenter->Render($this->response, $this->getData());
 		} else {
 			throw new \Exception('Invalid presenter class.');
 		}
@@ -58,7 +58,7 @@ abstract class Controller {
 	 * @param string $var
 	 * @param mixed $val
 	 */
-	protected function Set($var, $val) {
+	protected function set($var, $val) {
 		$this->data[$var] = $val;
 	}
 
@@ -68,7 +68,7 @@ abstract class Controller {
 	 *
 	 * @return array $data
 	 */
-	protected function GetData() {
+	protected function getData() {
 		return $this->data;
 	}
 }

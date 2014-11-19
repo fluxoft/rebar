@@ -45,7 +45,7 @@ class Cookies extends ParameterSet {
 		if (setcookie(
 			$key,
 			$value,
-			$this->settings['expires'],
+			$expires,
 			$this->settings['path'],
 			$this->settings['domain'],
 			$this->settings['secure'],
