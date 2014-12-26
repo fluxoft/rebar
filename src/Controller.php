@@ -27,7 +27,7 @@ abstract class Controller {
 	 *
 	 * @var array
 	 */
-	protected $data = array();
+	protected $data = [];
 
 	protected $request;
 	protected $response;

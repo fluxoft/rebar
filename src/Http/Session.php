@@ -12,8 +12,7 @@ class Session extends ParameterSet {
 	 * values of the $_SESSION superglobal array.
 	 */
 	public function __construct() {
-		/* todo: fix for 5.4 */
-		if (session_id() === '') {
+		if (session_status() == PHP_SESSION_NONE) {
 			session_start();
 		}
 

@@ -13,7 +13,7 @@ class Response {
 	protected $body;
 	protected $headers;
 
-	protected $messages = array(
+	protected $messages = [
 		//Informational 1xx
 		100 => '100 Continue',
 		101 => '101 Switching Protocols',
@@ -63,14 +63,14 @@ class Response {
 		503 => '503 Service Unavailable',
 		504 => '504 Gateway Timeout',
 		505 => '505 HTTP Version Not Supported'
-	);
+	];
 
 	public function __construct(
 		$status = 200,
 		$body = '',
-		array $headers = array(
+		array $headers = [
 			'Content-type' => 'text/html'
-		)
+		]
 	) {
 		$this->status  = $status;
 		$this->body    = $body;

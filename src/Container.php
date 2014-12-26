@@ -9,8 +9,8 @@
 namespace Fluxoft\Rebar;
 
 class Container implements \ArrayAccess {
-	protected $values  = array();
-	protected $objects = array();
+	protected $values  = [];
+	protected $objects = [];
 	
 	public function __isset($key) {
 		return $this->offsetExists($key);

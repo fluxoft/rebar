@@ -21,12 +21,12 @@ class Router {
 	/**
 	 * @var array
 	 */
-	protected $config = array();
+	protected $config = [];
 
 	/**
 	 * @var array
 	 */
-	protected $routes = array();
+	protected $routes = [];
 
 	/**
 	 * namespace is used to specify the namespace for the app's controllers
@@ -52,9 +52,9 @@ class Router {
 	 * @param array $config
 	 * @param array $routes
 	 */
-	public function __construct(array $config = array(), array $routes = array()) {
-		$this->config  = $config;
-		$this->routes  = $routes;
+	public function __construct(array $config = [], array $routes = []) {
+		$this->config = $config;
+		$this->routes = $routes;
 	}
 
 	/**
@@ -94,7 +94,7 @@ class Router {
 			));
 		}
 
-		$actionParams = array();
+		$actionParams = [];
 		if (isset($this->config['methodArgs'])) {
 			foreach ($this->config['methodArgs'] as $arg) {
 				$actionParams[] = $arg;
@@ -133,7 +133,7 @@ class Router {
 	}
 
 	protected function getRoute($path) {
-		$routeParts = array();
+		$routeParts = [];
 		if (isset($this->routes)) {
 			foreach ($this->routes as $route) {
 				if (!is_array($route) || !isset($route['path']) || !isset($route['controller']) || !isset($route['action'])) {

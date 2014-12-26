@@ -19,8 +19,8 @@ class Environment implements \ArrayAccess {
 		return self::$environment;
 	}
 
-	public static function GetMock(array $userSettings = array()) {
-		$defaults          = array(
+	public static function GetMock(array $userSettings = []) {
+		$defaults          = [
 			'method' => 'GET',
 			'SCRIPT_NAME' => '',
 			'pathInfo' => '',
@@ -34,7 +34,7 @@ class Environment implements \ArrayAccess {
 			'REMOTE_ADDR' => '127.0.0.1',
 			'rebar.protocol' => 'http',
 			'rebar.input' => ''
-		);
+		];
 		self::$environment = new self(array_merge($defaults, $userSettings));
 
 		return self::$environment;
@@ -44,7 +44,7 @@ class Environment implements \ArrayAccess {
 		if ($settings) {
 			$this->properties = $settings;
 		} else {
-			$env = array();
+			$env = [];
 
 			// The HTTP request method
 			$env['method'] = strtoupper($_SERVER['REQUEST_METHOD']);
@@ -89,14 +89,14 @@ class Environment implements \ArrayAccess {
 			$env['SERVER_PORT'] = $_SERVER['SERVER_PORT'];
 
 			//HTTP request headers
-			$specialHeaders = array(
+			$specialHeaders = [
 				'CONTENT_TYPE',
 				'CONTENT_LENGTH',
 				'PHP_AUTH_USER',
 				'PHP_AUTH_PW',
 				'PHP_AUTH_DIGEST',
 				'AUTH_TYPE'
-			);
+			];
 			foreach ($_SERVER as $key => $value) {
 				$value = is_string($value) ? trim($value) : $value;
 				if (strpos($key, 'HTTP_') === 0) {
@@ -120,13 +120,13 @@ class Environment implements \ArrayAccess {
 
 			// GET and POST arrays
 			$env['get']    = $_GET;
-			$env['post']   = array();
-			$env['put']    = array();
-			$env['patch']  = array();
-			$env['delete'] = array();
+			$env['post']   = [];
+			$env['put']    = [];
+			$env['patch']  = [];
+			$env['delete'] = [];
 
 			if (isset($env['headers']['X-HTTP-Method-Override'])) {
-				$env['post'] = array();
+				$env['post'] = [];
 				switch ($env['headers']['X-HTTP-Method-Override']) {
 					case 'PUT':
 						$env['method'] = 'PUT';
@@ -153,7 +153,7 @@ class Environment implements \ArrayAccess {
 		if (function_exists('getallheaders')) {
 			return getallheaders();
 		} else {
-			$out = array();
+			$out = [];
 			foreach ($_SERVER as $key => $value) {
 				if (substr($key, 0, 5) == "HTTP_") {
 					$key = str_replace(" ", "-", ucwords(strtolower(str_replace("_", " ", substr($key, 5)))));

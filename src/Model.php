@@ -11,9 +11,9 @@ abstract class Model implements \Iterator, \ArrayAccess {
 	 * Properties that have been changed from their original values but have not yet been written to the database.
 	 * @var array $modProperties
 	 */
-	protected $modProperties = array();
+	protected $modProperties = [];
 
-	public function __construct(array $properties = array()) {
+	public function __construct(array $properties = []) {
 		if (!empty($properties)) {
 			if (count(array_intersect_key($this->properties, $properties)) === count($this->properties)) {
 				foreach ($this->properties as $propertyName => $propertyValue) {

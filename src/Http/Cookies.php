@@ -10,19 +10,19 @@ class Cookies extends ParameterSet {
 	/**
 	 * @var array
 	 */
-	protected $settings = array();
+	protected $settings = [];
 
 	/**
 	 * @param array $settings
 	 */
-	public function __construct(array $settings = array()) {
-		$defaults = array(
+	public function __construct(array $settings = []) {
+		$defaults = [
 			'expires' => 0,
 			'path' => '/',
 			'domain' => null,
 			'secure' => false,
 			'httponly' => false
-		);
+		];
 
 		$this->settings = array_merge($defaults, $settings);
 
