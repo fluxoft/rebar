@@ -25,9 +25,7 @@ class Debug implements PresenterInterface {
 				$return .= "$padding$key => $value\n";
 			} elseif (is_object($value)) {
 				$return .= "$padding$key (Object) => (\n";
-				foreach ($value as $prop => $val) {
-					$return .= $padding.$this->tab.'['.$prop.'] => '.$val."\n";
-				}
+				$return .= $this->renderData($value, $padding);
 				$return .= "$padding)\n";
 			} else {
 				$return .= "$padding$key (Array) => [\n";

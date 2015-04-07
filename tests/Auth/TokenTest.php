@@ -1,0 +1,162 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: joehart
+ * Date: 11/3/14
+ * Time: 12:23 AM
+ */
+
+namespace Fluxoft\Rebar\Auth;
+
+class TokenTest extends \PHPUnit_Framework_TestCase {
+	protected function setup() {}
+
+	protected function teardown() {}
+
+	public function testNullToken () {
+		$this->setExpectedException('Fluxoft\Rebar\Auth\Exceptions\InvalidTokenException');
+
+		// will throw exception (cannot create with all nulls)
+		$token = new Token(null, null, null, null);
+		echo (string) $token;
+	}
+
+	/**
+	 * @param $userID
+	 * @dataProvider userIdProvider
+	 */
+	public function testCreateTokenWithUserID($userID) {
+		$token = new Token($userID);
+
+		// make sure the token returns the $userID used to create it
+		$this->assertEquals($userID, $token->UserID);
+		// make sure the token returned a valid seriesID
+		$this->assertEquals(true, $this->validateSeriesId($token->SeriesID));
+		// make sure the token returned a valid token string
+		$this->assertEquals(true, $this->validateToken($token->Token));
+		// make sure the token when cast to string is valid
+		$this->assertEquals(true, $this->validateTokenString((string) $token));
+	}
+	public function userIdProvider() {
+		return array(
+			array(1),
+			array(2),
+			array(3),
+			array(4),
+			array(5)
+		);
+	}
+
+	/**
+	 * @param $userID
+	 * @param $seriesID
+	 * @dataProvider userIdSeriesIdProvider
+	 */
+	public function testCreateTokenWithUserIdAndSeriesId($userID, $seriesID) {
+		$token = new Token ($userID, $seriesID);
+
+		// make sure the token returns the $userID used to create it
+		$this->assertEquals($userID, $token->UserID);
+		// make sure the token return the $seriesID used to create it
+		$this->assertEquals($seriesID, $token->SeriesID);
+		// make sure the token returned a valid token string
+		$this->assertEquals(true, $this->validateToken($token->Token));
+		// make sure the token when cast to string is valid
+		$this->assertEquals(true, $this->validateTokenString((string) $token));
+	}
+	public function userIdSeriesIdProvider() {
+		return array(
+			array(1, '54571765e346c1.60640599'),
+			array(2, '545714083383e1.26100867'),
+			array(3, '545714083383e1.26100867'),
+			array(4, '545714083383e1.26100867'),
+			array(5, '545714083383e1.26100867')
+		);
+	}
+
+	/**
+	 * @param $userID
+	 * @param $seriesID
+	 * @param $tokenValue
+	 * @dataProvider userIdSeriesIdTokenProvider
+	 */
+	public function testCreateTokenWithUserIdAndSeriesIdAndToken($userID, $seriesID, $tokenValue) {
+		$token = new Token ($userID, $seriesID, $tokenValue);
+
+		// make sure the token returns the $userID used to create it
+		$this->assertEquals($userID, $token->UserID);
+		// make sure the token returns the $seriesID used to create it
+		$this->assertEquals($seriesID, $token->SeriesID);
+		// make sure the token returns the $token used to create it
+		$this->assertEquals($tokenValue, $token->Token);
+		// make sure the token when cast to string is valid
+		$this->assertEquals(true, $this->validateTokenString((string) $token));
+	}
+	public function userIdSeriesIdTokenProvider() {
+		return array(
+			array(1, '54571765e346c1.60640599', '{3B99B6DD-892A-4135-3AC1-498115339856}'),
+			array(2, '545714083383e1.26100867', '{3B99B6DD-892A-4135-3AC1-498115339856}'),
+			array(3, '545714083383e1.26100867', '{3B99B6DD-892A-4135-3AC1-498115339856}'),
+			array(4, '545714083383e1.26100867', '{3B99B6DD-892A-4135-3AC1-498115339856}'),
+			array(5, '545714083383e1.26100867', '{3B99B6DD-892A-4135-3AC1-498115339856}')
+		);
+	}
+
+	/**
+	 * @param $tokenString
+	 * @dataProvider tokenStringProvider
+	 */
+	public function testCreateTokenFromTokenString($tokenString) {
+		$token = new Token(null, null, null, $tokenString);
+
+		list($userID, $seriesID, $tokenValue) = explode('|', base64_decode($tokenString));
+
+		// make sure the token's UserID was set to the value encoded in the token string
+		$this->assertEquals($userID, $token->UserID);
+		// make sure the token's UserID was set to the value encoded in the token string
+		$this->assertEquals($seriesID, $token->SeriesID);
+		// make sure the token's UserID was set to the value encoded in the token string
+		$this->assertEquals($tokenValue, $token->Token);
+	}
+	public function tokenStringProvider() {
+		return array(
+			array(base64_encode(
+				implode('|', array(1, '54571765e346c1.60640599', '{3B99B6DD-892A-4135-3AC1-498115339856}'))
+			)),
+			array(base64_encode(
+				implode('|', array(2, '545714083383e1.26100867', '{3B99B6DD-892A-4135-3AC1-498115339856}'))
+			)),
+			array(base64_encode(
+				implode('|', array(3, '545714083383e1.26100867', '{3B99B6DD-892A-4135-3AC1-498115339856}'))
+			)),
+			array(base64_encode(
+				implode('|', array(4, '545714083383e1.26100867', '{3B99B6DD-892A-4135-3AC1-498115339856}'))
+			)),
+			array(base64_encode(
+				implode('|', array(5, '545714083383e1.26100867', '{3B99B6DD-892A-4135-3AC1-498115339856}'))
+			))
+		);
+	}
+
+	private function validateSeriesId($seriesID) {
+		// seriesID should be the result of uniqid(), which returns a 13-digit string
+		$pattern = '/[a-z0-9\.]{23}/';
+		return (preg_match($pattern, $seriesID) === 1);
+	}
+
+	private function validateToken($token) {
+		// a token is a GUID
+		$pattern = '/{[0-9A-Z]{8}-[0-9A-Z]{4}-[0-9A-Z]{4}-[0-9A-Z]{4}-[0-9A-Z]{12}}/';
+		return (preg_match($pattern, $token) === 1);
+	}
+
+	private function validateTokenString($tokenString) {
+		list($userID, $seriesID, $token) = explode('|', base64_decode($tokenString));
+		return (
+			isset($userID) &&
+			$this->validateSeriesId($seriesID) &&
+			$this->validateToken($token)
+		);
+	}
+}
+ 

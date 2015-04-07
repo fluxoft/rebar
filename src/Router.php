@@ -1,7 +1,6 @@
 <?php
 namespace Fluxoft\Rebar;
 
-use Fluxoft\Rebar\Auth\Web;
 use Fluxoft\Rebar\Exceptions\RouterException;
 use Fluxoft\Rebar\Exceptions\AuthenticationException;
 use Fluxoft\Rebar\Http\Request;
