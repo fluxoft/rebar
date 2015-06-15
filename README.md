@@ -4,10 +4,7 @@ http://en.wikipedia.org/wiki/Rebar
 
 This is a framework. There are many like it. This one is mine.
 
-Use at your own risk. This is changing on an hourly basis at the moment; I just stuck it up here so I could more easily
-share it between a couple different projects I'm using it on at once.
-
-Check back in a couple months and maybe there will be a stable release. (How did you find this, anyway?)
+This is beta software. Use at your own risk (although I feel pretty close to making a 1.0 release).
 
 [![Build Status](https://travis-ci.org/fluxoft/rebar.svg?branch=master)](https://travis-ci.org/fluxoft/rebar)
 
@@ -26,12 +23,16 @@ At its simplest, I use Rebar by directing all traffic to an index.php which call
 
 ```
 **/index.php**
-$loader = require_once 'vendor/autoload.php';
+$loader   = require_once 'vendor/autoload.php';
+$request  = new Fluxoft\Rebar\Http\Request(
+	Fluxoft\Rebar\Http\Environment::GetInstance()
+);
+$response = new Fluxoft\Rebar\Http\Response();
 
 $router = new Fluxoft\Rebar\Router(array(
 	'namespace' => 'SiteSpecificClasses'
 ));
-$router->Route();
+$router->Route($request, $response);
 ```
 
 If no special routes are configured, the Router will split the path into parts and use those parts to instantiate an
