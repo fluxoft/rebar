@@ -6,7 +6,7 @@
  * Time: 12:23 AM
  */
 
-namespace Fluxoft\Rebar\Auth;
+namespace Fluxoft\Rebar\Auth\Db;
 
 class TokenTest extends \PHPUnit_Framework_TestCase {
 	protected function setup() {}
