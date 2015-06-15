@@ -10,6 +10,8 @@
  */
 namespace Fluxoft\Rebar;
 
+use Fluxoft\Rebar\Auth\Exceptions\AccessDeniedException;
+use Fluxoft\Rebar\Auth\AuthInterface;
 use Fluxoft\Rebar\Http\Request;
 use Fluxoft\Rebar\Http\Response;
 
@@ -29,12 +31,52 @@ abstract class Controller {
 	 */
 	protected $data = [];
 
+	/**
+	 * The array of authorized methods for the controller.
+	 * @var array
+	 */
+	protected $authorize = [];
+
 	protected $request;
 	protected $response;
+	protected $auth;
 
-	public function __construct(Request $request, Response $response) {
+	public function __construct(Request $request, Response $response, AuthInterface $auth = null) {
 		$this->request  = $request;
 		$this->response = $response;
+		$this->auth     = $auth;
+	}
+
+	public function Authorize($method) {
+		$authorized = true;
+		if (isset($this->auth)) {
+			if (isset($this->authorize[$method])) {
+				$authUser = $this->auth->GetAuthenticatedUser();
+				if ($authUser === false) {
+					// method is limited and user is not authenticated
+					throw new AccessDeniedException(sprintf(
+						'Access denied for %s',
+						$method
+					));
+				} else {
+					if (!empty($this->authorize[$method])) {
+						if (!$this->auth->UserHasRole($this->authorize[$method])) {
+							throw new AccessDeniedException(sprintf(
+								'User is not a member of the correct role.'
+							));
+						}
+					}
+				}
+			} else {
+				// method is not limited
+				$authorized = true;
+			}
+		}
+		return $authorized;
+	}
+
+	public function DenyAccess($message) {
+		$this->response->Halt(403, $message);
 	}
 
 	public function Display() {

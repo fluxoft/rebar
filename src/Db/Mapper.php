@@ -5,28 +5,44 @@ namespace Fluxoft\Rebar\Db;
 use Doctrine\DBAL\Connection;
 use Fluxoft\Rebar\Db\Exceptions\MapperException;
 
-class Mapper {
-	/** @var string $modelClass */
-	protected $modelClass = '';
-	/** @var \Fluxoft\Rebar\Db\Model $model */
+abstract class Mapper {
+	/**
+	 * @var string $modelClass
+	 */
+	protected $modelClass = null;
+
+	/** @var \Fluxoft\Rebar\Db\Model */
 	protected $model = null;
-	/** @var Connection $reader */
+	/** @var MapperFactory */
+	protected $mapperFactory;
+	/** @var Connection */
 	protected $reader;
-	/** @var Connection $writer */
+	/** @var Connection */
 	protected $writer;
 
-	public function __construct($modelClass, Connection $reader, Connection $writer = null) {
-		$this->reader = $reader;
-		$this->writer = (isset($writer)) ? $writer : $reader;
+	public function __construct(
+		MapperFactory $mapperFactory,
+		Connection $reader,
+		Connection $writer = null
+	) {
+		if (!isset($this->modelClass)) {
+			throw new MapperException(sprintf(
+				'No modelClass was defined for %s',
+				get_class()
+			));
+		}
 
-		$this->modelClass = $modelClass;
+		$this->mapperFactory = $mapperFactory;
+		$this->reader        = $reader;
+		$this->writer        = (isset($writer)) ? $writer : $reader;
+
+		$modelClass = $this->modelClass;
+
 		if (!class_exists($modelClass)) {
 			throw new MapperException(sprintf('The model %s could not be found.', $modelClass));
 		}
 		$this->model = new $modelClass();
 	}
-
-
 
 	public function GetNew() {
 		return clone $this->model;

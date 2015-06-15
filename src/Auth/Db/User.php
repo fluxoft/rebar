@@ -1,6 +1,6 @@
 <?php
 
-namespace Fluxoft\Rebar\Auth;
+namespace Fluxoft\Rebar\Auth\Db;
 
 use Fluxoft\Rebar\Db\Exceptions\ModelException;
 use Fluxoft\Rebar\Db\Model;

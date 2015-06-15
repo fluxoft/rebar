@@ -1,6 +1,8 @@
 <?php
 namespace Fluxoft\Rebar;
 
+use Fluxoft\Rebar\Auth\AuthInterface;
+use Fluxoft\Rebar\Auth\Exceptions\AccessDeniedException;
 use Fluxoft\Rebar\Exceptions\RouterException;
 use Fluxoft\Rebar\Exceptions\AuthenticationException;
 use Fluxoft\Rebar\Http\Request;
@@ -13,19 +15,14 @@ use Fluxoft\Rebar\Http\Response;
  *
  */
 class Router {
-	/**
-	 * @var \Fluxoft\Rebar\Auth\Web
-	 */
-	protected $webAuth;
-	/**
-	 * @var array
-	 */
+	/** @var array */
 	protected $config = [];
 
-	/**
-	 * @var array
-	 */
+	/** @var array */
 	protected $routes = [];
+
+	/** @var array */
+	protected $auth = [];
 
 	/**
 	 * namespace is used to specify the namespace for the app's controllers
@@ -47,13 +44,14 @@ class Router {
 	 * );
 	 * $router = new Router($webAuth, $config, $routes);
 	 * </code>
-	 * @param \Fluxoft\Rebar\Auth\Web
 	 * @param array $config
 	 * @param array $routes
+	 * @param array $auth
 	 */
-	public function __construct(array $config = [], array $routes = []) {
+	public function __construct(array $config = [], array $routes = [], array $auth = []) {
 		$this->config = $config;
 		$this->routes = $routes;
+		$this->auth   = $auth;
 	}
 
 	/**
@@ -77,11 +75,26 @@ class Router {
 	 * @throws AuthenticationException
 	 */
 	public function Route(Request $request, Response $response) {
-		$route = $this->getRoute($request->PathInfo);
+		$path = $request->PathInfo;
+		$auth = null;
+		foreach ($this->auth as $route => $authInterface) {
+			if (strpos($path, $route) === 0) {
+				$auth = $authInterface;
+				if (!$auth instanceof AuthInterface) {
+					throw new RouterException(sprintf(
+						"The authenticator for %s must implement AuthInterface",
+						$request->PathInfo
+					));
+				}
+				continue;
+			}
+		}
+
+		$route = $this->getRoute($path);
 
 		if (class_exists($route['controller'])) {
 			/** @var $controller \Fluxoft\Rebar\Controller */
-			$controller = new $route['controller']($request, $response, $this->webAuth);
+			$controller = new $route['controller']($request, $response, $auth);
 		} else {
 			throw new RouterException(sprintf('"%s" was not found.', $route['controller']));
 		}
@@ -91,6 +104,13 @@ class Router {
 				$route['action'],
 				$route['controller']
 			));
+		}
+
+		try {
+			$controller->Authorize($route['action']);
+		} catch (AccessDeniedException $e) {
+			$controller->DenyAccess($e->getMessage());
+			exit;
 		}
 
 		$actionParams = [];

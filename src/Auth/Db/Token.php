@@ -1,19 +1,13 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: joehart
- * Date: 5/26/14
- * Time: 10:18 AM
- */
 
-namespace Fluxoft\Rebar\Auth;
+namespace Fluxoft\Rebar\Auth\Db;
 
 use Fluxoft\Rebar\Auth\Exceptions\InvalidTokenException;
 use Fluxoft\Rebar\Model;
 
 /**
  * Class Token
- * @package Fluxoft\Rebar\Auth
+ * @package Fluxoft\Rebar\Auth\Web
  * @property int UserID
  * @property string SeriesID
  * @property string Token

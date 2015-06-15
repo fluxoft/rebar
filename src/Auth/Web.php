@@ -2,6 +2,9 @@
 
 namespace Fluxoft\Rebar\Auth;
 
+use Fluxoft\Rebar\Auth\Db\Token;
+use Fluxoft\Rebar\Auth\Db\User;
+use Fluxoft\Rebar\Auth\Db\UserMapper;
 use Fluxoft\Rebar\Http\Cookies;
 use Fluxoft\Rebar\Http\Session;
 
@@ -86,7 +89,7 @@ class Web implements AuthInterface {
 						$this->authenticatedUser = $this->LoginWithToken($token);
 					}
 				} else {
-					$this->authenticatedUser = $this->LoginWithToken($token);
+					$this->authenticatedUser = $this->LoginWithToken($validToken);
 				}
 			} else {
 				$this->authenticatedUser = $this->userMapper->GetOneById($userID);

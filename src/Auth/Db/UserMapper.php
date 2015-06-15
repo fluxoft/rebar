@@ -1,22 +1,24 @@
 <?php
 
-namespace Fluxoft\Rebar\Auth;
+namespace Fluxoft\Rebar\Auth\Db;
 
 use Doctrine\DBAL\Connection;
+use Fluxoft\Rebar\Auth\UserMapperInterface;
 use Fluxoft\Rebar\Db\Exceptions\ModelException;
 use Fluxoft\Rebar\Db\Mapper;
+use Fluxoft\Rebar\Db\MapperFactory;
 
-abstract class UserMapper extends Mapper {
+abstract class UserMapper extends Mapper implements UserMapperInterface {
 	/** @var User */
 	protected $userModel;
 
-	public function __construct($modelClass, Connection $reader, Connection $writer = null) {
-		parent::__construct($modelClass, $reader, $writer);
+	public function __construct(MapperFactory $mapperFactory, Connection $reader, Connection $writer = null) {
+		parent::__construct($mapperFactory, $reader, $writer);
 
 		if (!($this->model instanceof User)) {
 			throw new ModelException(sprintf(
 				'The model %s must be an instance of a class extended from Fluxoft\Rebar\Auth\User',
-				$modelClass
+				$this->modelClass
 			));
 		}
 

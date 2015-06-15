@@ -91,6 +91,12 @@ class Response {
 		echo $this->body;
 	}
 
+	public function Halt($status, $message) {
+		$this->Status = $status;
+		$this->Body   = $message;
+		$this->Send();
+	}
+
 	public function Redirect($location) {
 		$this->status = 302;
 		$this->AddHeader('Location', $location);
