@@ -86,7 +86,7 @@ class Router {
 						$request->PathInfo
 					));
 				}
-				continue;
+				break;
 			}
 		}
 

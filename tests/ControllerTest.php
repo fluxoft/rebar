@@ -32,5 +32,17 @@ class ControllerTest extends \PHPUnit_Framework_TestCase
 
 		$stub->Display();
 	}
+
+	public function testDenyAccess() {
+		$stub = $this->getMockForAbstractClass(
+			'\\Fluxoft\\Rebar\\Controller',
+			array(
+				$this->request,
+				$this->response
+			)
+		);
+
+		$stub->DenyAccess('denied');
+	}
 }
  

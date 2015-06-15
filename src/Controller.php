@@ -32,10 +32,10 @@ abstract class Controller {
 	protected $data = [];
 
 	/**
-	 * The array of authorized methods for the controller.
+	 * The array of methods for which authentication is required.
 	 * @var array
 	 */
-	protected $authorize = [];
+	protected $requireAuthentication = [];
 
 	protected $request;
 	protected $response;
@@ -50,7 +50,7 @@ abstract class Controller {
 	public function Authorize($method) {
 		$authorized = true;
 		if (isset($this->auth)) {
-			if (isset($this->authorize[$method])) {
+			if (in_array($method, $this->requireAuthentication)) {
 				$authUser = $this->auth->GetAuthenticatedUser();
 				if ($authUser === false) {
 					// method is limited and user is not authenticated
@@ -58,14 +58,6 @@ abstract class Controller {
 						'Access denied for %s',
 						$method
 					));
-				} else {
-					if (!empty($this->authorize[$method])) {
-						if (!$this->auth->UserHasRole($this->authorize[$method])) {
-							throw new AccessDeniedException(sprintf(
-								'User is not a member of the correct role.'
-							));
-						}
-					}
 				}
 			} else {
 				// method is not limited
@@ -76,7 +68,7 @@ abstract class Controller {
 	}
 
 	public function DenyAccess($message) {
-		$this->response->Halt(403, $message);
+		$this->response->Halt(403, "Forbidden: $message");
 	}
 
 	public function Display() {
