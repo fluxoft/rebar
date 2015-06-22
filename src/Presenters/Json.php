@@ -5,7 +5,10 @@ use Fluxoft\Rebar\Http\Response;
 
 class Json implements PresenterInterface {
 	protected $callback;
-	public function __construct($callback = null) {
+	public function __construct($callback = false) {
+		$this->callback = $callback;
+	}
+	public function SetCallback($callback) {
 		$this->callback = $callback;
 	}
 	public function Render(Response $response, array $data) {
