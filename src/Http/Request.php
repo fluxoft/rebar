@@ -10,6 +10,7 @@ use Fluxoft\Rebar\Model;
  * @property mixed PathInfo
  * @property mixed Headers
  * @property mixed Environment
+ * @property mixed Body
  */
 class Request extends Model {
 	/** @var ParameterSet  */
@@ -31,6 +32,7 @@ class Request extends Model {
 		$this->properties['PathInfo']    = $environment['pathInfo'];
 		$this->properties['Headers']     = $environment['headers'];
 		$this->properties['Environment'] = $environment;
+		$this->properties['Body']        = $environment['rebar.input'];
 
 		$this->getParamSet    = new ParameterSet($environment['get']);
 		$this->postParamSet   = new ParameterSet($environment['post']);
