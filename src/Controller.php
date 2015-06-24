@@ -32,10 +32,14 @@ abstract class Controller {
 	protected $data = [];
 
 	/**
-	 * The array of methods for which authentication is required.
-	 * @var array
+	 * @var array The array of methods for which authentication is required.
 	 */
 	protected $requireAuthentication = [];
+
+	/**
+	 * @var array The array of methods for which authentication can be skipped.
+	 */
+	protected $skipAuthentication = [];
 
 	protected $request;
 	protected $response;
@@ -50,18 +54,30 @@ abstract class Controller {
 	public function Authorize($method) {
 		$authorized = true;
 		if (isset($this->auth)) {
-			if (in_array($method, $this->requireAuthentication)) {
-				$authUser = $this->auth->GetAuthenticatedUser();
-				if ($authUser === false) {
-					// method is limited and user is not authenticated
-					throw new AccessDeniedException(sprintf(
-						'Access denied for %s',
-						$method
-					));
+			if (!(in_array($method, $this->skipAuthentication) ||
+				in_array('*', $this->skipAuthentication))
+			) {
+				$requireAuth = false;
+				// If requireAuthentication is empty, prevent access by default.
+				if (empty($this->requireAuthentication)) {
+					$requireAuth = true;
+				} else {
+					if (in_array($method, $this->requireAuthentication) ||
+						in_array('*', $this->requireAuthentication)
+					) {
+						$requireAuth = true;
+					}
 				}
-			} else {
-				// method is not limited
-				$authorized = true;
+				if ($requireAuth) {
+					$authUser = $this->auth->GetAuthenticatedUser();
+					if ($authUser === false) {
+						// method is limited and user is not authenticated
+						throw new AccessDeniedException(sprintf(
+							'Access denied for %s',
+							$method
+						));
+					}
+				}
 			}
 		}
 		return $authorized;
