@@ -50,7 +50,8 @@ abstract class User extends Model {
 	}
 
 	protected function setPassword($password) {
-		$this->{$this->authPasswordProperty} = $this->generateHash($password);
+		$this->modProperties[$this->authPasswordProperty]          = $this->properties[$this->authPasswordProperty];
+		$this->modProperties[$this->authPasswordProperty]['value'] = $this->generateHash($password);
 	}
 
 	private function generateHash ($password, $cost = 11) {
