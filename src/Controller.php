@@ -24,6 +24,13 @@ abstract class Controller {
 	 */
 	protected $presenter = null;
 	/**
+	 * @var null|string The name of a class implementing PresenterInterface that
+	 * should be used for setting the presenter if no other presenter has been set.
+	 * Either a fully-qualified class name should be given or a Presenter that can be
+	 * found in the \Fluxoft\Rebar\Presenters namespace should be used.
+	 */
+	protected $presenterClass = null;
+	/**
 	 * The data array holds any values that need to be available to
 	 * be rendered for output.
 	 *
@@ -89,7 +96,18 @@ abstract class Controller {
 
 	public function Display() {
 		if (!isset($this->presenter)) {
-			$this->presenter = new Presenters\Debug();
+			if (isset($this->presenterClass)) {
+				if (class_exists($this->presenterClass)) {
+					$this->presenter = new $this->presenterClass();
+				} else {
+					$class = '\\Fluxoft\\Rebar\\Presenters\\'.$this->presenterClass;
+					if (class_exists($class)) {
+						$this->presenter = new $class();
+					}
+				}
+			} else {
+				$this->presenter = new Presenters\Debug();
+			}
 		}
 		if ($this->presenter instanceof Presenters\PresenterInterface) {
 			$this->presenter->Render($this->response, $this->getData());
