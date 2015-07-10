@@ -51,7 +51,7 @@ abstract class Mapper {
 	public function GetOneById($id) {
 		$idProperty = $this->model->GetIDProperty();
 		$properties = $this->model->GetProperties();
-		$sql        = "SELECT * FROM {$this->model->GetDbTable()} WHERE {$properties[$idProperty]['col']} = :id";
+		$sql        = "SELECT * FROM `{$this->model->GetDbTable()}` WHERE `{$properties[$idProperty]['col']}` = :id";
 		$values     = ['id' => $id];
 		$types      = [$properties[$idProperty]['type']];
 		$results    = $this->reader->fetchAll(
@@ -68,7 +68,7 @@ abstract class Mapper {
 
 	public function GetOneWhere($where, $params = []) {
 		$properties = $this->model->GetProperties();
-		$sql        = "SELECT * FROM {$this->model->GetDbTable()}";
+		$sql        = "SELECT * FROM `{$this->model->GetDbTable()}`";
 		if (!empty($where)) {
 			$sql .= ' WHERE ' . $this->translateWhere($where, $properties);
 		}
@@ -99,7 +99,7 @@ abstract class Mapper {
 
 	public function GetSetWhere($where = '', $params = [], $page = 1, $pageSize = 0) {
 		$properties = $this->model->GetProperties();
-		$sql        = "SELECT * FROM {$this->model->GetDbTable()}";
+		$sql        = "SELECT * FROM `{$this->model->GetDbTable()}`";
 		if (!empty($where)) {
 			$sql .= ' WHERE ' . $this->translateWhere($where, $properties);
 		}
@@ -142,7 +142,7 @@ abstract class Mapper {
 
 	public function Delete(Model $model) {
 		$idColumn = $model->GetIDColumn();
-		$sql = "DELETE FROM {$model->GetDbTable()} WHERE $idColumn = :$idColumn";
+		$sql = "DELETE FROM `{$model->GetDbTable()}` WHERE `$idColumn` = :$idColumn";
 		$this->writer->executeQuery($sql, ['id' => $model->GetID()], [$model->GetIDType()]);
 		$model = null;
 	}
@@ -178,7 +178,7 @@ abstract class Mapper {
 				$values[$dbMap['col']] = $dbMap['value'];
 			}
 		}
-		$sql = "INSERT INTO {$model->GetDbTable()} (" . implode(',', $cols) . ") VALUES (:" . implode(',:', $cols) . ")";
+		$sql = "INSERT INTO `{$model->GetDbTable()}` (`" . implode('`,`', $cols) . "`) VALUES (:" . implode(',:', $cols) . ")";
 		$this->writer->executeQuery($sql, $values, $types);
 		$insertId = $this->writer->lastInsertId();
 		$model->SetID($insertId);
@@ -197,12 +197,12 @@ abstract class Mapper {
 				$types[]               = $dbMap['type'];
 				$values[$dbMap['col']] = $dbMap['value'];
 			}
-			$sql = "UPDATE {$model->GetDbTable()} SET ";
+			$sql = "UPDATE `{$model->GetDbTable()}` SET ";
 			foreach ($cols as $col) {
-				$sql .= "$col = :$col,";
+				$sql .= "`$col` = :$col,";
 			}
 			$sql     = substr($sql, 0, -1); // remove trailing comma
-			$sql    .= " WHERE {$properties[$idProperty]['col']} = :{$properties[$idProperty]['col']}";
+			$sql    .= " WHERE `{$properties[$idProperty]['col']}` = :{$properties[$idProperty]['col']}";
 			$types[] = $properties[$idProperty]['type'];
 
 			$values[$properties[$idProperty]['col']] = $properties[$idProperty]['value'];
@@ -212,7 +212,7 @@ abstract class Mapper {
 
 	private function translateWhere($where, $properties) {
 		return preg_replace_callback('/\{(\w+)\}/', function ($matches) use ($properties) {
-			return $properties[$matches[1]]['col'];
+			return '`'.$properties[$matches[1]]['col'].'`';
 		}, $where);
 	}
 }
