@@ -145,7 +145,7 @@ class Router {
 				);
 				break;
 			default:
-				call_user_func_array($controller, $route['action'], $actionParams);
+				call_user_func_array([$controller, $route['action']], $actionParams);
 				break;
 		}
 		$controller->Display();
