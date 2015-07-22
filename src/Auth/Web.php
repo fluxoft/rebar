@@ -58,7 +58,7 @@ class Web implements AuthInterface {
 	}
 
 	public function Logout() {
-		$user = $this->authenticatedUser;
+		$user = $this->GetAuthenticatedUser();
 		if ($user instanceof User) {
 			$token = $this->getValidToken();
 			if ($token === false) {
