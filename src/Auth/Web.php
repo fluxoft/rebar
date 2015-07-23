@@ -47,16 +47,6 @@ class Web implements AuthInterface {
 		return $user;
 	}
 
-	public function LoginWithToken (Token $token) {
-		$this->Logout();
-
-		$user = $this->userMapper->GetOneById($token->UserID);
-		if ($user instanceof User) {
-			$this->setTokens($user, $token);
-		}
-		return $user;
-	}
-
 	public function Logout() {
 		$user = $this->GetAuthenticatedUser();
 		if ($user instanceof User) {
@@ -86,16 +76,24 @@ class Web implements AuthInterface {
 					$this->authenticatedUser = false;
 
 					if (isset($token)) {
-						$this->authenticatedUser = $this->LoginWithToken($token);
+						$this->authenticatedUser = $this->loginWithToken($token);
 					}
 				} else {
-					$this->authenticatedUser = $this->LoginWithToken($validToken);
+					$this->authenticatedUser = $this->loginWithToken($validToken);
 				}
 			} else {
 				$this->authenticatedUser = $this->userMapper->GetOneById($userID);
 			}
 		}
 		return $this->authenticatedUser;
+	}
+
+	private function loginWithToken (Token $token) {
+		$user = $this->userMapper->GetOneById($token->UserID);
+		if ($user instanceof User) {
+			$this->setTokens($user, $token);
+		}
+		return $user;
 	}
 
 	private function getValidToken() {
