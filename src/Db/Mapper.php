@@ -167,6 +167,11 @@ abstract class Mapper {
 		$idProperty = $model->GetIDProperty();
 		// merged array containing original plus modified properties
 		$merged = array_replace_recursive($model->GetProperties(), $model->GetModifiedProperties());
+		foreach ($merged as $key => $property) {
+			if (!isset($property['value'])) {
+				unset($merged[$key]);
+			}
+		}
 		$cols   = [];
 		$types  = [];
 		$values = [];
