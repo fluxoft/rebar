@@ -83,7 +83,7 @@ class Response {
 	}
 
 	public function Send() {
-		header('HTTP/1.1 '.$this->messages[$this->status]);
+		header('HTTP/1.1 '.$this->status.' '.$this->messages[$this->status]);
 		if (!empty($this->headers)) {
 			foreach ($this->headers as $type => $content) {
 				header("$type: $content");
