@@ -98,7 +98,7 @@ class Router {
 		} else {
 			throw new RouterException(sprintf('"%s" was not found.', $route['controller']));
 		}
-		if (!is_callable([$controller, $route['action']])) {
+		if (!method_exists($controller, $route['action'])) {
 			throw new RouterException(sprintf(
 				'Could not find a method called %s in %s.',
 				$route['action'],
