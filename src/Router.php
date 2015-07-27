@@ -106,6 +106,8 @@ class Router {
 			));
 		}
 
+		$controller->Setup();
+
 		try {
 			$controller->Authorize($route['action']);
 		} catch (AccessDeniedException $e) {
@@ -149,6 +151,7 @@ class Router {
 				break;
 		}
 		$controller->Display();
+		$controller->Cleanup();
 	}
 
 	protected function getRoute($path) {

@@ -58,6 +58,22 @@ abstract class Controller {
 		$this->auth     = $auth;
 	}
 
+	/**
+	 * Can be overridden in child classes to perform setup functions (like setting up defaults).
+	 * @return bool
+	 */
+	public function Setup() {
+		return true;
+	}
+
+	/**
+	 * Can be overridden in child classes to perform cleanup functions
+	 * @return bool
+	 */
+	public function Cleanup() {
+		return true;
+	}
+
 	public function Authorize($method) {
 		$authorized = true;
 		if (isset($this->auth)) {
