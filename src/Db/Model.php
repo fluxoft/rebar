@@ -63,7 +63,11 @@ abstract class Model implements \Iterator {
 			// Populate the properties with the given values.
 			foreach ($this->propertyDbMap as $property => &$dbMap) {
 				if (isset($dataRow[$dbMap['col']])) {
-					$dbMap['value'] = $dataRow[$dbMap['col']];
+					if ($dbMap['type'] === 'boolean') {
+						$dbMap['value'] = (boolean) $dataRow[$dbMap['col']];
+					} else {
+						$dbMap['value'] = $dataRow[$dbMap['col']];
+					}
 				}
 			}
 		}
