@@ -90,6 +90,7 @@ class Response {
 			}
 		}
 		echo $this->body;
+		exit;
 	}
 
 	public function Halt($status, $message) {
