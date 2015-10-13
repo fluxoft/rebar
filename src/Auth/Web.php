@@ -88,7 +88,7 @@ class Web implements AuthInterface {
 		return $this->authenticatedUser;
 	}
 
-	private function loginWithToken (Token $token) {
+	protected function loginWithToken (Token $token) {
 		$user = $this->userMapper->GetOneById($token->UserID);
 		if ($user instanceof User) {
 			$this->setTokens($user, $token);
@@ -96,7 +96,7 @@ class Web implements AuthInterface {
 		return $user;
 	}
 
-	private function getValidToken() {
+	protected function getValidToken() {
 		$authToken = $this->cookies->Get('AuthToken');
 		$checksum  = $this->cookies->Get('AuthTokenChecksum');
 		if (!isset($authToken)) {
@@ -117,7 +117,7 @@ class Web implements AuthInterface {
 		}
 	}
 
-	private function setTokens(User $user, Token $token = null, $remember = false) {
+	protected function setTokens(User $user, Token $token = null, $remember = false) {
 		if (!isset($token)) {
 			$token = new Token($user->GetID());
 		}
@@ -131,7 +131,7 @@ class Web implements AuthInterface {
 		$this->userMapper->SaveAuthToken($token);
 	}
 
-	private function unsetTokens(User $user, Token $token = null) {
+	protected function unsetTokens(User $user, Token $token = null) {
 		if (isset($token)) {
 			$userID   = $token->UserID;
 			$seriesID = $token->SeriesID;
