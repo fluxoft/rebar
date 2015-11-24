@@ -46,7 +46,7 @@ abstract class Controller {
 	/**
 	 * @var array The array of methods for which authentication can be skipped.
 	 */
-	protected $skipAuthentication = [];
+	protected $skipAuthentication = ['*'];
 
 	protected $request;
 	protected $response;
