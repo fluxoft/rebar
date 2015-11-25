@@ -6,7 +6,7 @@ use Fluxoft\Rebar\Controller as BaseController;
 use Fluxoft\Rebar\Presenters\Json;
 
 abstract class Controller extends BaseController {
-	protected $corsEnabled = false;
+	protected $corsEnabled        = false;
 	protected $corsDomainsAllowed = [];
 
 	protected function run(
@@ -15,6 +15,7 @@ abstract class Controller extends BaseController {
 		array $config = null
 	) {
 		$allowed = (isset($config['allowed']) ? $config['allowed'] : ['GET']);
+
 		// OPTIONS requests must be allowed for CORS capability
 		if (!in_array('OPTIONS', $allowed)) {
 			array_push($allowed, 'OPTIONS');
@@ -31,11 +32,14 @@ abstract class Controller extends BaseController {
 		if ($this->corsEnabled) {
 			if (isset($headers['Origin'])) {
 				$origin = $headers['Origin'];
-
-				header('origin-found: '.$origin);
-
-				$this->response->AddHeader('Access-Control-Allow-Origin', $origin);
-				$this->response->AddHeader('Access-Control-Allow-Credentials', 'true');
+				if (in_array($origin, $this->corsDomainsAllowed)) {
+					$this->response->AddHeader('Access-Control-Allow-Origin', $origin);
+					$this->response->AddHeader('Access-Control-Allow-Credentials', 'true');
+					$this->response->AddHeader('Access-Control-Allow-Methods', implode(',', $allowed));
+					$this->response->AddHeader('Access-Control-Allow-Headers', 'Content-Type');
+				} else {
+					$corsOK = false;
+				}
 			} else {
 				$corsOK = false;
 			}
