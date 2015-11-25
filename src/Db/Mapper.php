@@ -183,7 +183,7 @@ abstract class Mapper {
 				$values[$dbMap['col']] = $dbMap['value'];
 			}
 		}
-		$sql = "INSERT INTO `{$model->GetDbTable()}` (`".
+		$sql = "INSERT INTO `{$model->GetDbTable()}` (`" .
 			implode('`,`', $cols) .
 			"`) VALUES (:" . implode(',:', $cols) . ")";
 		$this->writer->executeQuery($sql, $values, $types);
@@ -232,7 +232,6 @@ abstract class Mapper {
 			$returnWhere = '';
 		}
 
-		echo $returnWhere;
 		return $returnWhere;
 	}
 }
