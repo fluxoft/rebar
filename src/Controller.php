@@ -48,8 +48,11 @@ abstract class Controller {
 	 */
 	protected $skipAuthentication = ['*'];
 
+	/** @var Request */
 	protected $request;
+	/** @var Response */
 	protected $response;
+	/** @var AuthInterface */
 	protected $auth;
 
 	public function __construct(
