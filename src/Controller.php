@@ -46,13 +46,20 @@ abstract class Controller {
 	/**
 	 * @var array The array of methods for which authentication can be skipped.
 	 */
-	protected $skipAuthentication = [];
+	protected $skipAuthentication = ['*'];
 
+	/** @var Request */
 	protected $request;
+	/** @var Response */
 	protected $response;
+	/** @var AuthInterface */
 	protected $auth;
 
-	public function __construct(Request $request, Response $response, AuthInterface $auth = null) {
+	public function __construct(
+		Request $request,
+		Response $response,
+		AuthInterface $auth = null
+	) {
 		$this->request  = $request;
 		$this->response = $response;
 		$this->auth     = $auth;
