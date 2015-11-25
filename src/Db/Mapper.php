@@ -70,7 +70,7 @@ abstract class Mapper {
 		$properties = $this->model->GetProperties();
 		$sql        = "SELECT * FROM `{$this->model->GetDbTable()}`";
 		if (!empty($where)) {
-			$sql .= $this->translateWhere($where, $properties);
+			$sql .= ' WHERE ' . $this->translateWhere($where, $properties);
 		}
 		$sql   .= ' LIMIT 1';
 		$values = [];
@@ -101,7 +101,7 @@ abstract class Mapper {
 		$properties = $this->model->GetProperties();
 		$sql        = "SELECT * FROM `{$this->model->GetDbTable()}`";
 		if (!empty($where)) {
-			$sql .= $this->translateWhere($where, $properties);
+			$sql .= ' WHERE ' . $this->translateWhere($where, $properties);
 		}
 		if ($pageSize > 0) {
 			$sql .= " LIMIT $pageSize OFFSET " . ($pageSize * ($page - 1));
@@ -183,9 +183,7 @@ abstract class Mapper {
 				$values[$dbMap['col']] = $dbMap['value'];
 			}
 		}
-		$sql = "INSERT INTO `{$model->GetDbTable()}` (`".
-			implode('`,`', $cols) .
-			"`) VALUES (:" . implode(',:', $cols) . ")";
+		$sql = "INSERT INTO `{$model->GetDbTable()}` (`" . implode('`,`', $cols) . "`) VALUES (:" . implode(',:', $cols) . ")";
 		$this->writer->executeQuery($sql, $values, $types);
 		$insertId = $this->writer->lastInsertId();
 		$model->SetID($insertId);
@@ -218,21 +216,8 @@ abstract class Mapper {
 	}
 
 	private function translateWhere($where, $properties) {
-		// @todo: clean up this hacky mess - the methods here should really just accept an array of filter values
-		$returnWhere  = ' WHERE ';
-		$returnWhere .= preg_replace_callback('/\{(\w+)\}/', function ($matches) use ($properties) {
-			if (isset($properties[$matches[1]])) {
-				return '`' . $properties[$matches[1]]['col'] . '`';
-			} else {
-				return '{' . $matches[1] . '}';
-			}
+		return preg_replace_callback('/\{(\w+)\}/', function ($matches) use ($properties) {
+			return '`'.$properties[$matches[1]]['col'].'`';
 		}, $where);
-
-		if (preg_match('/\{(\w+)\}/', $returnWhere)) {
-			$returnWhere = '';
-		}
-
-		echo $returnWhere;
-		return $returnWhere;
 	}
 }

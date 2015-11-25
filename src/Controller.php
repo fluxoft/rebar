@@ -52,11 +52,7 @@ abstract class Controller {
 	protected $response;
 	protected $auth;
 
-	public function __construct(
-		Request $request,
-		Response $response,
-		AuthInterface $auth = null
-	) {
+	public function __construct(Request $request, Response $response, AuthInterface $auth = null) {
 		$this->request  = $request;
 		$this->response = $response;
 		$this->auth     = $auth;

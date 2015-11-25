@@ -177,7 +177,7 @@ class Router {
 		if (empty($routeParts)) {
 			if (strlen($path) > 1) { // disregard leading slash
 				$pathParts = array_filter(explode('/', $path), function ($var) {
-					return ($var !== null && $var !== false && $var !== '');
+					return ($var !== NULL && $var !== FALSE && $var !== '');
 				});
 				if (count($pathParts) == 1) {
 					$pathParts[] = 'index';
