@@ -12,7 +12,16 @@ abstract class Controller extends BaseController {
 
 	protected function handleAuth(AuthInterface $auth) {
 		$allowedMethods = (isset($config['allowed']) ? $config['allowed'] : ['GET']);
-		$corsOK = $this->corsCheck($this->request->Headers, $allowedMethods);
+		$corsOK         = $this->corsCheck($this->request->Headers, $allowedMethods);
+		
+		// Force Json presenter for this type of controller (so all replies are in JSON format)
+		// and set its Callback property from the value in $getVars['callback'], then unset that
+		// value from the array if it exists.
+		$this->presenterClass = 'Json';
+		$this->presenter      = new Json();
+		$this->presenter->SetCallback($this->request->Get('callback', ''));
+		$getVars = $this->request->Get();
+		unset($getVars['callback']);
 
 		switch ($this->request->Method) {
 			case 'OPTIONS':
@@ -36,7 +45,7 @@ abstract class Controller extends BaseController {
 				$email    = $body['credentials']['username'];
 				$password = $body['credentials']['password'];
 				$remember = (isset($body['credentials']['remember']) ? $body['credentials']['remember'] : false);
-				/** @var \Fluxoft\Rebar\Auth\Db\User $user */
+				/** @var \Fluxoft\Rebar\Auth\Db\User $authUser */
 				$authUser = $auth->Login($email, $password, $remember);
 				$this->set('auth', ($authUser === false) ? false : true);
 				$this->set('userID', ($authUser === false) ? 0 : $authUser->GetID());
@@ -56,7 +65,7 @@ abstract class Controller extends BaseController {
 		$allowedMethods = (isset($config['allowed']) ? $config['allowed'] : ['GET']);
 
 		// OPTIONS requests must be allowed for CORS capability
-		if (!in_array('OPTIONS', $allowed)) {
+		if (!in_array('OPTIONS', $allowedMethods)) {
 			array_push($allowed, 'OPTIONS');
 		}
 
@@ -76,7 +85,7 @@ abstract class Controller extends BaseController {
 		$this->presenter->SetCallback($this->request->Get('callback', ''));
 		unset($getVars['callback']);
 
-		if (!in_array($method, $allowed)) {
+		if (!in_array($method, $allowedMethods)) {
 			$response = [403, ['error' => "The {$method} method is not permitted here."]];
 		} else {
 			switch ($method) {
