@@ -11,9 +11,11 @@ abstract class Controller extends BaseController {
 	protected $corsDomainsAllowed = [];
 
 	protected function handleAuth(AuthInterface $auth) {
+		$allowedMethods = (isset($config['allowed']) ? $config['allowed'] : ['GET']);
+		$corsOK = $this->corsCheck($this->request->Headers, $allowedMethods);
+
 		switch ($this->request->Method) {
 			case 'OPTIONS':
-				$corsOK = $this->corsCheck($this->request->Headers);
 				if ($corsOK) {
 					$this->response->Status = 200;
 					$this->set('success', true);
@@ -51,7 +53,7 @@ abstract class Controller extends BaseController {
 		array $params,
 		array $config = null
 	) {
-		$allowed = (isset($config['allowed']) ? $config['allowed'] : ['GET']);
+		$allowedMethods = (isset($config['allowed']) ? $config['allowed'] : ['GET']);
 
 		// OPTIONS requests must be allowed for CORS capability
 		if (!in_array('OPTIONS', $allowed)) {
@@ -64,7 +66,7 @@ abstract class Controller extends BaseController {
 		$putVars  = $this->request->Put();
 		$body     = $this->request->Body;
 
-		$corsOK = $this->corsCheck($this->request->Headers);
+		$corsOK = $this->corsCheck($this->request->Headers, $allowedMethods);
 
 		// Force Json presenter for this type of controller (so all replies are in JSON format)
 		// and set its Callback property from the value in $getVars['callback'], then unset that
@@ -199,7 +201,7 @@ abstract class Controller extends BaseController {
 		}
 	}
 
-	private function corsCheck(array $headers) {
+	private function corsCheck(array $headers, array $allowedMethods) {
 		$corsOK = true;
 		if ($this->corsEnabled) {
 			if (isset($headers['Origin'])) {
@@ -207,7 +209,7 @@ abstract class Controller extends BaseController {
 				if (in_array($origin, $this->corsDomainsAllowed)) {
 					$this->response->AddHeader('Access-Control-Allow-Origin', $origin);
 					$this->response->AddHeader('Access-Control-Allow-Credentials', 'true');
-					$this->response->AddHeader('Access-Control-Allow-Methods', implode(',', $allowed));
+					$this->response->AddHeader('Access-Control-Allow-Methods', implode(',', $allowedMethods));
 					$this->response->AddHeader('Access-Control-Allow-Headers', 'Content-Type');
 				} else {
 					$corsOK = false;
