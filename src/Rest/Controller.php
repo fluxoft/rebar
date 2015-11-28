@@ -13,6 +13,15 @@ abstract class Controller extends BaseController {
 	protected function handleAuth(AuthInterface $auth) {
 		$allowedMethods = (isset($config['allowed']) ? $config['allowed'] : ['GET']);
 		$corsOK         = $this->corsCheck($this->request->Headers, $allowedMethods);
+		
+		// Force Json presenter for this type of controller (so all replies are in JSON format)
+		// and set its Callback property from the value in $getVars['callback'], then unset that
+		// value from the array if it exists.
+		$this->presenterClass = 'Json';
+		$this->presenter      = new Json();
+		$this->presenter->SetCallback($this->request->Get('callback', ''));
+		$getVars = $this->request->Get();
+		unset($getVars['callback']);
 
 		switch ($this->request->Method) {
 			case 'OPTIONS':
