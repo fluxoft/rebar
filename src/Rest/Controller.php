@@ -36,8 +36,8 @@ abstract class Controller extends BaseController {
 			case 'GET':
 				/** @var \Fluxoft\Rebar\Auth\Db\User $user */
 				$user = $auth->GetAuthenticatedUser();
-				$this->set('auth', ($user === false) ? false : true);
-				$this->set('userID', ($user === false) ? null : $user->GetID());
+				$this->set('auth', isset($user));
+				$this->set('userID', (isset($user)) ? $user->GetID() : 0);
 				break;
 			case 'POST':
 				$body = json_decode($this->request->Body, true);
