@@ -2,12 +2,49 @@
 
 namespace Fluxoft\Rebar\Rest;
 
+use Fluxoft\Rebar\Auth\AuthInterface;
 use Fluxoft\Rebar\Controller as BaseController;
 use Fluxoft\Rebar\Presenters\Json;
 
 abstract class Controller extends BaseController {
 	protected $corsEnabled        = false;
 	protected $corsDomainsAllowed = [];
+
+	protected function handleAuth(AuthInterface $auth) {
+		switch ($this->request->Method) {
+			case 'OPTIONS':
+				$corsOK = $this->corsCheck($this->request->Headers);
+				if ($corsOK) {
+					$this->response->Status = 200;
+					$this->set('success', true);
+				} else {
+					$this->response->Status = 403;
+					$this->set('error', 'Not allowed.');
+				}
+				break;
+			case 'GET':
+				/** @var \Fluxoft\Rebar\Auth\Db\User $user */
+				$user = $auth->GetAuthenticatedUser();
+				$this->set('auth', ($user === false) ? false : true);
+				$this->set('userID', ($user === false) ? null : $user->GetID());
+				break;
+			case 'POST':
+				$body = json_decode($this->request->Body, true);
+
+				$email    = $body['credentials']['username'];
+				$password = $body['credentials']['password'];
+				$remember = (isset($body['credentials']['remember']) ? $body['credentials']['remember'] : false);
+				/** @var \Fluxoft\Rebar\Auth\Db\User $user */
+				$authUser = $auth->Login($email, $password, $remember);
+				$this->set('auth', ($authUser === false) ? false : true);
+				$this->set('userID', ($authUser === false) ? 0 : $authUser->GetID());
+				break;
+			case 'DELETE':
+				$auth->Logout();
+				$this->set('auth', false);
+				break;
+		}
+	}
 
 	protected function run(
 		RepositoryInterface $repository,
@@ -26,24 +63,8 @@ abstract class Controller extends BaseController {
 		$postVars = $this->request->Post();
 		$putVars  = $this->request->Put();
 		$body     = $this->request->Body;
-		$headers  = $this->request->Headers;
 
-		$corsOK = true;
-		if ($this->corsEnabled) {
-			if (isset($headers['Origin'])) {
-				$origin = $headers['Origin'];
-				if (in_array($origin, $this->corsDomainsAllowed)) {
-					$this->response->AddHeader('Access-Control-Allow-Origin', $origin);
-					$this->response->AddHeader('Access-Control-Allow-Credentials', 'true');
-					$this->response->AddHeader('Access-Control-Allow-Methods', implode(',', $allowed));
-					$this->response->AddHeader('Access-Control-Allow-Headers', 'Content-Type');
-				} else {
-					$corsOK = false;
-				}
-			} else {
-				$corsOK = false;
-			}
-		}
+		$corsOK = $this->corsCheck($this->request->Headers);
 
 		// Force Json presenter for this type of controller (so all replies are in JSON format)
 		// and set its Callback property from the value in $getVars['callback'], then unset that
@@ -176,5 +197,25 @@ abstract class Controller extends BaseController {
 				$this->set($key, $value);
 			}
 		}
+	}
+
+	private function corsCheck(array $headers) {
+		$corsOK = true;
+		if ($this->corsEnabled) {
+			if (isset($headers['Origin'])) {
+				$origin = $headers['Origin'];
+				if (in_array($origin, $this->corsDomainsAllowed)) {
+					$this->response->AddHeader('Access-Control-Allow-Origin', $origin);
+					$this->response->AddHeader('Access-Control-Allow-Credentials', 'true');
+					$this->response->AddHeader('Access-Control-Allow-Methods', implode(',', $allowed));
+					$this->response->AddHeader('Access-Control-Allow-Headers', 'Content-Type');
+				} else {
+					$corsOK = false;
+				}
+			} else {
+				$corsOK = false;
+			}
+		}
+		return $corsOK;
 	}
 }
