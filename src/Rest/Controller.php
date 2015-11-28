@@ -60,13 +60,13 @@ abstract class Controller extends BaseController {
 	protected function run(
 		RepositoryInterface $repository,
 		array $params,
-		array $config = null
+		array $config = []
 	) {
 		$allowedMethods = (isset($config['allowed']) ? $config['allowed'] : ['GET']);
 
 		// OPTIONS requests must be allowed for CORS capability
 		if (!in_array('OPTIONS', $allowedMethods)) {
-			array_push($allowed, 'OPTIONS');
+			array_push($allowedMethods, 'OPTIONS');
 		}
 
 		$method   = $this->request->Method;
