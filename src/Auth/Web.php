@@ -18,8 +18,8 @@ class Web implements AuthInterface {
 	/** @var array */
 	protected $config;
 
-	/** @var bool|User */
-	protected $authenticatedUser = false;
+	/** @var User */
+	protected $authenticatedUser = null;
 
 	public function __construct(
 		UserMapper $userMapper,
@@ -63,8 +63,8 @@ class Web implements AuthInterface {
 	 * @return bool|User
 	 */
 	public function GetAuthenticatedUser(Token $token = null) {
-		if ($this->authenticatedUser === false) {
-			$userID = $this->session->Get('AuthUserID', false);
+		if (!isset($this->authenticatedUser)) {
+			$userID = $this->session->Get('AuthUserID', null);
 			if ($userID === false) {
 				// Check that valid tokens are set
 				$validToken = $this->getValidToken();
@@ -73,7 +73,7 @@ class Web implements AuthInterface {
 					$this->cookies->Delete('AuthToken');
 					$this->cookies->Delete('AuthTokenChecksum');
 					$this->session->Delete('AuthUserID');
-					$this->authenticatedUser = false;
+					$this->authenticatedUser = null;
 
 					if (isset($token)) {
 						$this->authenticatedUser = $this->loginWithToken($token);
