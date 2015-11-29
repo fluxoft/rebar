@@ -11,7 +11,7 @@ abstract class Controller extends BaseController {
 	protected $corsDomainsAllowed = [];
 
 	protected function handleAuth(AuthInterface $auth) {
-		$allowedMethods = (isset($config['allowed']) ? $config['allowed'] : ['GET']);
+		$allowedMethods = ['GET', 'POST', 'DELETE', 'OPTIONS'];
 		$corsOK         = $this->corsCheck($this->request->Headers, $allowedMethods);
 		
 		// Force Json presenter for this type of controller (so all replies are in JSON format)
@@ -214,12 +214,14 @@ abstract class Controller extends BaseController {
 		$corsOK = true;
 		if ($this->corsEnabled) {
 			if (isset($headers['Origin'])) {
-				$origin = $headers['Origin'];
+				$allowedHeaders = (isset($headers['Access-Control-Request-Headers']) ?
+					$headers['Access-Control-Request-Headers'] : '');
+				$origin         = $headers['Origin'];
 				if (in_array($origin, $this->corsDomainsAllowed)) {
 					$this->response->AddHeader('Access-Control-Allow-Origin', $origin);
 					$this->response->AddHeader('Access-Control-Allow-Credentials', 'true');
 					$this->response->AddHeader('Access-Control-Allow-Methods', implode(',', $allowedMethods));
-					$this->response->AddHeader('Access-Control-Allow-Headers', 'Content-Type');
+					$this->response->AddHeader('Access-Control-Allow-Headers', $allowedHeaders);
 				} else {
 					$corsOK = false;
 				}
