@@ -37,7 +37,7 @@ abstract class Controller extends BaseController {
 				/** @var \Fluxoft\Rebar\Auth\Db\User $user */
 				$user = $auth->GetAuthenticatedUser();
 				$this->set('auth', isset($user));
-				$this->set('userID', (isset($user)) ? $user->GetID() : 0);
+				$this->set('user', $user);
 				break;
 			case 'POST':
 				$body = json_decode($this->request->Body, true);
@@ -46,9 +46,9 @@ abstract class Controller extends BaseController {
 				$password = $body['credentials']['password'];
 				$remember = (isset($body['credentials']['remember']) ? $body['credentials']['remember'] : false);
 				/** @var \Fluxoft\Rebar\Auth\Db\User $authUser */
-				$authUser = $auth->Login($email, $password, $remember);
-				$this->set('auth', ($authUser === false) ? false : true);
-				$this->set('userID', ($authUser === false) ? 0 : $authUser->GetID());
+				$user = $auth->Login($email, $password, $remember);
+				$this->set('auth', isset($user));
+				$this->set('user', $user);
 				break;
 			case 'DELETE':
 				$auth->Logout();
