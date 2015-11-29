@@ -93,7 +93,7 @@ abstract class Mapper {
 		if (!empty($results)) {
 			return new $this->modelClass($results[0]);
 		} else {
-			return false;
+			return null;
 		}
 	}
 
