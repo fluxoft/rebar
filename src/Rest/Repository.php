@@ -96,7 +96,10 @@ class Repository implements RepositoryInterface {
 		} else {
 			if ($this->authUserFilter) {
 				$parent = $this->mapper->GetOneById($id);
-				if ($parent->{$this->authUserIDProperty} !== $this->authUser->GetID()) {
+
+				if (!isset($parent) ||
+					($parent->{$this->authUserIDProperty} !== $this->authUser->GetID())
+				) {
 					$response = [
 						404,
 						['error' => 'The requested item could not be found.']
