@@ -32,7 +32,7 @@ class Phtml implements PresenterInterface {
 
 		if (strlen($this->layout) > 0) {
 			$pageTemplate = $this->template;
-			$include = $this->templatePath.$this->layout;
+			$include      = $this->templatePath.$this->layout;
 		} else {
 			$include = $this->templatePath.$this->template;
 		}

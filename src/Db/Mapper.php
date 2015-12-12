@@ -142,7 +142,7 @@ abstract class Mapper {
 
 	public function Delete(Model $model) {
 		$idColumn = $model->GetIDColumn();
-		$sql = "DELETE FROM `{$model->GetDbTable()}` WHERE `$idColumn` = :$idColumn";
+		$sql      = "DELETE FROM `{$model->GetDbTable()}` WHERE `$idColumn` = :$idColumn";
 		$this->writer->executeQuery($sql, ['id' => $model->GetID()], [$model->GetIDType()]);
 		$model = null;
 	}
