@@ -58,7 +58,7 @@ abstract class Controller extends BaseController {
 	}
 
 	protected function run(
-		RepositoryInterface $repository,
+		Repository $repository,
 		array $params,
 		array $config = []
 	) {
@@ -85,15 +85,18 @@ abstract class Controller extends BaseController {
 		$this->presenter->SetCallback($this->request->Get('callback', ''));
 		unset($getVars['callback']);
 
+		$reply = new Reply();
+
 		if (!in_array($method, $allowedMethods)) {
-			$response = [403, ['error' => "The {$method} method is not permitted here."]];
+			$reply->Status = 403;
+			$reply->Data   = ['error' => "The {$method} method is not permitted here."];
 		} else {
 			switch ($method) {
 				case 'OPTIONS':
 					if ($corsOK) {
-						$response = [200, []];
+						$reply->Status = 200;
 					} else {
-						$response = [403, []];
+						$reply->Status = 403;
 					}
 					break;
 				case 'GET':
@@ -127,20 +130,18 @@ abstract class Controller extends BaseController {
 
 					switch (count($params)) {
 						case 0:
-							$response = $repository->GetSet($get, $page, $pageSize);
+							$reply = $repository->GetSet($get, $page, $pageSize);
 							break;
 						case 1:
 							// assume the first params value is the ID of an item
-							$response = $repository->GetOne($params[0]);
+							$reply = $repository->GetOne($params[0]);
 							break;
 						case 2:
-							$response = $repository->GetSubset($params[0], $params[1], $page, $pageSize);
+							$reply = $repository->GetSubset($params[0], $params[1], $page, $pageSize);
 							break;
 						default:
-							$response = [
-								400,
-								['error' => 'Too many parameters in URL.']
-							];
+							$reply->Status = 400;
+							$reply->Data   = ['error' => 'Too many parameters in URL.'];
 							break;
 					}
 					break;
@@ -159,7 +160,7 @@ abstract class Controller extends BaseController {
 						$model = [];
 					}
 
-					$response = $repository->Post($model);
+					$reply = $repository->Post($model);
 					break;
 
 				case 'PUT':
@@ -167,7 +168,8 @@ abstract class Controller extends BaseController {
 					 * PUT /{item}/{id} <- UPDATE an {item} with ID {id} using POST/PUT params
 					 */
 					if (empty($params)) {
-						$response = [422, ['error' => 'You must specify an ID in order to update.']];
+						$reply->Status = 422;
+						$reply->Data   = ['error' => 'You must specify an ID in order to update.'];
 					} else {
 						if (isset($putVars['model'])) {
 							$model = json_decode($putVars['model'], true);
@@ -178,35 +180,34 @@ abstract class Controller extends BaseController {
 						} else {
 							$model = [];
 						}
-						$response = $repository->Put($params[0], $model);
+						$reply = $repository->Put($params[0], $model);
 					}
 					break;
 
 				case 'DELETE':
 					if (empty($params)) {
 						// cannot delete if we don't have an id
-						$response = [422, ['error' => 'ID is required for DELETE operation.']];
+						$reply->Status = 422;
+						$reply->Data   = ['error' => 'ID is required for DELETE operation.'];
 					} else {
-						$response = $repository->Delete($params[0]);
+						$reply = $repository->Delete($params[0]);
 					}
 					break;
 
 				default:
-					$response = [405, ['error' => 'Unsupported method.']];
+					$reply->Status = 405;
+					$reply->Data   = ['error' => 'Unsupported method.'];
 			}
 		}
 
-		if ($response === false) {
-			$this->response->Status = 404;
-			$this->set('error', 'Not found');
-		} elseif (!is_array($response)) {
-			$this->response->Status = 500;
-			$this->set('error', 'Bad response from repository');
-		} else {
-			$this->response->Status = $response[0];
-			foreach ($response[1] as $key => $value) {
+		if ($reply instanceof Reply) {
+			$this->response->Status = $reply->Status;
+			foreach ($reply->Data as $key => $value) {
 				$this->set($key, $value);
 			}
+		} else {
+			$this->response->Status = 500;
+			$this->set('error', 'Bad reply from repository');
 		}
 	}
 
