@@ -39,6 +39,8 @@ class Phtml implements PresenterInterface {
 		if (file_exists($include)) {
 			include ($include);
 		}
+		$response = null;
+		exit;
 	}
 
 	public function __set($var, $val) {
