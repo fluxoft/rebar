@@ -33,7 +33,7 @@ class Router {
 	 * Custom routes that would not be handled by the default routing behavior can be passed in as a $routes array.
 	 *
 	 * <code>
-	 * $webAuth = new \Fluxoft\Rebar\Auth\Web(...);
+	 * $auth = new \Fluxoft\Rebar\Auth\Web(...);
 	 * $config = array(
 	 *     'rootPath' => '/
 	 *     'namespace' => 'UserFiles',
@@ -42,7 +42,7 @@ class Router {
 	 * $routes = array(
 	 *     '
 	 * );
-	 * $router = new Router($webAuth, $config, $routes);
+	 * $router = new Router($config, $routes, $auth);
 	 * </code>
 	 * @param array $config
 	 * @param array $routes
@@ -106,7 +106,11 @@ class Router {
 			));
 		}
 
-		$controller->Setup();
+		if (isset($this->config['methodArgs'])) {
+			$controller->Setup($this->config['methodArgs']);
+		} else {
+			$controller->Setup();
+		}
 
 		try {
 			$controller->Authorize($route['action']);
@@ -151,7 +155,12 @@ class Router {
 				break;
 		}
 		$controller->Display();
-		$controller->Cleanup();
+
+		if (isset($this->config['methodArgs'])) {
+			$controller->Cleanup($this->config['methodArgs']);
+		} else {
+			$controller->Cleanup();
+		}
 	}
 
 	protected function getRoute($path) {
