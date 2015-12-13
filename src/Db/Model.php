@@ -29,6 +29,10 @@ abstract class Model implements \Iterator {
 	protected $dbTable       = '';
 	protected $idProperty    = 'ID';
 
+	/**
+	 * @param array $dataRow
+	 * @throws \Exception
+	 */
 	public function __construct(array $dataRow = []) {
 		if (empty($this->propertyDbMap)) {
 			throw new \Exception(sprintf('You must specify the db column relationships in propertyDbMap'));
@@ -73,38 +77,65 @@ abstract class Model implements \Iterator {
 		}
 	}
 
+	/**
+	 * @return string
+	 */
 	public function GetDbTable() {
 		return $this->dbTable;
 	}
 
+	/**
+	 * @return string
+	 */
 	public function GetIDProperty() {
 		return $this->idProperty;
 	}
 
+	/**
+	 * @return mixed
+	 */
 	public function GetIDColumn() {
 		return $this->propertyDbMap[$this->idProperty]['col'];
 	}
 
+	/**
+	 * @return mixed
+	 */
 	public function GetIDType() {
 		return $this->propertyDbMap[$this->idProperty]['type'];
 	}
 
+	/**
+	 * @return mixed
+	 */
 	public function GetID() {
 		return $this->propertyDbMap[$this->idProperty]['value'];
 	}
 
+	/**
+	 * @param $id
+	 */
 	public function SetID($id) {
 		$this->propertyDbMap[$this->idProperty]['value'] = $id;
 	}
 
+	/**
+	 * @return array
+	 */
 	public function GetProperties() {
 		return $this->propertyDbMap;
 	}
 
+	/**
+	 * @return array
+	 */
 	public function GetModifiedProperties() {
 		return $this->modProperties;
 	}
 
+	/**
+	 * @return string
+	 */
 	public function __toString() {
 		$string = get_class($this) . ": {\n";
 		foreach ($this->propertyDbMap as $property => $dbMap) {
@@ -114,6 +145,10 @@ abstract class Model implements \Iterator {
 		return $string;
 	}
 
+	/**
+	 * @param $key
+	 * @return mixed
+	 */
 	public function __get($key) {
 		$fnName = "get$key";
 		if (method_exists($this, $fnName)) {
@@ -127,6 +162,10 @@ abstract class Model implements \Iterator {
 		}
 	}
 
+	/**
+	 * @param $key
+	 * @param $value
+	 */
 	public function __set($key, $value) {
 		$fnName = "set$key";
 		if (method_exists($this, $fnName)) {
@@ -143,26 +182,21 @@ abstract class Model implements \Iterator {
 
 	// Iterator interface implementation:
 	private $position = 0;
-
 	public function rewind() {
 		$this->position = 0;
 	}
-
 	public function current() {
 		$keys         = array_keys($this->propertyDbMap);
 		$propertyName = $keys[$this->position];
 		return $this->$propertyName;
 	}
-
 	public function key() {
 		$keys = array_keys($this->propertyDbMap);
 		return $keys[$this->position];
 	}
-
 	public function next() {
 		++$this->position;
 	}
-
 	public function valid() {
 		return !($this->position > count($this->propertyDbMap) - 1);
 	}

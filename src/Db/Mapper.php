@@ -5,12 +5,13 @@ namespace Fluxoft\Rebar\Db;
 use Doctrine\DBAL\Connection;
 use Fluxoft\Rebar\Db\Exceptions\MapperException;
 
+/**
+ * Class Mapper
+ * @package Fluxoft\Rebar\Db
+ */
 abstract class Mapper {
-	/**
-	 * @var string $modelClass
-	 */
+	/** @var string */
 	protected $modelClass = null;
-
 	/** @var \Fluxoft\Rebar\Db\Model */
 	protected $model = null;
 	/** @var MapperFactory */
@@ -20,6 +21,12 @@ abstract class Mapper {
 	/** @var Connection */
 	protected $writer;
 
+	/**
+	 * @param MapperFactory $mapperFactory
+	 * @param Connection $reader
+	 * @param Connection $writer
+	 * @throws MapperException
+	 */
 	public function __construct(
 		MapperFactory $mapperFactory,
 		Connection $reader,
@@ -44,10 +51,17 @@ abstract class Mapper {
 		$this->model = new $modelClass();
 	}
 
+	/**
+	 * @return Model
+	 */
 	public function GetNew() {
 		return clone $this->model;
 	}
 
+	/**
+	 * @param $id
+	 * @return Model|null
+	 */
 	public function GetOneById($id) {
 		$idProperty = $this->model->GetIDProperty();
 		$properties = $this->model->GetProperties();
@@ -66,6 +80,11 @@ abstract class Mapper {
 		}
 	}
 
+	/**
+	 * @param $where
+	 * @param array $params
+	 * @return null
+	 */
 	public function GetOneWhere($where, $params = []) {
 		$properties = $this->model->GetProperties();
 		$sql        = "SELECT * FROM `{$this->model->GetDbTable()}`";
@@ -97,6 +116,13 @@ abstract class Mapper {
 		}
 	}
 
+	/**
+	 * @param string $where
+	 * @param array $params
+	 * @param int $page
+	 * @param int $pageSize
+	 * @return array
+	 */
 	public function GetSetWhere($where = '', $params = [], $page = 1, $pageSize = 0) {
 		$properties = $this->model->GetProperties();
 		$sql        = "SELECT * FROM `{$this->model->GetDbTable()}`";
@@ -130,6 +156,9 @@ abstract class Mapper {
 		return $set;
 	}
 
+	/**
+	 * @param Model $model
+	 */
 	public function Save(Model $model) {
 		if ($model->GetID() === 0) {
 			// ID is set to 0, so this is an INSERT
@@ -140,6 +169,10 @@ abstract class Mapper {
 		}
 	}
 
+	/**
+	 * @param Model $model
+	 * @throws \Doctrine\DBAL\DBALException
+	 */
 	public function Delete(Model $model) {
 		$idColumn = $model->GetIDColumn();
 		$sql      = "DELETE FROM `{$model->GetDbTable()}` WHERE `$idColumn` = :$idColumn";
@@ -147,6 +180,9 @@ abstract class Mapper {
 		$model = null;
 	}
 
+	/**
+	 * @param $id
+	 */
 	public function DeleteOneById($id) {
 		/** @var Model $model */
 		$model = $this->GetOneById($id);
@@ -155,6 +191,10 @@ abstract class Mapper {
 		}
 	}
 
+	/**
+	 * @param $where
+	 * @param $params
+	 */
 	public function DeleteOneWhere($where, $params) {
 		/** @var Model $model */
 		$model = $this->GetOneWhere($where, $params);
@@ -163,6 +203,10 @@ abstract class Mapper {
 		}
 	}
 
+	/**
+	 * @param Model $model
+	 * @throws \Doctrine\DBAL\DBALException
+	 */
 	private function create(Model $model) {
 		$idProperty = $model->GetIDProperty();
 		// merged array containing original plus modified properties
@@ -191,6 +235,10 @@ abstract class Mapper {
 		$model->SetID($insertId);
 	}
 
+	/**
+	 * @param Model $model
+	 * @throws \Doctrine\DBAL\DBALException
+	 */
 	private function update(Model $model) {
 		$idProperty = $model->GetIDProperty();
 		$properties = $model->GetProperties();
@@ -217,6 +265,11 @@ abstract class Mapper {
 		}
 	}
 
+	/**
+	 * @param $where
+	 * @param $properties
+	 * @return string
+	 */
 	private function translateWhere($where, $properties) {
 		// @todo: clean up this hacky mess - the methods here should really just accept an array of filter values
 		$returnWhere  = ' WHERE ';
