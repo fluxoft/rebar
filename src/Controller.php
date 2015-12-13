@@ -67,17 +67,19 @@ abstract class Controller {
 
 	/**
 	 * Can be overridden in child classes to perform setup functions (like setting up defaults).
+	 * @param array $params
 	 * @return bool
 	 */
-	public function Setup() {
+	public function Setup(array $params = null) {
 		return true;
 	}
 
 	/**
 	 * Can be overridden in child classes to perform cleanup functions
+	 * @param array $params
 	 * @return bool
 	 */
-	public function Cleanup() {
+	public function Cleanup(array $params = null) {
 		return true;
 	}
 

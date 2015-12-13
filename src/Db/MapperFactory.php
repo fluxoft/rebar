@@ -18,9 +18,13 @@ abstract class MapperFactory implements FactoryInterface {
 	/** @var string */
 	protected $mapperNamespace = '';
 
+	/**
+	 * @param Connection $reader
+	 * @param Connection $writer
+	 */
 	public function __construct(Connection $reader, Connection $writer = null) {
 		$this->reader = $reader;
-		$this->writer = $writer;
+		$this->writer = (isset($writer)) ? $writer : $reader;
 	}
 
 	/**
