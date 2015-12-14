@@ -6,7 +6,7 @@ abstract class Model implements \Iterator, \ArrayAccess {
 	 * Holds the internal array of property names and values.
 	 * @var array $properties
 	 */
-	protected $properties;
+	protected $properties = [];
 	/**
 	 * Properties that have been changed from their original values but have not yet been written to the database.
 	 * @var array $modProperties
@@ -23,6 +23,20 @@ abstract class Model implements \Iterator, \ArrayAccess {
 				throw new \InvalidArgumentException('Property list does not match configured model property list.');
 			}
 		}
+	}
+
+	/**
+	 * @return array
+	 */
+	public function GetProperties() {
+		return $this->properties;
+	}
+
+	/**
+	 * @return array
+	 */
+	public function GetModifiedProperties() {
+		return $this->modProperties;
 	}
 
 	/**
