@@ -2,12 +2,13 @@
 
 namespace Fluxoft\Rebar\Db;
 
+use Fluxoft\Rebar\Model as BaseModel;
+
 /**
  * Class Model
  * @package Fluxoft\Rebar\Db
  */
-abstract class Model implements \Iterator {
-	protected $modProperties = [];
+abstract class Model extends BaseModel {
 	/**
 	 * $propertyDbMap = [
 	 *   '{Property Name}' => [
@@ -26,31 +27,40 @@ abstract class Model implements \Iterator {
 	 * @var array
 	 */
 	protected $propertyDbMap = [];
-	protected $dbTable       = '';
-	protected $idProperty    = 'ID';
+
+	/** @var string The name of the database table that holds these models. */
+	protected $dbTable = '';
+
+	/** @var string The name of the property that contains the ID
+	 * (used by Mapper to build certain queries) */
+	protected $idProperty = 'ID';
 
 	/**
 	 * @param array $dataRow
-	 * @throws \Exception
+	 * @throws ModelException
 	 */
 	public function __construct(array $dataRow = []) {
 		if (empty($this->propertyDbMap)) {
-			throw new \Exception(sprintf('You must specify the db column relationships in propertyDbMap'));
+			throw new ModelException(sprintf('You must specify the db column relationships in propertyDbMap'));
 		}
 		if (strlen($this->dbTable) === 0) {
-			throw new \Exception(sprintf('You must specify the database table in dbTable'));
+			throw new ModelException(sprintf('You must specify the database table in dbTable'));
 		}
+
 		foreach ($this->propertyDbMap as $property => &$dbMap) {
 			if (!is_array($dbMap)) {
 				$dbMap = ['col' => $dbMap, 'type' => \PDO::PARAM_STR, 'value' => null];
 			}
+			$this->properties[$property] = $dbMap['value'];
+			// this is no longer needed
+			unset($dbMap['value']);
 		}
 
 		// initialize the properties of this model
 		if (empty($dataRow)) {
 			// For an empty dataSet, this is a blank object. Set the ID property to 0 to indicate an
 			// uninitialized object.
-			$this->propertyDbMap[$this->idProperty]['value'] = 0;
+			$this->properties[$this->idProperty] = 0;
 		} else {
 			/**
 			 * Otherwise, use the values from the $dataRow to populate $this->properties using the map
@@ -59,7 +69,7 @@ abstract class Model implements \Iterator {
 			 * as the default value for the property.
 			 */
 			if (!in_array($this->propertyDbMap[$this->idProperty]['col'], array_keys($dataRow))) {
-				throw new \Exception(sprintf(
+				throw new ModelException(sprintf(
 					'The given dataRow does not include a value for the ID.
 					This value is required when a dataRow is given.'
 				));
@@ -68,9 +78,9 @@ abstract class Model implements \Iterator {
 			foreach ($this->propertyDbMap as $property => &$dbMap) {
 				if (isset($dataRow[$dbMap['col']])) {
 					if ($dbMap['type'] === 'boolean') {
-						$dbMap['value'] = (boolean) $dataRow[$dbMap['col']];
+						$this->properties[$property] = (boolean) $dataRow[$dbMap['col']];
 					} else {
-						$dbMap['value'] = $dataRow[$dbMap['col']];
+						$this->properties[$property] = $dataRow[$dbMap['col']];
 					}
 				}
 			}
@@ -109,95 +119,13 @@ abstract class Model implements \Iterator {
 	 * @return mixed
 	 */
 	public function GetID() {
-		return $this->propertyDbMap[$this->idProperty]['value'];
+		return $this->properties[$this->idProperty];
 	}
 
 	/**
 	 * @param $id
 	 */
 	public function SetID($id) {
-		$this->propertyDbMap[$this->idProperty]['value'] = $id;
-	}
-
-	/**
-	 * @return array
-	 */
-	public function GetProperties() {
-		return $this->propertyDbMap;
-	}
-
-	/**
-	 * @return array
-	 */
-	public function GetModifiedProperties() {
-		return $this->modProperties;
-	}
-
-	/**
-	 * @return string
-	 */
-	public function __toString() {
-		$string = get_class($this) . ": {\n";
-		foreach ($this->propertyDbMap as $property => $dbMap) {
-			$string .= "  $property ({$dbMap['col']}): " . $this->$property . "\n";
-		}
-		$string .= "}\n";
-		return $string;
-	}
-
-	/**
-	 * @param $key
-	 * @return mixed
-	 */
-	public function __get($key) {
-		$fnName = "get$key";
-		if (method_exists($this, $fnName)) {
-			return $this->$fnName();
-		} elseif (isset($this->modProperties[$key])) {
-			return $this->modProperties[$key]['value'];
-		} elseif (isset($this->propertyDbMap[$key])) {
-			return $this->propertyDbMap[$key]['value'];
-		} else {
-			throw new \InvalidArgumentException(sprintf('Cannot get property: \'%s\' does not exist', $key));
-		}
-	}
-
-	/**
-	 * @param $key
-	 * @param $value
-	 */
-	public function __set($key, $value) {
-		$fnName = "set$key";
-		if (method_exists($this, $fnName)) {
-			$this->$fnName($value);
-		} elseif (isset($this->propertyDbMap[$key])) {
-			if ($this->propertyDbMap[$key]['value'] != $value) {
-				$this->modProperties[$key]          = $this->propertyDbMap[$key];
-				$this->modProperties[$key]['value'] = $value;
-			}
-		} else {
-			throw new \InvalidArgumentException(sprintf('Cannot set property: \'%s\' does not exist', $key));
-		}
-	}
-
-	// Iterator interface implementation:
-	private $position = 0;
-	public function rewind() {
-		$this->position = 0;
-	}
-	public function current() {
-		$keys         = array_keys($this->propertyDbMap);
-		$propertyName = $keys[$this->position];
-		return $this->$propertyName;
-	}
-	public function key() {
-		$keys = array_keys($this->propertyDbMap);
-		return $keys[$this->position];
-	}
-	public function next() {
-		++$this->position;
-	}
-	public function valid() {
-		return !($this->position > count($this->propertyDbMap) - 1);
+		$this->properties[$this->idProperty] = $id;
 	}
 }
