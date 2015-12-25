@@ -63,12 +63,12 @@ abstract class Mapper {
 	 * @return Model|null
 	 */
 	public function GetOneById($id) {
-		$idProperty = $this->model->GetIDProperty();
-		$properties = $this->model->GetProperties();
-		$sql        = "SELECT * FROM `{$this->model->GetDbTable()}` WHERE `{$properties[$idProperty]['col']}` = :id";
-		$values     = ['id' => $id];
-		$types      = [$properties[$idProperty]['type']];
-		$results    = $this->reader->fetchAll(
+		$idProperty    = $this->model->GetIDProperty();
+		$propertyDbMap = $this->model->GetPropertyDbMap();
+		$sql           = "SELECT * FROM `{$this->model->GetDbTable()}` WHERE `{$propertyDbMap[$idProperty]['col']}` = :id";
+		$values        = ['id' => $id];
+		$types         = [$propertyDbMap[$idProperty]['type']];
+		$results       = $this->reader->fetchAll(
 			$sql,
 			$values,
 			$types
@@ -86,10 +86,10 @@ abstract class Mapper {
 	 * @return null
 	 */
 	public function GetOneWhere($where, $params = []) {
-		$properties = $this->model->GetProperties();
-		$sql        = "SELECT * FROM `{$this->model->GetDbTable()}`";
+		$propertyDbMap = $this->model->GetPropertyDbMap();
+		$sql           = "SELECT * FROM `{$this->model->GetDbTable()}`";
 		if (!empty($where)) {
-			$sql .= $this->translateWhere($where, $properties);
+			$sql .= $this->translateWhere($where, $propertyDbMap);
 		}
 		$sql   .= ' LIMIT 1';
 		$values = [];
@@ -124,10 +124,10 @@ abstract class Mapper {
 	 * @return array
 	 */
 	public function GetSetWhere($where = '', $params = [], $page = 1, $pageSize = 0) {
-		$properties = $this->model->GetProperties();
-		$sql        = "SELECT * FROM `{$this->model->GetDbTable()}`";
+		$propertyDbMap = $this->model->GetPropertyDbMap();
+		$sql           = "SELECT * FROM `{$this->model->GetDbTable()}`";
 		if (!empty($where)) {
-			$sql .= $this->translateWhere($where, $properties);
+			$sql .= $this->translateWhere($where, $propertyDbMap);
 		}
 		if ($pageSize > 0) {
 			$sql .= " LIMIT $pageSize OFFSET " . ($pageSize * ($page - 1));
@@ -210,21 +210,21 @@ abstract class Mapper {
 	private function create(Model $model) {
 		$idProperty = $model->GetIDProperty();
 		// merged array containing original plus modified properties
-		$merged = array_replace_recursive($model->GetProperties(), $model->GetModifiedProperties());
-		foreach ($merged as $key => $property) {
-			if (!isset($property['value'])) {
-				unset($merged[$key]);
-			}
-		}
+		$merged        = array_replace_recursive(
+			$model->GetProperties(),
+			$model->GetModifiedProperties()
+		);
+		$propertyDbMap = $model->GetPropertyDbMap();
+
 		$cols   = [];
 		$types  = [];
 		$values = [];
-		foreach ($merged as $property => $dbMap) {
+		foreach ($merged as $property => $value) {
 			if ($property !== $idProperty) {
-				$cols[]  = $dbMap['col'];
-				$types[] = $dbMap['type'];
+				$cols[]  = $propertyDbMap[$property]['col'];
+				$types[] = $propertyDbMap[$property]['type'];
 
-				$values[$dbMap['col']] = $dbMap['value'];
+				$values[$propertyDbMap[$property]['col']] = $value;
 			}
 		}
 		$sql = "INSERT INTO `{$model->GetDbTable()}` (`" .
@@ -240,27 +240,30 @@ abstract class Mapper {
 	 * @throws \Doctrine\DBAL\DBALException
 	 */
 	private function update(Model $model) {
-		$idProperty = $model->GetIDProperty();
-		$properties = $model->GetProperties();
-		$modified   = $model->GetModifiedProperties();
+		$idProperty    = $model->GetIDProperty();
+		$properties    = $model->GetProperties();
+		$modified      = $model->GetModifiedProperties();
+		$propertyDbMap = $model->GetPropertyDbMap();
 		if (!empty($modified)) {
 			$cols   = [];
 			$types  = [];
 			$values = [];
-			foreach ($modified as $property => $dbMap) {
-				$cols[]                = $dbMap['col'];
-				$types[]               = $dbMap['type'];
-				$values[$dbMap['col']] = $dbMap['value'];
+			foreach ($modified as $property => $value) {
+				$cols[]  = $propertyDbMap[$property]['col'];
+				$types[] = $propertyDbMap[$property]['type'];
+
+				$values[$propertyDbMap[$property]['col']] = $value;
 			}
+			$values[$propertyDbMap[$idProperty]['col']] = $properties[$idProperty];
+			$types[]                                    = $propertyDbMap[$idProperty]['type'];
+
 			$sql = "UPDATE `{$model->GetDbTable()}` SET ";
 			foreach ($cols as $col) {
 				$sql .= "`$col` = :$col,";
 			}
-			$sql     = substr($sql, 0, -1); // remove trailing comma
-			$sql    .= " WHERE `{$properties[$idProperty]['col']}` = :{$properties[$idProperty]['col']}";
-			$types[] = $properties[$idProperty]['type'];
+			$sql  = substr($sql, 0, -1); // remove trailing comma
+			$sql .= " WHERE `{$propertyDbMap[$idProperty]['col']}` = :{$propertyDbMap[$idProperty]['col']}";
 
-			$values[$properties[$idProperty]['col']] = $properties[$idProperty]['value'];
 			$this->writer->executeQuery($sql, $values, $types);
 		}
 	}

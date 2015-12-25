@@ -41,7 +41,7 @@ abstract class User extends Model {
 	 * @return bool
 	 */
 	public function IsPasswordValid($password) {
-		$hash = $this->propertyDbMap[$this->authPasswordProperty]['value'];
+		$hash = $this->properties[$this->authPasswordProperty];
 		return crypt($password, $hash) === $hash;
 	}
 
@@ -50,8 +50,7 @@ abstract class User extends Model {
 	}
 
 	protected function setPassword($password) {
-		$this->modProperties[$this->authPasswordProperty]          = $this->properties[$this->authPasswordProperty];
-		$this->modProperties[$this->authPasswordProperty]['value'] = $this->generateHash($password);
+		$this->modProperties[$this->authPasswordProperty] = $this->generateHash($password);
 	}
 
 	private function generateHash ($password, $cost = 11) {
