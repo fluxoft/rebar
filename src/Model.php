@@ -51,7 +51,7 @@ abstract class Model implements \Iterator, \ArrayAccess {
 		$fnName = "set$key";
 		if (method_exists($this, $fnName)) {
 			$this->$fnName($value);
-		} elseif (isset($this->properties[$key])) {
+		} elseif (array_key_exists($key, $this->properties)) {
 			if ($this->properties[$key] !== $value) {
 				$this->modProperties[$key] = $value;
 			}
@@ -76,9 +76,9 @@ abstract class Model implements \Iterator, \ArrayAccess {
 		$fnName = "get$key";
 		if (method_exists($this, $fnName)) {
 			return $this->$fnName();
-		} elseif (isset($this->modProperties[$key])) {
+		} elseif (array_key_exists($key, $this->modProperties)) {
 			return $this->modProperties[$key];
-		} elseif (isset($this->properties[$key])) {
+		} elseif (array_key_exists($key, $this->properties)) {
 			return $this->properties[$key];
 		} else {
 			throw new \InvalidArgumentException(sprintf('Cannot get property: \'%s\' does not exist', $key));
@@ -89,7 +89,8 @@ abstract class Model implements \Iterator, \ArrayAccess {
 		$fnName = "get$key";
 		if (method_exists($this, $fnName)) {
 			return ($this->$fnName() !== null);
-		} elseif (isset($this->modProperties[$key]) || isset($this->properties[$key])) {
+		} elseif (array_key_exists($key, $this->modProperties) ||
+			array_key_exists($key, $this->properties)) {
 			return true;
 		} else {
 			throw new \InvalidArgumentException(sprintf('Property %s does not exist', $key));
@@ -100,9 +101,9 @@ abstract class Model implements \Iterator, \ArrayAccess {
 		$fnName = "set$key";
 		if (method_exists($this, $fnName)) {
 			$this->$fnName(null);
-		} elseif (isset($this->modProperties[$key])) {
+		} elseif (array_key_exists($key, $this->modProperties)) {
 			unset($this->modProperties[$key]);
-		} elseif (isset($this->properties[$key])) {
+		} elseif (array_key_exists($key, $this->properties)) {
 			$this->properties[$key] = null;
 		} else {
 			throw new \InvalidArgumentException(sprintf('Cannot unset property %s', $key));

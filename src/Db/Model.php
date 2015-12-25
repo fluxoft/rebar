@@ -88,6 +88,13 @@ abstract class Model extends BaseModel {
 	}
 
 	/**
+	 * @return array
+	 */
+	public function GetPropertyDbMap() {
+		return $this->propertyDbMap;
+	}
+
+	/**
 	 * @return string
 	 */
 	public function GetDbTable() {

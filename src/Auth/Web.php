@@ -65,7 +65,7 @@ class Web implements AuthInterface {
 	public function GetAuthenticatedUser(Token $token = null) {
 		if (!isset($this->authenticatedUser)) {
 			$userID = $this->session->Get('AuthUserID', null);
-			if ($userID === false) {
+			if (!isset($userID)) {
 				// Check that valid tokens are set
 				$validToken = $this->getValidToken();
 				if ($validToken === false) {
