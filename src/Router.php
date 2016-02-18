@@ -35,9 +35,11 @@ class Router {
 	 * <code>
 	 * $auth = new \Fluxoft\Rebar\Auth\Web(...);
 	 * $config = array(
-	 *     'rootPath' => '/
-	 *     'namespace' => 'UserFiles',
-	 *     'methodArgs' => array('param1', 'param2')
+	 *     'rootPath'    => '/
+	 *     'namespace'   => 'UserFiles',
+	 *     'startupArgs' => ['param 1', 'param 2', ..., 'param n'],
+	 *     'methodArgs'  => ['param 1', 'param 2', ..., 'param n'],
+	 *     'cleanupArgs' => ['param 1', 'param 2', ..., 'param n']
 	 * );
 	 * $routes = array(
 	 *     '
@@ -106,8 +108,8 @@ class Router {
 			));
 		}
 
-		if (isset($this->config['methodArgs'])) {
-			$controller->Setup($this->config['methodArgs']);
+		if (isset($this->config['setupArgs'])) {
+			$controller->Setup($this->config['setupArgs']);
 		} else {
 			$controller->Setup();
 		}
@@ -156,8 +158,8 @@ class Router {
 		}
 		$controller->Display();
 
-		if (isset($this->config['methodArgs'])) {
-			$controller->Cleanup($this->config['methodArgs']);
+		if (isset($this->config['cleanupArgs'])) {
+			$controller->Cleanup($this->config['cleanupArgs']);
 		} else {
 			$controller->Cleanup();
 		}
