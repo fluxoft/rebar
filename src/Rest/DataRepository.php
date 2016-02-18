@@ -88,7 +88,7 @@ class DataRepository implements RepositoryInterface {
 			case 2:
 				$id         = $params[0];
 				$subsetName = $params[1];
-				$method = 'Get'.ucwords($subsetName);
+				$method     = 'Get'.ucwords($subsetName);
 				if (!method_exists($this->mapper, $method)) {
 					$reply = new Reply(
 						404,
@@ -108,15 +108,15 @@ class DataRepository implements RepositoryInterface {
 								['error' => 'The requested item could not be found.']
 							);
 						} else {
-							$subset   = $this->mapper->$method($parent->GetID(), $page, $pageSize);
-							$reply = new Reply(
+							$subset = $this->mapper->$method($parent->GetID(), $page, $pageSize);
+							$reply  = new Reply(
 								200,
 								$subset
 							);
 						}
 					} else {
-						$subset   = $this->mapper->$method($id, $page, $pageSize);
-						$reply = new Reply(
+						$subset = $this->mapper->$method($id, $page, $pageSize);
+						$reply  = new Reply(
 							200,
 							$subset
 						);

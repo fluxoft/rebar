@@ -113,17 +113,17 @@ abstract class Controller extends BaseController {
 			}
 		} else {
 
-			$method = $this->request->Method;
-			$getVars = $this->request->Get();
+			$method   = $this->request->Method;
+			$getVars  = $this->request->Get();
 			$postVars = $this->request->Post();
-			$putVars = $this->request->Put();
-			$body = $this->request->Body;
+			$putVars  = $this->request->Put();
+			$body     = $this->request->Body;
 
 			// Force Json presenter for this type of controller (so all replies are in JSON format)
 			// and set its Callback property from the value in $getVars['callback'], then unset that
 			// value from the array if it exists.
 			$this->presenterClass = 'Json';
-			$this->presenter = new Json();
+			$this->presenter      = new Json();
 			$this->presenter->SetCallback($this->request->Get('callback', ''));
 			unset($getVars['callback']);
 
@@ -138,8 +138,8 @@ abstract class Controller extends BaseController {
 					 * GET /{item}/{id}/{children} <- retrieve the children of {item} with id {id}
 					 *     ** the above only works on Mappers which have a Get{children} method accepting {id} as an argument
 					 */
-					$get = $getVars;
-					$page = (isset($get['page']) && is_numeric($get['page'])) ? $get['page'] : 1;
+					$get      = $getVars;
+					$page     = (isset($get['page']) && is_numeric($get['page'])) ? $get['page'] : 1;
 					$pageSize = 0;
 					if (isset($config['pageSize']) && is_numeric($config['pageSize'])) {
 						$pageSize = $config['pageSize'];
@@ -178,7 +178,7 @@ abstract class Controller extends BaseController {
 					 */
 					if (empty($params)) {
 						$reply->Status = 422;
-						$reply->Data = ['error' => 'You must specify an ID in order to update.'];
+						$reply->Data   = ['error' => 'You must specify an ID in order to update.'];
 					} else {
 						if (isset($putVars['model'])) {
 							$model = json_decode($putVars['model'], true);
@@ -197,7 +197,7 @@ abstract class Controller extends BaseController {
 					if (empty($params)) {
 						// cannot delete if we don't have an id
 						$reply->Status = 422;
-						$reply->Data = ['error' => 'ID is required for DELETE operation.'];
+						$reply->Data   = ['error' => 'ID is required for DELETE operation.'];
 					} else {
 						$reply = $repository->Delete($params[0]);
 					}
@@ -205,7 +205,7 @@ abstract class Controller extends BaseController {
 
 				default:
 					$reply->Status = 405;
-					$reply->Data = ['error' => 'Unsupported method.'];
+					$reply->Data   = ['error' => 'Unsupported method.'];
 
 			}
 
