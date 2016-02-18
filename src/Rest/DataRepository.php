@@ -7,7 +7,7 @@ use Fluxoft\Rebar\Auth\Db\User;
 use Fluxoft\Rebar\Db\Mapper;
 use Psr\Log\LoggerInterface;
 
-class DataRepository extends Repository {
+class DataRepository implements RepositoryInterface {
 	/** @var Mapper */
 	protected $mapper;
 	/** @var LoggerInterface */
@@ -24,105 +24,116 @@ class DataRepository extends Repository {
 		$this->authUser = $authUser;
 	}
 
-	public function GetSet(array $filter = [], $page = 1, $pageSize = 0) {
-		if ($this->authUserFilter) {
-			if (!isset($this->authUser)) {
-				return new Reply(403, ['error' => 'Must be logged in to access this resource.']);
-			}
-
-			// Filter results for this user.
-			$filter[$this->authUserIDProperty] = $this->authUser->GetID();
-		}
-
-		// if the params array was empty, return a set
-		$filterKeys   = [];
-		$filterValues = [];
-		foreach ($filter as $key => $value) {
-			$filterKeys[]          = '{'.$key.'} = :'.$key;
-			$filterValues[":$key"] = $value;
-		}
-
-		$whereClause = implode(' AND ', $filterKeys);
-
-		$set = $this->mapper->GetSetWhere($whereClause, $filterValues, $page, $pageSize);
-
-		return new Reply(
-			200,
-			$set
-		);
-	}
-
-	public function GetOne($id) {
+	/**
+	 * @param array $params
+	 * @param array $filter
+	 * @param int $page
+	 * @param int $pageSize
+	 * @return Reply
+	 */
+	public function Get(array $params, array $filter = [], $page = 1, $pageSize = 0) {
 		if ($this->authUserFilter && !isset($this->authUser)) {
 			return new Reply(403, ['error' => 'Must be logged in to access this resource.']);
 		}
-		$item = $this->mapper->GetOneById($id);
-		if ($item === false) {
-			$response = new Reply(
-				404,
-				[
-					'error' => 'The requested item could not be found.'
-				]
-			);
-		} else {
-			$response = new Reply(
-				200,
-				$item
-			);
-			if ($this->authUserFilter &&
-				$item->{$this->authUserIDProperty} !== $this->authUser->GetID()
-			) {
-				$response = new Reply(
-					404,
-					['error' => 'The requested item could not be found.']
+
+		$reply = null;
+		switch (count($params)) {
+			case 0:
+				if ($this->authUserFilter && isset($this->authUser)) {
+					$filter[$this->authUserIDProperty] = $this->authUser->GetID();
+				}
+
+				// if the params array was empty, return a set
+				$filterKeys   = [];
+				$filterValues = [];
+				foreach ($filter as $key => $value) {
+					$filterKeys[]          = '{'.$key.'} = :'.$key;
+					$filterValues[":$key"] = $value;
+				}
+
+				$whereClause = implode(' AND ', $filterKeys);
+
+				$set = $this->mapper->GetSetWhere($whereClause, $filterValues, $page, $pageSize);
+
+				$reply = new Reply(
+					200,
+					$set
 				);
-			}
-		}
-		return $response;
-	}
 
-	public function GetSubset($id, $subsetName, $page = 1, $pageSize = 0) {
-		if ($this->authUserFilter && !isset($this->authUser)) {
-			return new Reply(403, ['error' => 'Must be logged in to access this resource.']);
-		}
-		$method = 'Get'.ucwords($subsetName);
-		if (!method_exists($this->mapper, $method)) {
-			$response = new Reply(
-				404,
-				[
-					'error' => sprintf('"%s" not found.', $subsetName)
-				]
-			);
-		} else {
-			if ($this->authUserFilter) {
-				$parent = $this->mapper->GetOneById($id);
-
-				if (!isset($parent) ||
-					($parent->{$this->authUserIDProperty} !== $this->authUser->GetID())
-				) {
-					$response = new Reply(
+				break;
+			case 1:
+				$item = $this->mapper->GetOneById($params[0]);
+				if (!isset($item)) {
+					$reply = new Reply(
 						404,
-						['error' => 'The requested item could not be found.']
+						[
+							'error' => 'The requested item could not be found.'
+						]
 					);
 				} else {
-					$subset   = $this->mapper->$method($parent->GetID(), $page, $pageSize);
-					$response = new Reply(
+					$reply = new Reply(
 						200,
-						$subset
+						$item
 					);
+					if ($this->authUserFilter &&
+						$item->{$this->authUserIDProperty} !== $this->authUser->GetID()
+					) {
+						$reply = new Reply(
+							404,
+							['error' => 'The requested item could not be found.']
+						);
+					}
 				}
-			} else {
-				$subset   = $this->mapper->$method($id, $page, $pageSize);
-				$response = new Reply(
-					200,
-					$subset
+				break;
+			case 2:
+				$id         = $params[0];
+				$subsetName = $params[1];
+				$method     = 'Get'.ucwords($subsetName);
+				if (!method_exists($this->mapper, $method)) {
+					$reply = new Reply(
+						404,
+						[
+							'error' => sprintf('"%s" not found.', $subsetName)
+						]
+					);
+				} else {
+					if ($this->authUserFilter) {
+						$parent = $this->mapper->GetOneById($id);
+
+						if (!isset($parent) ||
+							($parent->{$this->authUserIDProperty} !== $this->authUser->GetID())
+						) {
+							$reply = new Reply(
+								404,
+								['error' => 'The requested item could not be found.']
+							);
+						} else {
+							$subset = $this->mapper->$method($parent->GetID(), $page, $pageSize);
+							$reply  = new Reply(
+								200,
+								$subset
+							);
+						}
+					} else {
+						$subset = $this->mapper->$method($id, $page, $pageSize);
+						$reply  = new Reply(
+							200,
+							$subset
+						);
+					}
+				}
+				break;
+			default:
+				$reply = new Reply(
+					400,
+					['error' => 'Too many parameters in URL.']
 				);
-			}
+				break;
 		}
-		return $response;
+		return $reply;
 	}
 
-	public function Post(array $post = []) {
+	public function Post(array $model = []) {
 		if ($this->authUserFilter) {
 			if (!isset($this->authUser)) {
 				return new Reply(403, ['error' => 'Must be logged in to access this resource.']);
@@ -131,12 +142,12 @@ class DataRepository extends Repository {
 				// something, but to his own account, not someone else's. This actually has the
 				// somewhat dubious side effect of allowing someone to add something without
 				// the need to pass in their UserID.
-				$post[$this->authUserIDProperty] = $this->authUser->GetID();
+				$model[$this->authUserIDProperty] = $this->authUser->GetID();
 			}
 		}
 		try {
 			$new = $this->mapper->GetNew();
-			foreach ($post as $key => $value) {
+			foreach ($model as $key => $value) {
 				$new->$key = $value;
 			}
 			$this->mapper->Save($new);

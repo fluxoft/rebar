@@ -15,7 +15,7 @@ class Reply extends Model {
 		'Status' => 200,
 		'Data' => []
 	];
-	public function __construct($status = 200, $data = []) {
+	public function __construct($status = 200, $data = null) {
 		$this->Status = $status;
 		$this->Data   = $data;
 	}

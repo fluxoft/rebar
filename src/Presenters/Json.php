@@ -25,7 +25,7 @@ class Json implements PresenterInterface {
 	
 	private function jsonEncode($data) {
 		if (!is_array($data) && !is_object($data)) {
-			return json_encode($data);
+			return json_encode(utf8_encode($data));
 		} elseif (is_object($data)) {
 			$bits = [];
 			foreach($data as $key => $value) {
