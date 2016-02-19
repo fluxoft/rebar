@@ -27,8 +27,10 @@ abstract class Controller extends BaseController {
 		// if this is an OPTIONS request, we just need to make sure corsCheck is true
 		if ($this->request->Method === 'OPTIONS') {
 			if ($corsOK) {
-				$this->response->Status = 200;
-				$this->set('success', true);
+				$preFlightCheck = new Reply(
+					200,
+					['success' => true]
+				);
 			} else {
 				$preFlightCheck = new Reply(403, ['error' => 'Not allowed']);
 			}
