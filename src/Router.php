@@ -108,11 +108,8 @@ class Router {
 			));
 		}
 
-		if (isset($this->config['setupArgs'])) {
-			$controller->Setup($this->config['setupArgs']);
-		} else {
-			$controller->Setup();
-		}
+		$setupArgs = (isset($this->config['setupArgs']) ? $this->config['setupArgs'] : []);
+		$this->callControllerMethodWithParams($controller, 'Setup', $setupArgs);
 
 		try {
 			$controller->Authorize($route['action']);
@@ -130,38 +127,39 @@ class Router {
 		foreach ($route['url'] as $urlParam) {
 			$actionParams[] = $urlParam;
 		}
-		switch (count($actionParams)) {
+		$this->callControllerMethodWithParams($controller, $route['action'], $actionParams);
+		$controller->Display();
+
+		$cleanupArgs = (isset($this->config['cleanupArgs']) ? $this->config['cleanupArgs'] : []);
+		$this->callControllerMethodWithParams($controller, 'Cleanup', $cleanupArgs);
+	}
+
+	protected function callControllerMethodWithParams(Controller $controller, $method, array $params) {
+		switch (count($params)) {
 			case 0:
-				$controller->$route['action']();
+				$controller->$method();
 				break;
 			case 1:
-				$controller->$route['action'](
-					$actionParams[0]
+				$controller->$method(
+					$params[0]
 				);
 				break;
 			case 2:
-				$controller->$route['action'](
-					$actionParams[0],
-					$actionParams[1]
+				$controller->$method(
+					$params[0],
+					$params[1]
 				);
 				break;
 			case 3:
-				$controller->$route['action'](
-					$actionParams[0],
-					$actionParams[1],
-					$actionParams[2]
+				$controller->$method(
+					$params[0],
+					$params[1],
+					$params[2]
 				);
 				break;
 			default:
-				call_user_func_array([$controller, $route['action']], $actionParams);
+				call_user_func_array([$controller, $method], $params);
 				break;
-		}
-		$controller->Display();
-
-		if (isset($this->config['cleanupArgs'])) {
-			$controller->Cleanup($this->config['cleanupArgs']);
-		} else {
-			$controller->Cleanup();
 		}
 	}
 

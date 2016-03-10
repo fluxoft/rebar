@@ -66,20 +66,22 @@ abstract class Controller {
 	}
 
 	/**
-	 * Can be overridden in child classes to perform setup functions (like setting up defaults).
-	 * @param array $params
+	 * Can be overridden in child classes to perform setup functions. When using the Router,
+	 * each member of the router's $config['setupArgs'] array will be passed as method parameters,
+	 * in order of definition.
 	 * @return bool
 	 */
-	public function Setup(array $params = null) {
+	public function Setup() {
 		return true;
 	}
 
 	/**
-	 * Can be overridden in child classes to perform cleanup functions
-	 * @param array $params
+	 * Can be overridden in child classes to perform cleanup functions. When using the Router,
+	 * each member of the router's $config['cleanupArgs'] array will be passed as method parameters,
+	 * in order of definition.
 	 * @return bool
 	 */
-	public function Cleanup(array $params = null) {
+	public function Cleanup() {
 		return true;
 	}
 
