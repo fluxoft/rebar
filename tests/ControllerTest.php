@@ -34,10 +34,6 @@ class ControllerTest extends \PHPUnit_Framework_TestCase
 		unset($this->response);
 	}
 
-	public function testSetup() {
-		$this->controller->Setup();
-	}
-
 	public function testDisplay() {
 		$this->controller->Display();
 	}
