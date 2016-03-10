@@ -84,7 +84,7 @@ abstract class Controller {
 				}
 				if ($requireAuth) {
 					$authUser = $this->auth->GetAuthenticatedUser();
-					if ($authUser === false) {
+					if (!isset($authUser)) {
 						// method is limited and user is not authenticated
 						throw new AccessDeniedException(sprintf(
 							'Access denied for %s',

@@ -9,6 +9,6 @@ abstract class BasicUserMapper implements UserMapperInterface {
 		if (isset($this->users[$username]) && $this->users[$username] === $password) {
 			return ['username' => $username, 'password' => $password];
 		}
-		return false;
+		return null;
 	}
 }
