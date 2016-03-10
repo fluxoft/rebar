@@ -31,9 +31,9 @@ abstract class UserMapper extends Mapper implements UserMapperInterface {
 			'{'.$this->userModel->GetAuthUsernameProperty().'} = :username',
 			['username' => $username]
 		);
-		$return = false;
-		if ($user !== false) {
-			$return = ($user->IsPasswordValid($password)) ? $user : false;
+		$return = null;
+		if (isset($user)) {
+			$return = ($user->IsPasswordValid($password)) ? $user : null;
 		}
 		return $return;
 	}
