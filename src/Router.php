@@ -108,8 +108,10 @@ class Router {
 			));
 		}
 
-		$setupArgs = (isset($this->config['setupArgs']) ? $this->config['setupArgs'] : []);
-		$this->callControllerMethodWithParams($controller, 'Setup', $setupArgs);
+		if (method_exists($controller, 'Setup')) {
+			$setupArgs = (isset($this->config['setupArgs']) ? $this->config['setupArgs'] : []);
+			$this->callControllerMethodWithParams($controller, 'Setup', $setupArgs);
+		}
 
 		try {
 			$controller->Authorize($route['action']);
@@ -130,8 +132,10 @@ class Router {
 		$this->callControllerMethodWithParams($controller, $route['action'], $actionParams);
 		$controller->Display();
 
-		$cleanupArgs = (isset($this->config['cleanupArgs']) ? $this->config['cleanupArgs'] : []);
-		$this->callControllerMethodWithParams($controller, 'Cleanup', $cleanupArgs);
+		if (method_exists($controller, 'Cleanup')) {
+			$cleanupArgs = (isset($this->config['cleanupArgs']) ? $this->config['cleanupArgs'] : []);
+			$this->callControllerMethodWithParams($controller, 'Cleanup', $cleanupArgs);
+		}
 	}
 
 	protected function callControllerMethodWithParams(Controller $controller, $method, array $params) {
