@@ -26,10 +26,10 @@ class Json implements PresenterInterface {
 	private function jsonEncode($data) {
 		if (!is_array($data) && !is_object($data)) {
 			if (is_null($data)) {
-				$data = 'null';
+				return 'null';
 			}
 			if (is_bool($data)) {
-				$data = ($data) ? 'true' : 'false';
+				return ($data) ? 'true' : 'false';
 			}
 			return json_encode(utf8_encode($data));
 		} elseif (is_object($data)) {
