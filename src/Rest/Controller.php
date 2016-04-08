@@ -3,6 +3,8 @@
 namespace Fluxoft\Rebar\Rest;
 
 use Fluxoft\Rebar\Auth\AuthInterface;
+use Fluxoft\Rebar\Auth\Exceptions\InvalidPasswordException;
+use Fluxoft\Rebar\Auth\Exceptions\UserNotFoundException;
 use Fluxoft\Rebar\Controller as BaseController;
 use Fluxoft\Rebar\Presenters\Json;
 
@@ -81,10 +83,21 @@ abstract class Controller extends BaseController {
 					$email    = $body['credentials']['username'];
 					$password = $body['credentials']['password'];
 					$remember = (isset($body['credentials']['remember']) ? $body['credentials']['remember'] : false);
-					/** @var \Fluxoft\Rebar\Auth\Db\User $authUser */
-					$user = $auth->Login($email, $password, $remember);
-					$this->set('auth', isset($user));
-					$this->set('user', $user);
+					try {
+						/** @var \Fluxoft\Rebar\Auth\Db\User $authUser */
+						$user = $auth->Login($email, $password, $remember);
+						$this->set('auth', isset($user));
+						$this->set('user', $user);
+					} catch (UserNotFoundException $e) {
+						$this->response->Status = 403;
+						$this->set('error', $e->getMessage());
+					} catch (InvalidPasswordException $e) {
+						$this->response->Status = 403;
+						$this->set('error', $e->getMessage());
+					} catch (\Exception $e) {
+						$this->response->Status = 500;
+						$this->set('error', $e->getMessage());
+					}
 					break;
 				case 'DELETE':
 					$auth->Logout();

@@ -3,6 +3,8 @@
 namespace Fluxoft\Rebar\Auth\Db;
 
 use Doctrine\DBAL\Connection;
+use Fluxoft\Rebar\Auth\Exceptions\InvalidPasswordException;
+use Fluxoft\Rebar\Auth\Exceptions\UserNotFoundException;
 use Fluxoft\Rebar\Auth\UserMapperInterface;
 use Fluxoft\Rebar\Db\Exceptions\ModelException;
 use Fluxoft\Rebar\Db\Mapper;
@@ -33,9 +35,14 @@ abstract class UserMapper extends Mapper implements UserMapperInterface {
 		);
 		$return = null;
 		if (isset($user)) {
-			$return = ($user->IsPasswordValid($password)) ? $user : null;
+			if ($user->IsPasswordValid($password)) {
+				return $user;
+			} else {
+				throw new InvalidPasswordException(sprintf('Incorrect password'));
+			}
+		} else {
+			throw new UserNotFoundException(sprintf('User not found'));
 		}
-		return $return;
 	}
 
 	public function CheckAuthToken (Token $token) {
