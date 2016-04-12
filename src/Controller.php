@@ -66,6 +66,12 @@ abstract class Controller {
 	}
 
 	public function Authorize($method) {
+		/*
+		 * Issue #30: Authorize any OPTIONS request.
+		 */
+		if (strtoupper($this->request->Method) === 'OPTIONS') {
+			return true;
+		}
 		$authorized = true;
 		if (isset($this->auth)) {
 			if (!(in_array($method, $this->skipAuthentication) ||
