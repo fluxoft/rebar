@@ -5,6 +5,7 @@ namespace Fluxoft\Rebar\Rest;
 use Doctrine\DBAL\DBALException;
 use Fluxoft\Rebar\Auth\Db\User;
 use Fluxoft\Rebar\Db\Mapper;
+use Fluxoft\Rebar\Http\Request;
 use Psr\Log\LoggerInterface;
 
 class DataRepository implements RepositoryInterface {
@@ -25,13 +26,32 @@ class DataRepository implements RepositoryInterface {
 	}
 
 	/**
+	 * @param Request $request
 	 * @param array $params
-	 * @param array $filter
-	 * @param int $page
-	 * @param int $pageSize
 	 * @return Reply
 	 */
-	public function Get(array $params, array $filter = [], $page = 1, $pageSize = 0) {
+	public function Get(Request $request, $params = []) {
+		/**
+		 * GET /{item}                 <- retrieve a set
+		 * GET /{item}?page={page}     <- retrieve page {page} of results
+		 * GET /{item}/{id}            <- retrieve {item} with id {id}
+		 * GET /{item}/{id}/{children} <- retrieve the children of {item} with id {id}
+		 *     ** the above only works on Mappers which have a Get{children} method accepting {id} as an argument
+		 */
+		$get      = $request->Get();
+		$page     = (isset($get['page']) && is_numeric($get['page'])) ? $get['page'] : 1;
+		$pageSize = 0;
+		if (isset($config['pageSize']) && is_numeric($config['pageSize'])) {
+			$pageSize = $config['pageSize'];
+		}
+		if (isset($get['pageSize']) && is_numeric($get['pageSize'])) {
+			$pageSize = $get['pageSize'];
+		}
+
+		unset($get['page']);
+		unset($get['pageSize']);
+		unset($get['callback']);
+
 		if ($this->authUserFilter && !isset($this->authUser)) {
 			return new Reply(403, ['error' => 'Must be logged in to access this resource.']);
 		}
@@ -40,13 +60,13 @@ class DataRepository implements RepositoryInterface {
 		switch (count($params)) {
 			case 0:
 				if ($this->authUserFilter && isset($this->authUser)) {
-					$filter[$this->authUserIDProperty] = $this->authUser->GetID();
+					$get[$this->authUserIDProperty] = $this->authUser->GetID();
 				}
 
 				// if the params array was empty, return a set
 				$filterKeys   = [];
 				$filterValues = [];
-				foreach ($filter as $key => $value) {
+				foreach ($get as $key => $value) {
 					$filterKeys[]          = '{'.$key.'} = :'.$key;
 					$filterValues[":$key"] = $value;
 				}
@@ -133,7 +153,25 @@ class DataRepository implements RepositoryInterface {
 		return $reply;
 	}
 
-	public function Post(array $model = []) {
+	public function Post(Request $request, $params = []) {
+		// $params is unused in this implementation
+		$params = null;
+
+		/**
+		 * POST /{items} <- create an {item} using POST data
+		 */
+		$body     = $request->Body;
+		$postVars = $request->Post();
+
+		if (isset($postVars['model'])) {
+			$model = json_decode($postVars['model'], true);
+		} elseif (!empty($postVars)) {
+			$model = $postVars;
+		} elseif (strlen($body) > 0) {
+			$model = json_decode($body, true);
+		} else {
+			$model = [];
+		}
 		if ($this->authUserFilter) {
 			if (!isset($this->authUser)) {
 				return new Reply(403, ['error' => 'Must be logged in to access this resource.']);
@@ -166,54 +204,83 @@ class DataRepository implements RepositoryInterface {
 		return $response;
 	}
 
-	public function Put($id, array $model) {
-		if ($this->authUserFilter && !isset($this->authUser)) {
-			return new Reply(403, ['error' => 'Must be logged in to access this resource.']);
-		}
-		/** @var \Fluxoft\Rebar\Db\Model $update */
-		$update = $this->mapper->GetOneById($id);
-		if ($this->authUserFilter) {
-			if ($update->{$this->authUserIDProperty} !== $this->authUser->GetID()) {
-				$update = false;
-			}
-		}
-		if ($update === false) {
-			$response = new Reply(404, ['error' => 'The object to be updated was not found.']);
+	public function Put(Request $request, $params = []) {
+		/**
+		 * PUT /{item}/{id} <- UPDATE an {item} with ID {id} using POST/PUT params
+		 */
+		if (empty($params)) {
+			return new Reply(422, ['error' => 'You must specify an ID in order to update.']);
 		} else {
-			$errors = [];
-			foreach ($model as $key => $value) {
-				try {
-					$update->$key = $value;
-				} catch (\InvalidArgumentException $e) {
-					$errors[] = $e->getMessage();
+			$id   = $params[0];
+			$body = $request->Body;
+
+			if (isset($putVars['model'])) {
+				$model = json_decode($putVars['model'], true);
+			} elseif (!empty($putVars)) {
+				$model = $putVars;
+			} elseif (strlen($body) > 0) {
+				$model = json_decode($body, true);
+			} else {
+				$model = [];
+			}
+			if ($this->authUserFilter && !isset($this->authUser)) {
+				return new Reply(403, ['error' => 'Must be logged in to access this resource.']);
+			}
+			/** @var \Fluxoft\Rebar\Db\Model $update */
+			$update = $this->mapper->GetOneById($id);
+			if ($this->authUserFilter) {
+				if ($update->{$this->authUserIDProperty} !== $this->authUser->GetID()) {
+					$update = false;
 				}
 			}
-			if (empty($errors)) {
-				$this->mapper->Save($update);
-				$response = new Reply(200, $update);
+			if (!isset($update)) {
+				return new Reply(404, ['error' => 'The object to be updated was not found.']);
 			} else {
-				$response = new Reply(422, ['errors' => $errors]);
+				$errors = [];
+				foreach ($model as $key => $value) {
+					try {
+						$update->$key = $value;
+					} catch (\InvalidArgumentException $e) {
+						$errors[] = $e->getMessage();
+					}
+				}
+				if (empty($errors)) {
+					$this->mapper->Save($update);
+					return new Reply(200, $update);
+				} else {
+					return new Reply(422, ['errors' => $errors]);
+				}
 			}
 		}
-		return $response;
 	}
 
-	public function Delete($id) {
-		if ($this->authUserFilter && !isset($this->authUser)) {
-			return new Reply(403, ['error' => 'Must be logged in to access this resource.']);
-		}
-		$delete = $this->mapper->GetOneById($id);
-		if ($this->authUserFilter) {
-			if ($delete->{$this->authUserIDProperty} !== $this->authUser->GetID()) {
-				$delete = null;
+	public function Delete(Request $request, $params = []) {
+		// $request is unused in this implementation
+		$request = null;
+
+		if (empty($params)) {
+			// cannot delete if we don't have an id
+			return new Reply(422, ['error' => 'ID is required for DELETE operation.']);
+		} else {
+			if ($this->authUserFilter && !isset($this->authUser)) {
+				return new Reply(403, ['error' => 'Must be logged in to access this resource.']);
+			}
+			$id = $params[0];
+
+			$delete = $this->mapper->GetOneById($id);
+			if ($this->authUserFilter) {
+				if ($delete->{$this->authUserIDProperty} !== $this->authUser->GetID()) {
+					$delete = null;
+				}
+			}
+			if (!isset($delete)) {
+				return new Reply(403, ['error' => 'Must be logged in to access this resource.']);
+			} else {
+				$this->mapper->Delete($delete);
+				return new Reply(204, ['success' => 'The item was deleted.']);
 			}
 		}
-		if (!isset($delete)) {
-			return new Reply(403, ['error' => 'Must be logged in to access this resource.']);
-		} else {
-			$this->mapper->Delete($delete);
-			return new Reply(204, ['success' => 'The item was deleted.']);
-		}
+
 	}
 
 	protected function log($type, $message) {
