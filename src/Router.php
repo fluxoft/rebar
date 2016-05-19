@@ -3,6 +3,8 @@ namespace Fluxoft\Rebar;
 
 use Fluxoft\Rebar\Auth\AuthInterface;
 use Fluxoft\Rebar\Auth\Exceptions\AccessDeniedException;
+use Fluxoft\Rebar\Exceptions\CrossOriginException;
+use Fluxoft\Rebar\Exceptions\MethodNotAllowedException;
 use Fluxoft\Rebar\Exceptions\RouterException;
 use Fluxoft\Rebar\Exceptions\AuthenticationException;
 use Fluxoft\Rebar\Http\Request;
@@ -116,8 +118,11 @@ class Router {
 		try {
 			$controller->Authorize($route['action']);
 		} catch (AccessDeniedException $e) {
-			$controller->DenyAccess($e->getMessage());
-			exit;
+			$response->Halt(403, $e->getMessage());
+		} catch (MethodNotAllowedException $e) {
+			$response->Halt(405, $e->getMessage());
+		} catch (CrossOriginException $e) {
+			$response->Halt(403, $e->getMessage());
 		}
 
 		$actionParams = [];

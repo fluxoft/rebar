@@ -12,10 +12,31 @@ namespace Fluxoft\Rebar;
 
 use Fluxoft\Rebar\Auth\Exceptions\AccessDeniedException;
 use Fluxoft\Rebar\Auth\AuthInterface;
+use Fluxoft\Rebar\Exceptions\CrossOriginException;
+use Fluxoft\Rebar\Exceptions\MethodNotAllowedException;
 use Fluxoft\Rebar\Http\Request;
 use Fluxoft\Rebar\Http\Response;
 
 abstract class Controller {
+	/**
+	 * If CORS requests need to be handled automatically by the Controller,
+	 * set this to true to add the appropriate headers to responses based on
+	 * the Origin header provided.
+	 * @var bool
+	 */
+	protected $crossOriginEnabled = false;
+	/**
+	 * An array of domains from which cross-origin requests are allowed.
+	 * @var array
+	 */
+	protected $crossOriginDomainsAllowed = [];
+	/**
+	 * Methods that are allowed to this controller. If a controller method needs
+	 * a different set of allowed methods, this array should be reset inside the
+	 * method.
+	 * @var array
+	 */
+	protected $allowedMethods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'];
 	/**
 	 * The presenter property determines which presenter class
 	 * will be used to render the display.
@@ -66,6 +87,37 @@ abstract class Controller {
 	}
 
 	public function Authorize($method) {
+		$allowedMethods = array_map('strtoupper', $this->allowedMethods);
+		// always allow OPTIONS requests
+		if (!in_array('OPTIONS', $allowedMethods)) {
+			array_push($allowedMethods, 'OPTIONS');
+		}
+		// set CORS headers if configured
+		if ($this->crossOriginEnabled) {
+			$headers = $this->request->Headers;
+			if (isset($headers['Origin'])) {
+				$allowedHeaders = (isset($headers['Access-Control-Request-Headers']) ?
+					$headers['Access-Control-Request-Headers'] : '');
+				$origin         = $headers['Origin'];
+				if (in_array($origin, $this->crossOriginDomainsAllowed)) {
+					$this->response->AddHeader('Access-Control-Allow-Origin', $origin);
+					$this->response->AddHeader('Access-Control-Allow-Credentials', 'true');
+					$this->response->AddHeader('Access-Control-Allow-Methods', implode(',', $allowedMethods));
+					$this->response->AddHeader('Access-Control-Allow-Headers', $allowedHeaders);
+				} else {
+					throw new CrossOriginException(sprintf(
+						'The origin "%s" is not permitted.',
+						$origin
+					));
+				}
+			}
+		}
+		if (!in_array($this->request->Method, $allowedMethods)) {
+			throw new MethodNotAllowedException(sprintf(
+				'The %s method is not permitted here (118).',
+				$this->request->Method
+			));
+		}
 		/*
 		 * Issue #30: Authorize any OPTIONS request.
 		 */
@@ -101,10 +153,6 @@ abstract class Controller {
 			}
 		}
 		return $authorized;
-	}
-
-	public function DenyAccess($message) {
-		$this->response->Halt(403, "Forbidden: $message");
 	}
 
 	public function Display() {

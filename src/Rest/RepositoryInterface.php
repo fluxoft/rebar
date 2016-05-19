@@ -2,7 +2,7 @@
 
 namespace Fluxoft\Rebar\Rest;
 
-//use Fluxoft\Rebar\Rest\RepositoryInterface;
+use Fluxoft\Rebar\Http\Request;
 
 /**
  * Class Repository
@@ -10,30 +10,30 @@ namespace Fluxoft\Rebar\Rest;
  */
 interface RepositoryInterface {
 	/**
+	 * @param Request $request
 	 * @param array $params
-	 * @param array $filter
-	 * @param int $page
-	 * @param int $pageSize
 	 * @return Reply
 	 */
-	public function Get(array $params, array $filter = [], $page = 1, $pageSize = 0);
+	public function Get(Request $request, $params = []);
 
 	/**
-	 * @param array $post
+	 * @param Request $request
+	 * @param array $params
 	 * @return Reply
 	 */
-	public function Post(array $post = []);
+	public function Post(Request $request, $params = []);
 
 	/**
-	 * @param $id
-	 * @param array $model
+	 * @param Request $request
+	 * @param array $params
 	 * @return Reply
 	 */
-	public function Put($id, array $model);
+	public function Put(Request $request, $params = []);
 
 	/**
-	 * @param $id
+	 * @param Request $request
+	 * @param array $params
 	 * @return Reply
 	 */
-	public function Delete($id);
+	public function Delete(Request $request, $params = []);
 }
