@@ -26,5 +26,9 @@
 	},
 	"autoload": {
 		"psr-4": {"Fluxoft\\Rebar\\": "src/"}
+	},
+	"suggest": {
+		"smarty/smarty": "Allows the use of the Smarty Presenter class.",
+		"twig/twig": "Allows the use of the Twig Presenter class."
 	}
 }
