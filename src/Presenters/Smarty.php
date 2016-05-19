@@ -33,7 +33,7 @@ class Smarty implements PresenterInterface {
 		$smarty->cache_dir    = $cachePath;
 		$smarty->config_dir   = $configPath;
 
-		$this->smarty = $smarty;
+		$this->smarty       = $smarty;
 		$this->templatePath = $templatePath;
 		$this->template     = $template;
 		$this->layout       = $layout;
