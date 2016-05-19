@@ -37,10 +37,6 @@ class ControllerTest extends \PHPUnit_Framework_TestCase
 	public function testDisplay() {
 		$this->controller->Display();
 	}
-
-	public function testDenyAccess() {
-		$this->controller->DenyAccess('denied');
-	}
 }
 
 class DummyController extends Controller {
