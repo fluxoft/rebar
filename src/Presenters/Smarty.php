@@ -29,14 +29,14 @@ class Smarty implements PresenterInterface {
 		$smarty = new \Smarty();
 		$smarty->muteExpectedErrors();
 		$smarty->template_dir = $templatePath;
-		$smarty->compile_dir = $compilePath;
-		$smarty->cache_dir = $cachePath;
-		$smarty->config_dir = $configPath;
+		$smarty->compile_dir  = $compilePath;
+		$smarty->cache_dir    = $cachePath;
+		$smarty->config_dir   = $configPath;
 
 		$this->smarty = $smarty;
 		$this->templatePath = $templatePath;
-		$this->template = $template;
-		$this->layout = $layout;
+		$this->template     = $template;
+		$this->layout       = $layout;
 	}
 
 	public function Render(Response $response, array $data) {
