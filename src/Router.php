@@ -125,6 +125,12 @@ class Router {
 			$response->Halt(403, $e->getMessage());
 		}
 
+		// If this is an options request, and no exceptions were thrown for Authorize,
+		// immediately return a 200 OK and do not even run the controller method.
+		if (strtoupper($request->Method) === 'OPTIONS') {
+			$response->Halt(200, 'OK');
+		}
+
 		$actionParams = [];
 		if (isset($this->config['methodArgs'])) {
 			foreach ($this->config['methodArgs'] as $arg) {
