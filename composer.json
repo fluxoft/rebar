@@ -30,6 +30,6 @@
 	"suggest": {
 		"smarty/smarty": "Allows the use of the Smarty Presenter class.",
 		"twig/twig": "Allows the use of the Twig Presenter class.",
-		"firebase/php-jwt": "Allows the use of the Auth\Jwt authentication class."
+		"firebase/php-jwt": "Allows the use of the Auth\\Jwt authentication class."
 	}
 }
