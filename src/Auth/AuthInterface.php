@@ -1,5 +1,6 @@
 <?php
 namespace Fluxoft\Rebar\Auth;
+
 use Fluxoft\Rebar\Http\Request;
 
 /**
