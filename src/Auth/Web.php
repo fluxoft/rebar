@@ -57,8 +57,9 @@ class Web implements AuthInterface {
 	 */
 	public function GetAuthenticatedUser(Request $request) {
 		if (!isset($this->auth)) {
-			$auth   = new Reply();
-			$userID = $this->session->Get('AuthUserID', null);
+			$auth     = new Reply();
+			$userID   = $this->session->Get('AuthUserID', null);
+			$authUser = null;
 			if (!isset($userID)) {
 				// Check that valid tokens are set
 				$validToken = $this->getValidToken($request);
@@ -68,16 +69,29 @@ class Web implements AuthInterface {
 					$this->session->Delete('AuthUserID');
 					$this->session->Delete('AuthToken');
 				} else {
-					$authUser    = $this->loginWithToken($validToken);
-					$auth->Auth  = true;
-					$auth->User  = $authUser;
-					$auth->Token = $validToken;
+					// a valid token was found - use it to pull the correct user
+					$authUser = $this->userMapper->GetAuthorizedUserById($validToken->UserID);
+					if ($authUser instanceof User) {
+						$tokenString   = $this->setTokens($authUser, $validToken);
+						$auth->Auth    = true;
+						$auth->User    = $authUser;
+						$auth->Token   = $tokenString;
+						$auth->Message = 'Found valid token.';
+					} else {
+						$auth->Message = 'Tried to log in using token but user not found. '.$validToken->UserID;
+					}
 				}
 			} else {
-				$authUser    = $this->userMapper->GetOneById($userID);
-				$auth->Auth  = true;
-				$auth->User  = $authUser;
-				$auth->Token = $this->session->Get('AuthToken');
+				// the user ID was found in the session, use that to log in
+				$authUser = $this->userMapper->GetAuthorizedUserById($userID);
+				if ($authUser instanceof User) {
+					$auth->Auth    = true;
+					$auth->User    = $authUser;
+					$auth->Token   = $this->session->Get('AuthToken');
+					$auth->Message = 'Logged in using session';
+				} else {
+					$auth->Message = 'Tried to log in with session but user not found';
+				}
 			}
 			$this->auth = $auth;
 		}
@@ -86,7 +100,7 @@ class Web implements AuthInterface {
 
 	public function Login($username, $password, $remember = false) {
 		$reply = new Reply();
-		$user  = $this->userMapper->GetOneForUsernameAndPassword($username, $password);
+		$user  = $this->userMapper->GetAuthorizedUserForUsernameAndPassword($username, $password);
 		if ($user instanceof User) {
 			$tokenString  = $this->setTokens($user, null, $remember);
 			$reply->Auth  = true;
@@ -104,20 +118,23 @@ class Web implements AuthInterface {
 			if ($token === false) {
 				$token = null;
 			}
-			$this->unsetTokens($auth->User, $token);
+			if (isset($token)) {
+				$userID   = $token->UserID;
+				$seriesID = $token->SeriesID;
+			} else {
+				$userID   = $auth->User->GetID();
+				$seriesID = null;
+			}
+			$this->tokenMapper->DeleteAuthToken($userID, $seriesID);
+			$this->cookies->Delete('AuthToken');
+			$this->session->Delete('AuthUserID');
+			$this->session->Delete('AuthToken');
 		}
 		$this->auth = new Reply();
 	}
 
 
 
-	private function loginWithToken (Token $token) {
-		$user = $this->userMapper->GetOneById($token->UserID);
-		if ($user instanceof User) {
-			$this->setTokens($user, $token);
-		}
-		return $user;
-	}
 	private function getValidToken(Request $request) {
 		$tokenString = $this->cookies->Get('AuthToken');
 		if (!isset($tokenString)) {
@@ -157,19 +174,5 @@ class Web implements AuthInterface {
 		$this->tokenMapper->SaveAuthToken($token);
 
 		return $tokenString;
-	}
-	private function unsetTokens(User $user, Token $token = null) {
-		if (isset($token)) {
-			$userID   = $token->UserID;
-			$seriesID = $token->SeriesID;
-		} else {
-			$userID   = $user->GetID();
-			$seriesID = null;
-		}
-
-		$this->tokenMapper->DeleteAuthToken($userID, $seriesID);
-		$this->cookies->Delete('AuthToken');
-		$this->session->Delete('AuthUserID');
-		$this->session->Delete('AuthToken');
 	}
 }

@@ -47,7 +47,7 @@ class UserMapper implements UserMapperInterface {
 	 * @throws InvalidPasswordException
 	 * @throws UserNotFoundException
 	 */
-	public function GetOneForUsernameAndPassword($username, $password) {
+	public function GetAuthorizedUserForUsernameAndPassword($username, $password) {
 		$users = array_filter($this->users, function (User $user) use ($username) {
 			return $user->Username === $username;
 		});
@@ -72,7 +72,7 @@ class UserMapper implements UserMapperInterface {
 	 * @return mixed
 	 * @throws UserNotFoundException
 	 */
-	public function GetOneById($id) {
+	public function GetAuthorizedUserById($id) {
 		$users = array_filter($this->users, function (User $user) use ($id) {
 			return $user->GetID() === $id;
 		});

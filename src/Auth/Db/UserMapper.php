@@ -10,7 +10,7 @@ use Fluxoft\Rebar\Db\Exceptions\ModelException;
 use Fluxoft\Rebar\Db\Mapper;
 use Fluxoft\Rebar\Db\MapperFactory;
 
-abstract class UserMapper extends Mapper implements UserMapperInterface {
+class UserMapper extends Mapper implements UserMapperInterface {
 	/** @var User */
 	protected $userModel;
 
@@ -34,7 +34,7 @@ abstract class UserMapper extends Mapper implements UserMapperInterface {
 	 * @throws InvalidPasswordException
 	 * @throws UserNotFoundException
 	 */
-	public function GetOneForUsernameAndPassword($username, $password) {
+	public function GetAuthorizedUserForUsernameAndPassword($username, $password) {
 		/** @var User $user */
 		$user = $this->GetOneWhere(
 			'{'.$this->userModel->GetAuthUsernameProperty().'} = :username',
@@ -49,5 +49,15 @@ abstract class UserMapper extends Mapper implements UserMapperInterface {
 		} else {
 			throw new UserNotFoundException(sprintf('User not found'));
 		}
+	}
+
+	/**
+	 * Return the user for the given ID. Should be overridden if restrictions should be made on
+	 * on how a user should be allowed access.
+	 * @param $id
+	 * @return mixed
+	 */
+	public function GetAuthorizedUserById($id) {
+		return $this->GetOneById($id);
 	}
 }

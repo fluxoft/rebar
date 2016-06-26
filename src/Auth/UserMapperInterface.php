@@ -14,12 +14,13 @@ interface UserMapperInterface {
 	 * @param $password
 	 * @return mixed
 	 */
-	public function GetOneForUsernameAndPassword($username, $password);
+	public function GetAuthorizedUserForUsernameAndPassword($username, $password);
 
 	/**
-	 * Return the user for the given ID
+	 * Return the user for the given ID. Should be overridden if restrictions should be made on
+	 * on how a user should be allowed access.
 	 * @param $id
 	 * @return mixed
 	 */
-	public function GetOneById($id);
+	public function GetAuthorizedUserById($id);
 }
