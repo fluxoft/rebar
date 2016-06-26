@@ -21,10 +21,20 @@ abstract class Controller extends BaseController {
 
 		switch ($this->request->Method) {
 			case 'GET':
-				/** @var \Fluxoft\Rebar\Auth\Db\User $user */
-				$user = $auth->GetAuthenticatedUser();
-				$this->set('auth', isset($user));
-				$this->set('user', $user);
+				try {
+					/** @var \Fluxoft\Rebar\Auth\Reply $authReply */
+					$authReply = $auth->GetAuthenticatedUser($this->request);
+					$this->set('auth', $authReply);
+				} catch (UserNotFoundException $e) {
+					$this->response->Status = 403;
+					$this->set('error', $e->getMessage());
+				} catch (InvalidPasswordException $e) {
+					$this->response->Status = 403;
+					$this->set('error', $e->getMessage());
+				} catch (\Exception $e) {
+					$this->response->Status = 500;
+					$this->set('error', $e->getMessage());
+				}
 				break;
 			case 'POST':
 				$body = json_decode($this->request->Body, true);
@@ -33,10 +43,9 @@ abstract class Controller extends BaseController {
 				$password = $body['credentials']['password'];
 				$remember = (isset($body['credentials']['remember']) ? $body['credentials']['remember'] : false);
 				try {
-					/** @var \Fluxoft\Rebar\Auth\Db\User $authUser */
-					$user = $auth->Login($email, $password, $remember);
-					$this->set('auth', isset($user));
-					$this->set('user', $user);
+					/** @var \Fluxoft\Rebar\Auth\Reply $authReply */
+					$authReply = $auth->Login($email, $password, $remember);
+					$this->set('auth', $authReply);
 				} catch (UserNotFoundException $e) {
 					$this->response->Status = 403;
 					$this->set('error', $e->getMessage());

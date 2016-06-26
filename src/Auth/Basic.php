@@ -2,12 +2,16 @@
 
 namespace Fluxoft\Rebar\Auth;
 
+use Fluxoft\Rebar\Http\Request;
+
+/**
+ * Class Basic
+ * @package Fluxoft\Rebar\Auth
+ */
 class Basic implements AuthInterface {
 	protected $userMapper;
 	protected $realm;
 	protected $message;
-
-	protected $authenticatedUser = false;
 
 	public function __construct(UserMapperInterface $userMapper, $realm, $message) {
 		$this->userMapper = $userMapper;
@@ -15,26 +19,50 @@ class Basic implements AuthInterface {
 		$this->message    = $message;
 	}
 
-	public function GetAuthenticatedUser() {
+	/**
+	 * Attempt to return a Reply for the authenticated user.
+	 * @param \Fluxoft\Rebar\Http\Request $request
+	 * @return Reply
+	 */
+	// @codingStandardsIgnoreStart ($request is unused)
+	public function GetAuthenticatedUser(Request $request) {
+	// @codingStandardsIgnoreEnd
 		if (!isset($_SERVER['PHP_AUTH_USER'])) {
 			header('WWW-Authenticate: Basic realm="'.$this->realm.'"');
 			header('HTTP/1.0 401 Unauthorized');
 			echo $this->message;
 			exit;
-		} else {
-			$this->authenticatedUser = $this->Login($_SERVER['PHP_AUTH_USER'], $_SERVER['PHP_AUTH_PW']);
 		}
-		return $this->authenticatedUser;
+		return $this->Login($_SERVER['PHP_AUTH_USER'], $_SERVER['PHP_AUTH_PW']);
 	}
 
+	/**
+	 * Attempt to log the user in using the given $username and $password
+	 * and return a Reply object.
+	 * @param string $username
+	 * @param string $password
+	 * @return \Fluxoft\Rebar\Auth\Reply
+	 */
 	public function Login($username, $password) {
-		return $this->userMapper->GetOneForUsernameAndPassword($username, $password);
+		$reply       = new Reply();
+		$user        = $this->userMapper->GetOneForUsernameAndPassword($username, $password);
+		$reply->Auth = true;
+		$reply->User = $user;
+		return $reply;
 	}
 
-	public function Logout() {
+	/**
+	 * Log the user out and return a blank Reply
+	 * @param \Fluxoft\Rebar\Http\Request $request
+	 * @return Reply
+	 */
+	// @codingStandardsIgnoreStart ($request is unused)
+	public function Logout(Request $request) {
+	// @codingStandardsIgnoreEnd
+
 		// You can't really log out of a basic authentication session, since the browser will
 		// just keep sending the same Authorization header over and over, so this method won't
-		// really do anything.
-		return true;
+		// really do anything, but return a blank Reply for conformity's sake
+		return new Reply();
 	}
 }
