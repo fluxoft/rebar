@@ -160,4 +160,12 @@ abstract class Model implements \Iterator, \ArrayAccess {
 	public function offsetUnset($offset) {
 		unset($this->$offset);
 	}
+
+	public function asArray() {
+		$return = [];
+		foreach ($this->properties as $key => $value) {
+			$return[$key] = $this->$key;
+		}
+		return $return;
+	}
 }
