@@ -45,7 +45,7 @@ class Basic implements AuthInterface {
 	 */
 	public function Login($username, $password) {
 		$reply       = new Reply();
-		$user        = $this->userMapper->GetOneForUsernameAndPassword($username, $password);
+		$user        = $this->userMapper->GetAuthorizedUserForUsernameAndPassword($username, $password);
 		$reply->Auth = true;
 		$reply->User = $user;
 		return $reply;

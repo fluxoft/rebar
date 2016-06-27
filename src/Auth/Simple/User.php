@@ -65,7 +65,7 @@ class User extends Model implements UserInterface {
 	 * @return string
 	 */
 	public function GetPassword() {
-		return $this->properties['Password'];
+		return '********';
 	}
 
 	/**
@@ -74,6 +74,6 @@ class User extends Model implements UserInterface {
 	 * @return bool
 	 */
 	public function IsPasswordValid($password) {
-		return $this->Password === $password;
+		return $this->properties['Password'] === $password;
 	}
 }
