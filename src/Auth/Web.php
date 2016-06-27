@@ -4,8 +4,6 @@ namespace Fluxoft\Rebar\Auth;
 
 use Fluxoft\Rebar\Auth\Db\Token;
 use Fluxoft\rebar\Auth\Db\TokenMapper;
-use Fluxoft\Rebar\Auth\Db\User;
-use Fluxoft\Rebar\Auth\Db\UserMapper;
 use Fluxoft\Rebar\Http\Cookies;
 use Fluxoft\Rebar\Http\Request;
 use Fluxoft\Rebar\Http\Session;
@@ -15,7 +13,7 @@ use Fluxoft\Rebar\Http\Session;
  * @package Fluxoft\Rebar\Auth
  */
 class Web implements AuthInterface {
-	/** @var UserMapper */
+	/** @var UserMapperInterface */
 	protected $userMapper;
 	/** @var TokenMapper */
 	protected $tokenMapper;
@@ -71,10 +69,9 @@ class Web implements AuthInterface {
 				} else {
 					// a valid token was found - use it to pull the correct user
 					$authUser = $this->userMapper->GetAuthorizedUserById($validToken->UserID);
-					if ($authUser instanceof User) {
+					if ($authUser instanceof UserInterface) {
 						$tokenString   = $this->setTokens($authUser, $validToken);
 						$auth->Auth    = true;
-						$auth->User    = $authUser;
 						$auth->Token   = $tokenString;
 						$auth->Message = 'Found valid token.';
 					} else {
@@ -84,15 +81,15 @@ class Web implements AuthInterface {
 			} else {
 				// the user ID was found in the session, use that to log in
 				$authUser = $this->userMapper->GetAuthorizedUserById($userID);
-				if ($authUser instanceof User) {
+				if ($authUser instanceof UserInterface) {
 					$auth->Auth    = true;
-					$auth->User    = $authUser;
 					$auth->Token   = $this->session->Get('AuthToken');
 					$auth->Message = 'Logged in using session';
 				} else {
 					$auth->Message = 'Tried to log in with session but user not found';
 				}
 			}
+			$auth->User = $authUser;
 			$this->auth = $auth;
 		}
 		return $this->auth;
@@ -101,7 +98,7 @@ class Web implements AuthInterface {
 	public function Login($username, $password, $remember = false) {
 		$reply = new Reply();
 		$user  = $this->userMapper->GetAuthorizedUserForUsernameAndPassword($username, $password);
-		if ($user instanceof User) {
+		if ($user instanceof UserInterface) {
 			$tokenString  = $this->setTokens($user, null, $remember);
 			$reply->Auth  = true;
 			$reply->User  = $user;
@@ -113,7 +110,7 @@ class Web implements AuthInterface {
 
 	public function Logout(Request $request) {
 		$auth = $this->GetAuthenticatedUser( $request);
-		if ($auth->User instanceof User) {
+		if ($auth->User instanceof UserInterface) {
 			$token = $this->getValidToken($request);
 			if ($token === false) {
 				$token = null;
@@ -158,7 +155,7 @@ class Web implements AuthInterface {
 			return false;
 		}
 	}
-	private function setTokens(User $user, Token $token = null, $remember = false) {
+	private function setTokens(UserInterface $user, Token $token = null, $remember = false) {
 		if (!isset($token)) {
 			$token = new Token($user->GetID());
 		}
