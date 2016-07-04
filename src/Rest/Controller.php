@@ -37,15 +37,27 @@ abstract class Controller extends BaseController {
 				}
 				break;
 			case 'POST':
-				$body = json_decode($this->request->Body, true);
-
-				$email    = $body['credentials']['username'];
-				$password = $body['credentials']['password'];
-				$remember = (isset($body['credentials']['remember']) ? $body['credentials']['remember'] : false);
 				try {
-					/** @var \Fluxoft\Rebar\Auth\Reply $authReply */
-					$authReply = $auth->Login($email, $password, $remember);
-					$this->set('auth', $authReply);
+					$body = json_decode($this->request->Body, true);
+
+					if (!isset($body['credentials']) ||
+						!isset($body['credentials']['username']) ||
+						!isset($body['credentials']['password'])) {
+						$this->response->Status = 400;
+						$this->set(
+							'error',
+							'A credentials object is required to log in and must contain a username and password'
+						);
+					} else {
+						$email    = $body['credentials']['username'];
+						$password = $body['credentials']['password'];
+						$remember = (isset($body['credentials']['remember']) ? $body['credentials']['remember'] : false);
+
+
+						/** @var \Fluxoft\Rebar\Auth\Reply $authReply */
+						$authReply = $auth->Login($email, $password, $remember);
+						$this->set('auth', $authReply);
+					}
 				} catch (UserNotFoundException $e) {
 					$this->response->Status = 403;
 					$this->set('error', $e->getMessage());
@@ -58,7 +70,7 @@ abstract class Controller extends BaseController {
 				}
 				break;
 			case 'DELETE':
-				$auth->Logout();
+				$auth->Logout($this->request);
 				$this->set('auth', false);
 				break;
 		}
