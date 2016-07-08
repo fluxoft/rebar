@@ -2,10 +2,11 @@
 
 namespace Fluxoft\Rebar\Auth\Db;
 
+use Fluxoft\Rebar\Auth\UserInterface;
 use Fluxoft\Rebar\Db\Exceptions\ModelException;
 use Fluxoft\Rebar\Db\Model;
 
-abstract class User extends Model {
+abstract class User extends Model implements UserInterface {
 	protected $authUsernameProperty = 'Email';
 	protected $authPasswordProperty = 'Password';
 
@@ -43,6 +44,13 @@ abstract class User extends Model {
 	public function IsPasswordValid($password) {
 		$hash = $this->properties[$this->authPasswordProperty];
 		return crypt($password, $hash) === $hash;
+	}
+
+	/**
+	 * @return string
+	 */
+	public function GetUsername() {
+		return $this->properties[$this->authUsernameProperty];
 	}
 
 	protected function getPassword() {
