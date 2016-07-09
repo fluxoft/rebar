@@ -16,6 +16,7 @@ class BasicNotifier implements NotifierInterface {
 	 * @return mixed
 	 */
 	public function Notify(\Exception $e) {
+		header('HTTP/1.1 500 Unhandled exception');
 		header('content-type: text/plain');
 		echo "******************************\n";
 		echo "***  Unhandled exception:  ***\n";
