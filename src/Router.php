@@ -196,12 +196,6 @@ class Router extends Model {
 					throw new RouterException('Routes must be instance of the Route class.');
 				}
 
-				/*
-				 * remember to add class checking back in here after Route stuff
-				 */
-
-
-
 				$pattern = '/^'.str_replace('/', '\/', $route->Path).'(\/[A-Za-z0-9\-.]+)*\/*$/';
 				if (preg_match($pattern, $path)) {
 					$controllerClass  = (strlen($this->controllerNamespace) > 0) ? '\\' . $this->controllerNamespace : '';
