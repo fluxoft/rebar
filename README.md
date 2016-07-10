@@ -1,3 +1,4 @@
+[![Stories in Ready](https://badge.waffle.io/fluxoft/rebar.png?label=ready&title=Ready)](https://waffle.io/fluxoft/rebar)
 Rebar
 =====
 http://en.wikipedia.org/wiki/Rebar
