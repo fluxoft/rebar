@@ -8,6 +8,10 @@ use Fluxoft\Rebar\Db\Mapper;
 use Fluxoft\Rebar\Http\Request;
 use Psr\Log\LoggerInterface;
 
+/**
+ * Class DataRepository
+ * @package Fluxoft\Rebar\Rest
+ */
 class DataRepository implements RepositoryInterface {
 	/** @var Mapper */
 	protected $mapper;
@@ -19,6 +23,11 @@ class DataRepository implements RepositoryInterface {
 	protected $authUserFilter     = false;
 	protected $authUserIDProperty = 'UserID';
 
+	/**
+	 * @param Mapper $mapper
+	 * @param LoggerInterface $logger
+	 * @param User $authUser
+	 */
 	public function __construct(Mapper $mapper, LoggerInterface $logger = null, User $authUser = null) {
 		$this->mapper   = $mapper;
 		$this->logger   = $logger;
@@ -153,25 +162,18 @@ class DataRepository implements RepositoryInterface {
 		return $reply;
 	}
 
+	/**
+	 * POST /{item}/{id} <- CREATE an {item} with ID {id} using POST/PUT params
+	 * @param Request $request
+	 * @param array $params
+	 * @return Reply
+	 */
 	public function Post(Request $request, $params = []) {
 		// $params is unused in this implementation
 		$params = null;
 
-		/**
-		 * POST /{items} <- create an {item} using POST data
-		 */
-		$body     = $request->Body;
-		$postVars = $request->Post();
+		$model = $this->getPostData($request);
 
-		if (isset($postVars['model'])) {
-			$model = json_decode($postVars['model'], true);
-		} elseif (!empty($postVars)) {
-			$model = $postVars;
-		} elseif (strlen($body) > 0) {
-			$model = json_decode($body, true);
-		} else {
-			$model = [];
-		}
 		if ($this->authUserFilter) {
 			if (!isset($this->authUser)) {
 				return new Reply(403, ['error' => 'Must be logged in to access this resource.']);
@@ -204,28 +206,21 @@ class DataRepository implements RepositoryInterface {
 		return $response;
 	}
 
+	/**
+	 * PUT /{item}/{id} <- UPDATE an {item} with ID {id} using POST/PUT params
+	 * @param Request $request
+	 * @param array $params
+	 * @return Reply
+	 */
 	public function Put(Request $request, $params = []) {
-		/**
-		 * PUT /{item}/{id} <- UPDATE an {item} with ID {id} using POST/PUT params
-		 */
 		if (empty($params)) {
 			return new Reply(422, ['error' => 'You must specify an ID in order to update.']);
 		} else {
-			$id   = $params[0];
-			$body = $request->Body;
-
-			if (isset($putVars['model'])) {
-				$model = json_decode($putVars['model'], true);
-			} elseif (!empty($putVars)) {
-				$model = $putVars;
-			} elseif (strlen($body) > 0) {
-				$model = json_decode($body, true);
-			} else {
-				$model = [];
-			}
 			if ($this->authUserFilter && !isset($this->authUser)) {
 				return new Reply(403, ['error' => 'Must be logged in to access this resource.']);
 			}
+
+			$id = $params[0];
 			/** @var \Fluxoft\Rebar\Db\Model $update */
 			$update = $this->mapper->GetOneById($id);
 			if ($this->authUserFilter) {
@@ -237,6 +232,8 @@ class DataRepository implements RepositoryInterface {
 				return new Reply(404, ['error' => 'The object to be updated was not found.']);
 			} else {
 				$errors = [];
+				$model  = $this->getPutData($request);
+
 				foreach ($model as $key => $value) {
 					try {
 						$update->$key = $value;
@@ -254,6 +251,11 @@ class DataRepository implements RepositoryInterface {
 		}
 	}
 
+	/**
+	 * @param Request $request
+	 * @param array $params
+	 * @return Reply
+	 */
 	public function Delete(Request $request, $params = []) {
 		// $request is unused in this implementation
 		$request = null;
@@ -280,7 +282,65 @@ class DataRepository implements RepositoryInterface {
 				return new Reply(204, ['success' => 'The item was deleted.']);
 			}
 		}
+	}
 
+	private $postData = null;
+
+	/**
+	 * Will return the request's data as an array from whatever source it can find.
+	 * Can be called in child classes to modify the contents of the data before saving.
+	 * @param Request $request
+	 * @return array
+	 */
+	protected function getPostData(Request $request) {
+		if (!isset($this->postData)) {
+			$body = $request->Body;
+			/** @var array $postVars */
+			$postVars = $request->Post();
+
+			if (isset($postVars['model'])) {
+				$this->postData = json_decode($postVars['model'], true);
+			} elseif (!empty($postVars)) {
+				$this->postData = $postVars;
+			} elseif (strlen($body) > 0) {
+				$this->postData = json_decode($body, true);
+			} else {
+				$this->postData = [];
+			}
+		}
+		return $this->postData;
+	}
+	protected function setPostData(array $postData) {
+		$this->postData = $postData;
+	}
+
+	private $putData = null;
+
+	/**
+	 * Will return the request's data as an array from whatever source it can find.
+	 * Can be called in child classes to modify the contents of the data before saving.
+	 * @param Request $request
+	 * @return array
+	 */
+	protected function getPutData(Request $request) {
+		if (!isset($this->putData)) {
+			$body    = $request->Body;
+			$putVars = $request->Put();
+
+			if (isset($putVars['model'])) {
+				$this->putData = json_decode($putVars['model'], true);
+			} elseif (!empty($putVars)) {
+				$this->putData = $putVars;
+			} elseif (strlen($body) > 0) {
+				$this->putData = json_decode($body, true);
+			} else {
+				$this->putData = [];
+			}
+		}
+		return $this->putData;
+	}
+	protected function setPutData(array $putData) {
+		$this->putData = $putData;
 	}
 
 	protected function log($type, $message) {
