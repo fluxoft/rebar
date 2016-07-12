@@ -2,6 +2,7 @@
 
 namespace Fluxoft\Rebar\Db;
 
+use Fluxoft\Rebar\Db\Exceptions\ModelException;
 use Fluxoft\Rebar\Model as BaseModel;
 
 /**
