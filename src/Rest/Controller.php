@@ -26,7 +26,7 @@ abstract class Controller extends BaseController {
 					$authReply = $auth->GetAuthenticatedUser($this->request);
 					$this->set('auth', $authReply);
 				} catch (UserNotFoundException $e) {
-					$this->response->Status = 403;
+					$this->response->Status = 404;
 					$this->set('error', $e->getMessage());
 				} catch (InvalidPasswordException $e) {
 					$this->response->Status = 403;
@@ -59,7 +59,7 @@ abstract class Controller extends BaseController {
 						$this->set('auth', $authReply);
 					}
 				} catch (UserNotFoundException $e) {
-					$this->response->Status = 403;
+					$this->response->Status = 404;
 					$this->set('error', $e->getMessage());
 				} catch (InvalidPasswordException $e) {
 					$this->response->Status = 403;
