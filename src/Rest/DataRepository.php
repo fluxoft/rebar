@@ -3,6 +3,7 @@
 namespace Fluxoft\Rebar\Rest;
 
 use Doctrine\DBAL\DBALException;
+use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Fluxoft\Rebar\Auth\Db\User;
 use Fluxoft\Rebar\Db\Mapper;
 use Fluxoft\Rebar\Http\Request;
@@ -194,6 +195,11 @@ class DataRepository implements RepositoryInterface {
 			$response = new Reply(201, $new);
 		} catch (\InvalidArgumentException $e) {
 			$response = new Reply(422, ['error' => $e->getMessage()]);
+		} catch (UniqueConstraintViolationException $e) {
+			$response = new Reply(
+				409,
+				['error' => 'Object already exists.']
+			);
 		} catch (DBALException $e) {
 			$this->log('error', $e->getMessage());
 			$response = new Reply(
