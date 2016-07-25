@@ -147,7 +147,7 @@ class DataRepository implements RepositoryInterface {
 					} else {
 						$subset = $this->mapper->$method($id, $page, $pageSize);
 						if (isset($subset)) {
-							$reply  = new Reply(
+							$reply = new Reply(
 								200,
 								$subset
 							);
