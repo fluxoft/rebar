@@ -146,10 +146,17 @@ class DataRepository implements RepositoryInterface {
 						}
 					} else {
 						$subset = $this->mapper->$method($id, $page, $pageSize);
-						$reply  = new Reply(
-							200,
-							$subset
-						);
+						if (isset($subset)) {
+							$reply  = new Reply(
+								200,
+								$subset
+							);
+						} else {
+							$reply = new Reply(
+								404,
+								['error' => 'The subset returned a null result.']
+							);
+						}
 					}
 				}
 				break;
