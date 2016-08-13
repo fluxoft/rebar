@@ -220,7 +220,7 @@ abstract class Mapper {
 		$types  = [];
 		$values = [];
 		foreach ($merged as $property => $value) {
-			if ($property !== $idProperty) {
+			if ($property !== $idProperty && !is_null($value)) {
 				$cols[]  = $propertyDbMap[$property]['col'];
 				$types[] = $propertyDbMap[$property]['type'];
 
