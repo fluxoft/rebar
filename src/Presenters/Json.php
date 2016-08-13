@@ -14,10 +14,10 @@ class Json implements PresenterInterface {
 	public function Render(Response $response, array $data) {
 		$jsonString = $this->jsonEncode($data);
 		if ($this->callback) {
-			$response->AddHeader('Content-type', 'text/javascript');
+			$response->AddHeader('Content-type', 'text/javascript;charset=utf-8');
 			$response->Body = $this->callback.'('.$jsonString.');';
 		} else {
-			$response->AddHeader('Content-type', 'application/json');
+			$response->AddHeader('Content-type', 'application/json;charset=utf-8');
 			$response->Body = $jsonString;
 		}
 		$response->Send();
@@ -31,7 +31,7 @@ class Json implements PresenterInterface {
 			if (is_bool($data)) {
 				return ($data) ? 'true' : 'false';
 			}
-			return json_encode(utf8_encode($data));
+			return json_encode($data);
 		} elseif (is_object($data)) {
 			$bits = [];
 			foreach($data as $key => $value) {
