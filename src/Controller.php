@@ -143,7 +143,7 @@ abstract class Controller {
 				if ($requireAuth) {
 					/** @var \Fluxoft\Rebar\Auth\Reply $authReply */
 					$authReply = $this->auth->GetAuthenticatedUser($this->request);
-					if ($authReply->Auth) {
+					if (!$authReply->Auth) {
 						// method is limited and user is not authenticated
 						throw new AccessDeniedException(sprintf(
 							'Access denied for %s',
