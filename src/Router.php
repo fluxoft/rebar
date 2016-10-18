@@ -241,7 +241,7 @@ class Router extends Model {
 				 * If the $pathPart is 'index' that means we are at the end of a chain, so try changing
 				 * that to 'main' so that we can find main/index controllers in a bundle directory.
 				 */
-				$pathPart         = array_shift($pathParts);
+				$pathPart = array_shift($pathParts);
 				if ($pathPart === 'index') {
 					$pathPart = 'main';
 				}
