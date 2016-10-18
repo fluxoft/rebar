@@ -237,8 +237,15 @@ class Router extends Model {
 			 */
 			$controllerClass = (strlen($this->controllerNamespace) > 0) ? '\\' . $this->controllerNamespace : '';
 			while (!empty($pathParts)) {
-				//foreach ($pathParts as $part) {
-				$controllerClass .= '\\'.ucwords(array_shift($pathParts));
+				/*
+				 * If the $pathPart is 'index' that means we are at the end of a chain, so try changing
+				 * that to 'main' so that we can find main/index controllers in a bundle directory.
+				 */
+				$pathPart = array_shift($pathParts);
+				if ($pathPart === 'index') {
+					$pathPart = 'main';
+				}
+				$controllerClass .= '\\'.ucwords($pathPart);
 				if (class_exists($controllerClass)) {
 					$routeParts['controller'] = $controllerClass;
 					break;
