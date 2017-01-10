@@ -220,7 +220,7 @@ abstract class Mapper {
 		$types  = [];
 		$values = [];
 		foreach ($merged as $property => $value) {
-			if ($property !== $idProperty && !is_null($value)) {
+			if ($property !== $idProperty && !is_null($value) && isset($propertyDbMap[$property])) {
 				$cols[]  = $propertyDbMap[$property]['col'];
 				$types[] = $propertyDbMap[$property]['type'];
 
@@ -249,22 +249,26 @@ abstract class Mapper {
 			$types  = [];
 			$values = [];
 			foreach ($modified as $property => $value) {
-				$cols[]  = $propertyDbMap[$property]['col'];
-				$types[] = $propertyDbMap[$property]['type'];
+				if (isset($propertyDbMap[$property])) {
+					$cols[]  = $propertyDbMap[$property]['col'];
+					$types[] = $propertyDbMap[$property]['type'];
 
-				$values[$propertyDbMap[$property]['col']] = $value;
+					$values[$propertyDbMap[$property]['col']] = $value;
+				}
 			}
-			$values[$propertyDbMap[$idProperty]['col']] = $properties[$idProperty];
-			$types[]                                    = $propertyDbMap[$idProperty]['type'];
+			if (!empty($cols)) {
+				$values[$propertyDbMap[$idProperty]['col']] = $properties[$idProperty];
+				$types[]                                    = $propertyDbMap[$idProperty]['type'];
 
-			$sql = "UPDATE `{$model->GetDbTable()}` SET ";
-			foreach ($cols as $col) {
-				$sql .= "`$col` = :$col,";
+				$sql = "UPDATE `{$model->GetDbTable()}` SET ";
+				foreach ($cols as $col) {
+					$sql .= "`$col` = :$col,";
+				}
+				$sql  = substr($sql, 0, -1); // remove trailing comma
+				$sql .= " WHERE `{$propertyDbMap[$idProperty]['col']}` = :{$propertyDbMap[$idProperty]['col']}";
+
+				$this->writer->executeQuery($sql, $values, $types);
 			}
-			$sql  = substr($sql, 0, -1); // remove trailing comma
-			$sql .= " WHERE `{$propertyDbMap[$idProperty]['col']}` = :{$propertyDbMap[$idProperty]['col']}";
-
-			$this->writer->executeQuery($sql, $values, $types);
 		}
 	}
 
