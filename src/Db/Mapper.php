@@ -3,6 +3,7 @@
 namespace Fluxoft\Rebar\Db;
 
 use Doctrine\DBAL\Connection;
+use Fluxoft\Rebar\Db\Exceptions\InvalidModelException;
 use Fluxoft\Rebar\Db\Exceptions\MapperException;
 
 /**
@@ -20,6 +21,8 @@ abstract class Mapper {
 	protected $reader;
 	/** @var Connection */
 	protected $writer;
+	/** @var string */
+	protected $selectSql = null;
 
 	/**
 	 * @param MapperFactory $mapperFactory
@@ -63,97 +66,50 @@ abstract class Mapper {
 	 * @return Model|null
 	 */
 	public function GetOneById($id) {
-		$idProperty    = $this->model->GetIDProperty();
-		$propertyDbMap = $this->model->GetPropertyDbMap();
-		$sql           = "SELECT * FROM `{$this->model->GetDbTable()}` WHERE `{$propertyDbMap[$idProperty]['col']}` = :id";
-		$values        = ['id' => $id];
-		$types         = [$propertyDbMap[$idProperty]['type']];
-		$results       = $this->reader->fetchAll(
-			$sql,
-			$values,
-			$types
+		$idProperty = $this->model->GetIDProperty();
+		$select     = $this->getSelect([$idProperty => $id], [], 1, 1);
+		$results    = $this->reader->fetchAll(
+			$select['sql'],
+			$select['params']
 		);
 		if (!empty($results)) {
-			return new $this->modelClass($results[0]);
+			return $this->getModel($results[0]);
 		} else {
 			return null;
 		}
 	}
 
 	/**
-	 * @param $where
-	 * @param array $params
+	 * @param array $filter
 	 * @return null
 	 */
-	public function GetOneWhere($where, $params = []) {
-		$propertyDbMap = $this->model->GetPropertyDbMap();
-		$sql           = "SELECT * FROM `{$this->model->GetDbTable()}`";
-		if (!empty($where)) {
-			$sql .= $this->translateWhere($where, $propertyDbMap);
-		}
-		$sql   .= ' LIMIT 1';
-		$values = [];
-		$types  = [];
-		foreach ($params as $key => $value) {
-			if (is_array($value)) {
-				$values[$key] = $value['value'];
-				if (isset($value['type'])) {
-					$types[] = $value['type'];
-				}
-			} else {
-				$values[$key] = $value;
-			}
-		}
+	public function GetOneWhere($filter = []) {
+		$select  = $this->getSelect($filter, [], 1, 1);
 		$results = $this->reader->fetchAll(
-			$sql,
-			$values,
-			$types
+			$select['sql'],
+			$select['params']
 		);
 		if (!empty($results)) {
-			return new $this->modelClass($results[0]);
+			return $this->getModel($results[0]);
 		} else {
 			return null;
 		}
 	}
 
 	/**
-	 * @param string $where
-	 * @param array $params
+	 * @param array $filter
+	 * @param array $sort
 	 * @param int $page
 	 * @param int $pageSize
 	 * @return array
 	 */
-	public function GetSetWhere($where = '', $params = [], $page = 1, $pageSize = 0) {
-		$propertyDbMap = $this->model->GetPropertyDbMap();
-		$sql           = "SELECT * FROM `{$this->model->GetDbTable()}`";
-		if (!empty($where)) {
-			$sql .= $this->translateWhere($where, $propertyDbMap);
-		}
-		if ($pageSize > 0) {
-			$sql .= " LIMIT $pageSize OFFSET " . ($pageSize * ($page - 1));
-		}
-		$values = [];
-		$types  = [];
-		foreach ($params as $key => $value) {
-			if (is_array($value)) {
-				$values[$key] = $value['value'];
-				if (isset($value['type'])) {
-					$types[] = $value['type'];
-				}
-			} else {
-				$values[$key] = $value;
-			}
-		}
-		$set     = [];
+	public function GetSetWhere($filter = [], $sort = [], $page = 1, $pageSize = 0) {
+		$select  = $this->getSelect($filter, $sort, $page, $pageSize);
 		$results = $this->reader->fetchAll(
-			$sql,
-			$values,
-			$types
+			$select['sql'],
+			$select['params']
 		);
-		foreach ($results as $result) {
-			$set[] = new $this->modelClass($result);
-		}
-		return $set;
+		return $this->getModelSet($results);
 	}
 
 	/**
@@ -162,10 +118,10 @@ abstract class Mapper {
 	public function Save(Model $model) {
 		if ($model->GetID() === 0) {
 			// ID is set to 0, so this is an INSERT
-			$this->create($model);
+			$this->Create($model);
 		} else {
 			// UPDATE for this ID
-			$this->update($model);
+			$this->Update($model);
 		}
 	}
 
@@ -192,12 +148,11 @@ abstract class Mapper {
 	}
 
 	/**
-	 * @param $where
-	 * @param $params
+	 * @param array $filter
 	 */
-	public function DeleteOneWhere($where, $params) {
+	public function DeleteOneWhere($filter = []) {
 		/** @var Model $model */
-		$model = $this->GetOneWhere($where, $params);
+		$model = $this->GetOneWhere($filter);
 		if ($model !== false) {
 			$this->Delete($model);
 		}
@@ -205,41 +160,45 @@ abstract class Mapper {
 
 	/**
 	 * @param Model $model
-	 * @throws \Doctrine\DBAL\DBALException
+	 * @throws InvalidModelException
 	 */
-	private function create(Model $model) {
-		$idProperty = $model->GetIDProperty();
-		// merged array containing original plus modified properties
-		$merged        = array_replace_recursive(
-			$model->GetProperties(),
-			$model->GetModifiedProperties()
-		);
-		$propertyDbMap = $model->GetPropertyDbMap();
+	public function Create(Model $model) {
+		if ($model->IsValid()) {
+			$idProperty = $model->GetIDProperty();
+			// merged array containing original plus modified properties
+			$merged        = array_replace_recursive(
+				$model->GetProperties(),
+				$model->GetModifiedProperties()
+			);
+			$propertyDbMap = $model->GetPropertyDbMap();
 
-		$cols   = [];
-		$types  = [];
-		$values = [];
-		foreach ($merged as $property => $value) {
-			if ($property !== $idProperty && !is_null($value) && isset($propertyDbMap[$property])) {
-				$cols[]  = $propertyDbMap[$property]['col'];
-				$types[] = $propertyDbMap[$property]['type'];
+			$cols   = [];
+			$types  = [];
+			$values = [];
+			foreach ($merged as $property => $value) {
+				if ($property !== $idProperty && !is_null($value) && isset($propertyDbMap[$property])) {
+					$cols[]  = $propertyDbMap[$property]['col'];
+					$types[] = $propertyDbMap[$property]['type'];
 
-				$values[$propertyDbMap[$property]['col']] = $value;
+					$values[$propertyDbMap[$property]['col']] = $value;
+				}
 			}
+			$sql = "INSERT INTO `{$model->GetDbTable()}` (`" .
+				implode('`,`', $cols) .
+				"`) VALUES (:" . implode(',:', $cols) . ")";
+			$this->writer->executeQuery($sql, $values, $types);
+			$insertId = $this->writer->lastInsertId();
+			$model->SetID($insertId);
+		} else {
+			throw new InvalidModelException('Model failed validation check.');
 		}
-		$sql = "INSERT INTO `{$model->GetDbTable()}` (`" .
-			implode('`,`', $cols) .
-			"`) VALUES (:" . implode(',:', $cols) . ")";
-		$this->writer->executeQuery($sql, $values, $types);
-		$insertId = $this->writer->lastInsertId();
-		$model->SetID($insertId);
 	}
 
 	/**
 	 * @param Model $model
 	 * @throws \Doctrine\DBAL\DBALException
 	 */
-	private function update(Model $model) {
+	public function Update(Model $model) {
 		$idProperty    = $model->GetIDProperty();
 		$properties    = $model->GetProperties();
 		$modified      = $model->GetModifiedProperties();
@@ -273,25 +232,88 @@ abstract class Mapper {
 	}
 
 	/**
-	 * @param $where
-	 * @param $properties
-	 * @return string
+	 * @param array $filter Array of property names and values to filter by
+	 * @param array $sort Array of property names to sort by in the order they should be applied,
+	 *                    e.g. ['Name', 'ID DESC']
+	 * @param int $page
+	 * @param int $pageSize
+	 * @return array Contains 2 elements: 'sql' is the SQL statement, 'params' are the values
+	 *               to be passed to the prepared statement
 	 */
-	private function translateWhere($where, $properties) {
-		// @todo: clean up this hacky mess - the methods here should really just accept an array of filter values
-		$returnWhere  = ' WHERE ';
-		$returnWhere .= preg_replace_callback('/\{(\w+)\}/', function ($matches) use ($properties) {
-			if (isset($properties[$matches[1]])) {
-				return '`' . $properties[$matches[1]]['col'] . '`';
-			} else {
-				return '{' . $matches[1] . '}';
-			}
-		}, $where);
+	private function getSelect($filter = [], $sort = [], $page = 1, $pageSize = 0) {
+		$dbTable       = $this->model->GetDbTable();
+		$properties    = $this->model->GetProperties();
+		$propertyDbMap = $this->model->GetPropertyDbMap();
 
-		if (preg_match('/\{(\w+)\}/', $returnWhere)) {
-			$returnWhere = '';
+		if (!isset($this->selectSql)) {
+			$fields = [];
+			foreach ($propertyDbMap as $name => $dbMap) {
+				$fields[] = "`$dbTable`.`{$dbMap['col']}` $name";
+			}
+			$this->selectSql = 'SELECT '.implode(', ', $fields).' FROM `'.$dbTable.'`';
 		}
 
-		return $returnWhere;
+		$sql    = $this->selectSql;
+		$params = [];
+
+		// Apply filters, if provided.
+		if (!empty($filter)) {
+			// If a filter is in the propertyDbMap, it is filtered in the WHERE clause
+			$whereFilters = [];
+			foreach ($filter as $key => $value) {
+				if (isset($propertyDbMap[$key])) {
+					$whereFilters[] = "`$dbTable`.`{$propertyDbMap[$key]['col']}` = :$key";
+					$params[$key]   = $value;
+					unset($filter[$key]);
+				}
+			}
+			if (!empty($whereFilters)) {
+				$sql .= ' WHERE '.implode(' AND ', $whereFilters);
+			}
+
+			// If a filter is in properties, but wasn't found in propertyDbMap, use a HAVING clause
+			$havingFilters = [];
+			foreach ($filter as $key => $value) {
+				if (isset($properties[$key])) {
+					$havingFilters[] = "$key = :$key";
+					$params[$key]    = $value;
+				}
+			}
+			if (!empty($havingFilters)) {
+				$sql .= ' HAVING '.implode(' AND ', $havingFilters);
+			}
+		}
+		// Apply order, if set
+		if (!empty($sort)) {
+			$orderBy = [];
+			foreach ($sort as $item) {
+				list($field) = explode(' ', $item);
+				if (array_key_exists($field, $properties)) {
+					$orderBy[] = $item;
+				}
+			}
+			if (!empty($orderBy)) {
+				$sql .= ' ORDER BY ' . implode(', ', $orderBy);
+			}
+		}
+		// Apply limit, if limited
+		if ($pageSize > 0) {
+			$sql .= " LIMIT $pageSize OFFSET " . ($pageSize * ($page - 1));
+		}
+		return [
+			'sql' => $sql,
+			'params' => $params
+		];
+	}
+
+	private function getModelSet($rowSet) {
+		$models = [];
+		foreach ($rowSet as $row) {
+			$models[] = new $this->modelClass($row);
+		}
+		return $models;
+	}
+	private function getModel($row) {
+		return new $this->modelClass($row);
 	}
 }
