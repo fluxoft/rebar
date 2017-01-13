@@ -5,6 +5,7 @@ namespace Fluxoft\Rebar\Rest;
 use Doctrine\DBAL\DBALException;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Fluxoft\Rebar\Auth\Db\User;
+use Fluxoft\Rebar\Db\Exceptions\InvalidModelException;
 use Fluxoft\Rebar\Db\Mapper;
 use Fluxoft\Rebar\Http\Request;
 use Psr\Log\LoggerInterface;
@@ -73,17 +74,16 @@ class DataRepository implements RepositoryInterface {
 					$get[$this->authUserIDProperty] = $this->authUser->GetID();
 				}
 
-				// if the params array was empty, return a set
-				$filterKeys   = [];
-				$filterValues = [];
-				foreach ($get as $key => $value) {
-					$filterKeys[]          = '{'.$key.'} = :'.$key;
-					$filterValues[":$key"] = $value;
+				$order = [];
+				if (isset($get['order'])) {
+					if (is_array($get['order'])) {
+						$order = $get['order'];
+					} else {
+						$order = [$get['order']];
+					}
+					unset($get['order']);
 				}
-
-				$whereClause = implode(' AND ', $filterKeys);
-
-				$set = $this->mapper->GetSetWhere($whereClause, $filterValues, $page, $pageSize);
+				$set = $this->mapper->GetSetWhere($get, $order, $page, $pageSize);
 
 				$reply = new Reply(
 					200,
@@ -193,13 +193,21 @@ class DataRepository implements RepositoryInterface {
 				$model[$this->authUserIDProperty] = $this->authUser->GetID();
 			}
 		}
+		$new = $this->mapper->GetNew();
+		foreach ($model as $key => $value) {
+			$new->$key = $value;
+		}
 		try {
-			$new = $this->mapper->GetNew();
-			foreach ($model as $key => $value) {
-				$new->$key = $value;
-			}
 			$this->mapper->Save($new);
 			$response = new Reply(201, $new);
+		} catch (InvalidModelException $e) {
+			$response = new Reply(
+				422,
+				[
+					'error' => $e->getMessage(),
+					'invalidProperties' => $new->GetValidationErrors()
+				]
+			);
 		} catch (\InvalidArgumentException $e) {
 			$response = new Reply(422, ['error' => $e->getMessage()]);
 		} catch (UniqueConstraintViolationException $e) {
@@ -255,8 +263,18 @@ class DataRepository implements RepositoryInterface {
 					}
 				}
 				if (empty($errors)) {
-					$this->mapper->Save($update);
-					return new Reply(200, $update);
+					try {
+						$this->mapper->Save($update);
+						return new Reply(200, $update);
+					} catch (InvalidModelException $e) {
+						return new Reply(
+							422,
+							[
+								'error' => $e->getMessage(),
+								'invalidProperties' => $new->GetValidationErrors()
+							]
+						);
+					}
 				} else {
 					return new Reply(422, ['errors' => $errors]);
 				}

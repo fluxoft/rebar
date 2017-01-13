@@ -15,12 +15,8 @@ abstract class Model implements \Iterator, \ArrayAccess {
 
 	public function __construct(array $properties = []) {
 		if (!empty($properties)) {
-			if (count(array_intersect_key($this->properties, $properties)) === count($this->properties)) {
-				foreach ($this->properties as $propertyName => $propertyValue) {
-					$this->properties[$propertyName] = $properties[$propertyName];
-				}
-			} else {
-				throw new \InvalidArgumentException('Property list does not match configured model property list.');
+			foreach ($properties as $name => $value) {
+				$this->$name = $value;
 			}
 		}
 	}
@@ -37,6 +33,30 @@ abstract class Model implements \Iterator, \ArrayAccess {
 	 */
 	public function GetModifiedProperties() {
 		return $this->modProperties;
+	}
+
+	private $validationErrors = [];
+	public function IsValid() {
+		// Reset the error array
+		$this->validationErrors = [];
+
+		$valid = true;
+		foreach ($this->properties as $key => $value) {
+			$validationMethod = 'Validate'.$key;
+			if (is_callable([$this, $validationMethod])) {
+				$validation = $this->$validationMethod($value);
+				if ($validation !== true) {
+					//
+					$this->validationErrors[$key] = $validation;
+
+					$valid = false;
+				}
+			}
+		}
+		return $valid;
+	}
+	public function GetValidationErrors() {
+		return $this->validationErrors;
 	}
 
 	/**

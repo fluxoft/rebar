@@ -36,10 +36,9 @@ class UserMapper extends Mapper implements UserMapperInterface {
 	 */
 	public function GetAuthorizedUserForUsernameAndPassword($username, $password) {
 		/** @var User $user */
-		$user = $this->GetOneWhere(
-			'{'.$this->userModel->GetAuthUsernameProperty().'} = :username',
-			['username' => $username]
-		);
+		$user = $this->GetOneWhere([
+			$this->userModel->GetAuthUsernameProperty() => $username
+		]);
 		if (isset($user)) {
 			if ($user->IsPasswordValid($password)) {
 				return $user;
