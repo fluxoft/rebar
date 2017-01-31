@@ -26,7 +26,7 @@ class Handler {
 	public static function ErrorHandler($severity, $message, $filename, $lineno) {
 		throw new \ErrorException($message, 0, $severity, $filename, $lineno);
 	}
-	public static function ExceptionHandler(\Exception $e) {
-		self::$notifier->Notify($e);
+	public static function ExceptionHandler(\Throwable $t) {
+		self::$notifier->Notify($t);
 	}
 }
