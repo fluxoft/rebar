@@ -99,8 +99,8 @@ class Response {
 		$this->Send();
 	}
 
-	public function Redirect($location) {
-		$this->status = 302;
+	public function Redirect($location, $permanent = false) {
+		$this->status = ($permanent) ? 301 : 302;
 		$this->AddHeader('Location', $location);
 		$this->body = '';
 		$this->Send();
