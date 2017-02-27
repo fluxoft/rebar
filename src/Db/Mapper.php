@@ -306,14 +306,14 @@ abstract class Mapper {
 		];
 	}
 
-	private function getModelSet($rowSet) {
+	protected function getModelSet($rowSet) {
 		$models = [];
 		foreach ($rowSet as $row) {
 			$models[] = new $this->modelClass($row);
 		}
 		return $models;
 	}
-	private function getModel($row) {
+	protected function getModel($row) {
 		return new $this->modelClass($row);
 	}
 }

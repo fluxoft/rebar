@@ -42,7 +42,7 @@ abstract class Model implements \Iterator, \ArrayAccess {
 
 		$valid = true;
 		foreach ($this->properties as $key => $value) {
-			$validationMethod = 'Validate'.$key;
+			$validationMethod = 'validate'.$key;
 			if (is_callable([$this, $validationMethod])) {
 				$validation = $this->$validationMethod($value);
 				if ($validation !== true) {
