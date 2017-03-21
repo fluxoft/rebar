@@ -271,7 +271,7 @@ class DataRepository implements RepositoryInterface {
 							422,
 							[
 								'error' => $e->getMessage(),
-								'invalidProperties' => $new->GetValidationErrors()
+								'invalidProperties' => $update->GetValidationErrors()
 							]
 						);
 					}
