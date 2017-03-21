@@ -80,9 +80,13 @@ class Jwt implements AuthInterface {
 	 * and return a Reply object.
 	 * @param string $username
 	 * @param string $password
+	 * @param bool $remember
 	 * @return \Fluxoft\Rebar\Auth\Reply
 	 */
-	public function Login($username, $password) {
+	public function Login($username, $password, $remember = null) {
+		// unused in this implementation
+		$remember = null;
+
 		$reply = new Reply();
 		$user  = $this->userMapper->GetAuthorizedUserForUsernameAndPassword($username, $password);
 		if ($user instanceof UserInterface) {

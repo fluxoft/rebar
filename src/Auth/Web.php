@@ -95,6 +95,14 @@ class Web implements AuthInterface {
 		return $this->auth;
 	}
 
+	/**
+	 * Attempt to log the user in using the given $username and $password
+	 * and return a Reply object.
+	 * @param string $username
+	 * @param string $password
+	 * @param bool $remember
+	 * @return \Fluxoft\Rebar\Auth\Reply
+	 */
 	public function Login($username, $password, $remember = false) {
 		$reply = new Reply();
 		$user  = $this->userMapper->GetAuthorizedUserForUsernameAndPassword($username, $password);
@@ -108,6 +116,11 @@ class Web implements AuthInterface {
 		return $reply;
 	}
 
+	/**
+	 * Log the user out and return a blank Reply
+	 * @param \Fluxoft\Rebar\Http\Request $request
+	 * @return Reply
+	 */
 	public function Logout(Request $request) {
 		$auth = $this->GetAuthenticatedUser( $request);
 		if ($auth->User instanceof UserInterface) {
