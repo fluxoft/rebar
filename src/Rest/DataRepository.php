@@ -26,6 +26,12 @@ class DataRepository implements RepositoryInterface {
 	protected $authUserIDProperty = 'UserID';
 
 	/**
+	 * If specified for a repository, this is the default page size
+	 * @var null|int
+	 */
+	protected $defaultPageSize = null;
+
+	/**
 	 * @param Mapper $mapper
 	 * @param LoggerInterface $logger
 	 * @param User $authUser
@@ -49,25 +55,36 @@ class DataRepository implements RepositoryInterface {
 		 * GET /{item}/{id}/{children} <- retrieve the children of {item} with id {id}
 		 *     ** the above only works on Mappers which have a Get{children} method accepting {id} as an argument
 		 */
+		$page     = 1;
+		$pageSize = null;
 		$get      = $request->Get();
-		$page     = (isset($get['page']) && is_numeric($get['page'])) ? $get['page'] : 1;
-		$pageSize = 0;
-		if (isset($config['pageSize']) && is_numeric($config['pageSize'])) {
-			$pageSize = $config['pageSize'];
+		if (isset($this->defaultPageSize) && is_int($this->defaultPageSize)) {
+			$pageSize = $this->defaultPageSize;
 		}
-		if (isset($get['pageSize']) && is_numeric($get['pageSize'])) {
-			$pageSize = $get['pageSize'];
+		if (isset($get['page'])) {
+			if (is_array($get['page'])) {
+				if (isset($get['page']['number']) && is_numeric($get['page']['number'])) {
+					$page = (int) $get['page']['number'];
+				}
+				if (isset($get['page']['size']) && is_numeric($get['page']['size'])) {
+					$pageSize = (int) $get['page']['size'];
+				}
+			} elseif (is_numeric($get['page'])) {
+				$page = (int) $get['page'];
+			}
+			if (isset($get['pageSize']) && is_numeric($get['pageSize'])) {
+				$pageSize = (int) $get['pageSize'];
+			}
 		}
 
 		unset($get['page']);
-		unset($get['pageSize']);
 		unset($get['callback']);
 
 		if ($this->authUserFilter && !isset($this->authUser)) {
-			return new Reply(403, ['error' => 'Must be logged in to access this resource.']);
+			return new Reply(403, [], [], new Error(403, 'Must be logged in to access this resource.'));
 		}
 
-		$reply = null;
+		$reply = new Reply();
 		switch (count($params)) {
 			case 0:
 				if ($this->authUserFilter && isset($this->authUser)) {
@@ -83,49 +100,48 @@ class DataRepository implements RepositoryInterface {
 					}
 					unset($get['order']);
 				}
-				$set = $this->mapper->GetSetWhere($get, $order, $page, $pageSize);
+				$set   = $this->mapper->GetSetWhere($get, $order, $page, $pageSize);
+				$count = $this->mapper->CountWhere($get);
+				$pages = (isset($pageSize) && $pageSize > 0) ? ceil($count/$pageSize) : 1;
 
-				$reply = new Reply(
-					200,
-					$set
-				);
-
+				$reply->Data = $set;
+				$reply->Meta = [
+					'page' => $page,
+					'pages' => $pages,
+					'count' => $count
+				];
 				break;
 			case 1:
 				$item = $this->mapper->GetOneById($params[0]);
 				if (!isset($item)) {
-					$reply = new Reply(
-						404,
-						[
-							'error' => 'The requested item could not be found.'
-						]
-					);
+					$reply->Status = 404;
+					$reply->Error  = new Error(404, 'The requested item could not be found.');
 				} else {
-					$reply = new Reply(
-						200,
-						$item
-					);
 					if ($this->authUserFilter &&
 						$item->{$this->authUserIDProperty} !== $this->authUser->GetID()
 					) {
-						$reply = new Reply(
-							404,
-							['error' => 'The requested item could not be found.']
-						);
+						$reply->Status = 404;
+						$reply->Error  = new Error(404, 'The requested item could not be found.');
+					} else {
+						$reply->Data = $item;
 					}
 				}
 				break;
 			case 2:
 				$id         = $params[0];
 				$subsetName = $params[1];
-				$method     = 'Get'.ucwords($subsetName);
-				if (!method_exists($this->mapper, $method)) {
-					$reply = new Reply(
-						404,
-						[
-							'error' => sprintf('"%s" not found.', $subsetName)
-						]
-					);
+				$getter     = 'Get'.ucwords($subsetName);
+				$counter    = 'Count'.ucwords($subsetName);
+				if (!method_exists($this->mapper, $getter)) {
+					$reply->Status = 404;
+					$reply->Error  = new Error(404, sprintf('"%s" not found.', $subsetName));
+				} elseif (!method_exists($this->mapper, $counter)) {
+					$reply->Status = 500;
+					$reply->Error  = new Error(500, sprintf(
+						'Counter method "%s" not found in mapper "%s"',
+						$counter,
+						get_class($this->mapper)
+					));
 				} else {
 					if ($this->authUserFilter) {
 						$parent = $this->mapper->GetOneById($id);
@@ -133,38 +149,42 @@ class DataRepository implements RepositoryInterface {
 						if (!isset($parent) ||
 							($parent->{$this->authUserIDProperty} !== $this->authUser->GetID())
 						) {
-							$reply = new Reply(
-								404,
-								['error' => 'The requested item could not be found.']
-							);
+							$reply->Status = 404;
+							$reply->Error  = new Error(404, 'The requested item could not be found.');
 						} else {
-							$subset = $this->mapper->$method($parent->GetID(), $page, $pageSize);
-							$reply  = new Reply(
-								200,
-								$subset
-							);
+							$subset = $this->mapper->$getter($parent->GetID(), $page, $pageSize);
+							$count  = $this->mapper->$counter($parent->GetID());
+							$pages  = (isset($pageSize) && $pageSize > 0) ? ceil($count/$pageSize) : 1;
+
+							$reply->Data = $subset;
+							$reply->Meta = [
+								'page' => $page,
+								'pages' => $pages,
+								'count' => $count
+							];
 						}
 					} else {
-						$subset = $this->mapper->$method($id, $page, $pageSize);
+						$subset = $this->mapper->$getter($id, $page, $pageSize);
 						if (isset($subset)) {
-							$reply = new Reply(
-								200,
-								$subset
-							);
+							$count = $this->mapper->$counter($id);
+							$pages = (isset($pageSize) && $pageSize > 0) ? ceil($count/$pageSize) : 1;
+
+							$reply->Data = $subset;
+							$reply->Meta = [
+								'page' => $page,
+								'pages' => $pages,
+								'count' => $count
+							];
 						} else {
-							$reply = new Reply(
-								404,
-								['error' => 'The subset returned a null result.']
-							);
+							$reply->Status = 404;
+							$reply->Error  = new Error(404, 'The subset returned a null result.');
 						}
 					}
 				}
 				break;
 			default:
-				$reply = new Reply(
-					400,
-					['error' => 'Too many parameters in URL.']
-				);
+				$reply->Status = 400;
+				$reply->Error  = new Error(400, 'Too many parameters in URL.');
 				break;
 		}
 		return $reply;
@@ -184,7 +204,7 @@ class DataRepository implements RepositoryInterface {
 
 		if ($this->authUserFilter) {
 			if (!isset($this->authUser)) {
-				return new Reply(403, ['error' => 'Must be logged in to access this resource.']);
+				return new Reply(403, [], [], new Error(403, 'Must be logged in to access this resource.'));
 			} else {
 				// Just change the $post's UserID to the user's. This will let the attacker add
 				// something, but to his own account, not someone else's. This actually has the
@@ -197,34 +217,34 @@ class DataRepository implements RepositoryInterface {
 		foreach ($model as $key => $value) {
 			$new->$key = $value;
 		}
+
+		$reply = new Reply();
 		try {
 			$this->mapper->Save($new);
-			$response = new Reply(201, $new);
+			$reply->Status = 201;
+			$reply->Data   = $new;
 		} catch (InvalidModelException $e) {
-			$response = new Reply(
+			$reply->Status = 422;
+			$reply->Error  = new Error(
 				422,
-				[
-					'error' => $e->getMessage(),
-					'invalidProperties' => $new->GetValidationErrors()
-				]
+				$e->getMessage(),
+				['invalidProperties' => $new->GetValidationErrors()]
 			);
 		} catch (\InvalidArgumentException $e) {
-			$response = new Reply(422, ['error' => $e->getMessage()]);
+			$reply->Status = 422;
+			$reply->Error  = new Error(422, $e->getMessage());
 		} catch (UniqueConstraintViolationException $e) {
-			$response = new Reply(
-				409,
-				['error' => 'Object already exists.']
-			);
+			$reply->Status = 409;
+			$reply->Error  = new Error(409, 'Object already exists');
 		} catch (DBALException $e) {
 			$this->log('error', $e->getMessage());
-			$response = new Reply(
-				500,
-				['error' => 'Database error. Please try again later.']
-			);
+			$reply->Status = 500;
+			$reply->Error  = new Error(500, 'Database error. Please try again later.');
 		} catch (\Exception $e) {
-			$response = new Reply(500, ['error' => $e->getMessage()]);
+			$reply->Status = 500;
+			$reply->Error  = new Error(500, $e->getMessage());
 		}
-		return $response;
+		return $reply;
 	}
 
 	/**
@@ -235,10 +255,10 @@ class DataRepository implements RepositoryInterface {
 	 */
 	public function Put(Request $request, $params = []) {
 		if (empty($params)) {
-			return new Reply(422, ['error' => 'You must specify an ID in order to update.']);
+			return new Reply(422, [], [], new Error(422, 'You must specify an ID in order to update.'));
 		} else {
 			if ($this->authUserFilter && !isset($this->authUser)) {
-				return new Reply(403, ['error' => 'Must be logged in to access this resource.']);
+				return new Reply(403, [], [], new Error(403, 'Must be logged in to access this resource.'));
 			}
 
 			$id = $params[0];
@@ -250,7 +270,7 @@ class DataRepository implements RepositoryInterface {
 				}
 			}
 			if (!isset($update)) {
-				return new Reply(404, ['error' => 'The object to be updated was not found.']);
+				return new Reply(404, [], [], new Error(404, 'The object to be updated was not found.'));
 			} else {
 				$errors = [];
 				$model  = $this->getPutData($request);
@@ -269,17 +289,26 @@ class DataRepository implements RepositoryInterface {
 					} catch (InvalidModelException $e) {
 						return new Reply(
 							422,
-							[
-								'error' => $e->getMessage(),
-								'invalidProperties' => $update->GetValidationErrors()
-							]
+							[],
+							[],
+							new Error(422, $e->getMessage(), ['invalidProperties' => $update->GetValidationErrors()])
 						);
 					}
 				} else {
-					return new Reply(422, ['errors' => $errors]);
+					return new Reply(422, [], [], new Error(422, 'Errors saving properties', ['errors' => $errors]));
 				}
 			}
 		}
+	}
+
+	/**
+	 * The repository handles PUT and PATCH requests the exact same way, so this should just call Put
+	 * @param Request $request
+	 * @param array $params
+	 * @return Reply
+	 */
+	public function Patch(Request $request, $params = []) {
+		return $this->Put($request, $params);
 	}
 
 	/**
@@ -293,10 +322,10 @@ class DataRepository implements RepositoryInterface {
 
 		if (empty($params)) {
 			// cannot delete if we don't have an id
-			return new Reply(422, ['error' => 'ID is required for DELETE operation.']);
+			return new Reply(422, [], [], new Error(422, 'ID is required for DELETE operation.'));
 		} else {
 			if ($this->authUserFilter && !isset($this->authUser)) {
-				return new Reply(403, ['error' => 'Must be logged in to access this resource.']);
+				return new Reply(403, [], [], new Error(403, 'Must be logged in to access this resource.'));
 			}
 			$id = $params[0];
 
@@ -307,7 +336,7 @@ class DataRepository implements RepositoryInterface {
 				}
 			}
 			if (!isset($delete)) {
-				return new Reply(403, ['error' => 'Must be logged in to access this resource.']);
+				return new Reply(403, [], [], new Error(403, 'Must be logged in to access this resource.'));
 			} else {
 				$this->mapper->Delete($delete);
 				return new Reply(204, ['success' => 'The item was deleted.']);

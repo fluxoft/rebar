@@ -35,5 +35,12 @@ interface RepositoryInterface {
 	 * @param array $params
 	 * @return Reply
 	 */
+	public function Patch(Request $request, $params = []);
+
+	/**
+	 * @param Request $request
+	 * @param array $params
+	 * @return Reply
+	 */
 	public function Delete(Request $request, $params = []);
 }
