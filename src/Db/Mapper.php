@@ -266,7 +266,7 @@ abstract class Mapper {
 		$sql    = $this->selectSql;
 		$filter = $this->getFilter($filter);
 		$params = [];
-		if (strlen($filter['sql'] > 0)) {
+		if (strlen($filter['sql']) > 0) {
 			$sql   .= $filter['sql'];
 			$params = $filter['params'];
 		}
@@ -293,6 +293,35 @@ abstract class Mapper {
 		];
 	}
 
+	/**
+	 * @param array $filter Array of property names and values to filter by
+	 * @return array Contains 2 elements: 'sql' is the SQL statement, 'params' are the values
+	 *               to be passed to the prepared statement
+	 */
+	protected function countSelect($filter = []) {
+		$dbTable       = $this->model->GetDbTable();
+		$properties    = $this->model->GetProperties();
+		$propertyDbMap = $this->model->GetPropertyDbMap();
+
+		if (!isset($this->countSql)) {
+			$idField        = $propertyDbMap[$this->model->GetIDProperty()]['col'];
+			$this->countSql = 'SELECT COUNT('.$idField.') FROM `'.$dbTable.'`';
+		}
+
+		$sql    = $this->countSql;
+		$filter = $this->getFilter($filter);
+		$params = [];
+		if (strlen($filter['sql']) > 0) {
+			$sql   .= $filter['sql'];
+			$params = $filter['params'];
+		}
+
+		return [
+			'sql' => $sql,
+			'params' => $params
+		];
+	}
+
 	protected function getFilter($filter = []) {
 		$filterString  = '';
 		$filterClauses = $this->getFilterClauses($filter);
@@ -313,6 +342,8 @@ abstract class Mapper {
 
 	protected function getFilterClauses($filter = []) {
 		$dbTable       = $this->model->GetDbTable();
+		$properties    = $this->model->GetProperties();
+		$propertyDbMap = $this->model->GetPropertyDbMap();
 		$filterClauses = [];
 		$params        = [];
 		// Apply filters, if provided.
@@ -344,56 +375,6 @@ abstract class Mapper {
 		}
 		$filterClauses['params'] = $params;
 		return $filterClauses;
-	}
-	/**
-	 * @param array $filter Array of property names and values to filter by
-	 * @return array Contains 2 elements: 'sql' is the SQL statement, 'params' are the values
-	 *               to be passed to the prepared statement
-	 */
-	protected function countSelect($filter = []) {
-		$dbTable       = $this->model->GetDbTable();
-		$properties    = $this->model->GetProperties();
-		$propertyDbMap = $this->model->GetPropertyDbMap();
-
-		if (!isset($this->countSql)) {
-			$idField        = $propertyDbMap[$this->model->GetIDProperty()]['col'];
-			$this->countSql = 'SELECT COUNT('.$idField.') FROM `'.$dbTable.'`';
-		}
-
-		$sql    = $this->countSql;
-		$params = [];
-
-		// Apply filters, if provided.
-		if (!empty($filter)) {
-			// If a filter is in the propertyDbMap, it is filtered in the WHERE clause
-			$whereFilters = [];
-			foreach ($filter as $key => $value) {
-				if (isset($propertyDbMap[$key])) {
-					$whereFilters[] = "`$dbTable`.`{$propertyDbMap[$key]['col']}` = :$key";
-					$params[$key]   = $value;
-					unset($filter[$key]);
-				}
-			}
-			if (!empty($whereFilters)) {
-				$sql .= ' WHERE '.implode(' AND ', $whereFilters);
-			}
-
-			// If a filter is in properties, but wasn't found in propertyDbMap, use a HAVING clause
-			$havingFilters = [];
-			foreach ($filter as $key => $value) {
-				if (isset($properties[$key])) {
-					$havingFilters[] = "$key = :$key";
-					$params[$key]    = $value;
-				}
-			}
-			if (!empty($havingFilters)) {
-				$sql .= ' HAVING '.implode(' AND ', $havingFilters);
-			}
-		}
-		return [
-			'sql' => $sql,
-			'params' => $params
-		];
 	}
 
 	protected function getModelSet($rowSet) {
