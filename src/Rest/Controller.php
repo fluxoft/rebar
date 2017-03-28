@@ -103,22 +103,28 @@ abstract class Controller extends BaseController {
 			case 'PUT':
 				$reply = $repository->Put($this->request, $params);
 				break;
+			case 'PATCH':
+				$reply = $repository->Patch($this->request, $params);
+				break;
 			case 'DELETE':
 				$reply = $repository->Delete($this->request, $params);
 				break;
 			default:
 				$reply->Status = 405;
-				$reply->Data   = ['error' => 'Unsupported method.'];
+				$reply->Error  = new Error(405, 'Unsupported method.');
 		}
 
 		if ($reply instanceof Reply) {
 			$this->response->Status = $reply->Status;
-			foreach ($reply->Data as $key => $value) {
-				$this->set($key, $value);
+			$this->set('meta', $reply->Meta);
+			if (!empty($reply->Error)) {
+				$this->set('error', $reply->Error);
+			} else {
+				$this->set('data', $reply->Data);
 			}
 		} else {
 			$this->response->Status = 500;
-			$this->set('error', 'Bad reply from repository');
+			$this->set('error', new Error(500, 'Bad reply from repository'));
 		}
 	}
 }

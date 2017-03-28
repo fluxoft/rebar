@@ -21,9 +21,10 @@ interface AuthInterface {
 	 * and return a Reply object.
 	 * @param string $username
 	 * @param string $password
+	 * @param bool $remember
 	 * @return \Fluxoft\Rebar\Auth\Reply
 	 */
-	public function Login($username, $password);
+	public function Login($username, $password, $remember);
 
 	/**
 	 * Log the user out and return a blank Reply
