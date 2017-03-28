@@ -239,7 +239,17 @@ class DataRepository implements RepositoryInterface {
 		} catch (DBALException $e) {
 			$this->log('error', $e->getMessage());
 			$reply->Status = 500;
-			$reply->Error  = new Error(500, 'Database error. Please try again later.');
+			$reply->Error  = new Error(
+				500,
+				'Database error. Please try again later.',
+				[
+					'Code' => $e->getCode(),
+					'Message' => $e->getMessage(),
+					'Line' => $e->getLine(),
+					'File' => $e->getFile(),
+					'Trace' => $e->getTraceAsString()
+				]
+			);
 		} catch (\Exception $e) {
 			$reply->Status = 500;
 			$reply->Error  = new Error(500, $e->getMessage());
