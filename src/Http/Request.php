@@ -11,6 +11,7 @@ use Fluxoft\Rebar\Model;
  * @property mixed Headers
  * @property mixed Environment
  * @property mixed Body
+ * @property string RemoteIP
  */
 class Request extends Model {
 	/** @var ParameterSet  */
@@ -55,5 +56,34 @@ class Request extends Model {
 	}
 	public function Delete($var = null, $default = null) {
 		return $this->deleteParamSet->Get($var, $default);
+	}
+
+	public function GetRemoteIP() {
+		if (array_key_exists('X-Forwarded-For', $this->Headers)) {
+			$ips = $this->Headers['X-Forwarded-For'];
+		} elseif (array_key_exists('HTTP_X_FORWARDED_FOR', $this->Headers)) {
+			$ips = $this->Headers['HTTP_X_FORWARDED_FOR'];
+		} elseif (isset($this->Environment['REMOTE_ADDR'])) {
+			$ips = $this->Environment['REMOTE_ADDR'];
+		} else {
+			$ips = '';
+		}
+		$ips = explode(',', $ips);
+
+		// return the first non-private IP address (forwarded IP string will list forwarded IPs in order,
+		// so the earliest non-private IP (in case the user is behind a proxy/firewall) is the user's IP
+		foreach ($ips as $ip) {
+			$ip = trim($ip);
+			if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE) !== false) {
+				return $ip;
+			}
+		}
+
+		// if somehow we got to this point, there is somehow only a private IP address
+		if (isset($this->Environment['REMOTE_ADDR'])) {
+			return $this->Environment['REMOTE_ADDR'];
+		} else {
+			return 'invalid';
+		}
 	}
 }
