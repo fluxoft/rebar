@@ -264,34 +264,11 @@ abstract class Mapper {
 		}
 
 		$sql    = $this->selectSql;
+		$filter = $this->getFilter($filter);
 		$params = [];
-
-		// Apply filters, if provided.
-		if (!empty($filter)) {
-			// If a filter is in the propertyDbMap, it is filtered in the WHERE clause
-			$whereFilters = [];
-			foreach ($filter as $key => $value) {
-				if (isset($propertyDbMap[$key])) {
-					$whereFilters[] = "`$dbTable`.`{$propertyDbMap[$key]['col']}` = :$key";
-					$params[$key]   = $value;
-					unset($filter[$key]);
-				}
-			}
-			if (!empty($whereFilters)) {
-				$sql .= ' WHERE '.implode(' AND ', $whereFilters);
-			}
-
-			// If a filter is in properties, but wasn't found in propertyDbMap, use a HAVING clause
-			$havingFilters = [];
-			foreach ($filter as $key => $value) {
-				if (isset($properties[$key])) {
-					$havingFilters[] = "$key = :$key";
-					$params[$key]    = $value;
-				}
-			}
-			if (!empty($havingFilters)) {
-				$sql .= ' HAVING '.implode(' AND ', $havingFilters);
-			}
+		if (strlen($filter['sql'] > 0)) {
+			$sql   .= $filter['sql'];
+			$params = $filter['params'];
 		}
 		// Apply order, if set
 		if (!empty($sort)) {
@@ -314,6 +291,59 @@ abstract class Mapper {
 			'sql' => $sql,
 			'params' => $params
 		];
+	}
+
+	protected function getFilter($filter = []) {
+		$filterString  = '';
+		$filterClauses = $this->getFilterClauses($filter);
+		$params        = [];
+		if (isset($filterClauses['where'])) {
+			$filterString .= ' '.$filterClauses['where'];
+			$params        = $filterClauses['params'];
+		}
+		if (isset($filterClauses['having'])) {
+			$filterString .= ' '.$filterClauses['having'];
+			$params        = $filterClauses['params'];
+		}
+		return [
+			'sql' => $filterString,
+			'params' => $params
+		];
+	}
+
+	protected function getFilterClauses($filter = []) {
+		$dbTable       = $this->model->GetDbTable();
+		$filterClauses = [];
+		$params        = [];
+		// Apply filters, if provided.
+		if (!empty($filter)) {
+			// If a filter is in the propertyDbMap, it is filtered in the WHERE clause
+			$whereFilters = [];
+			foreach ($filter as $key => $value) {
+				if (isset($propertyDbMap[$key])) {
+					$whereFilters[] = "`$dbTable`.`{$propertyDbMap[$key]['col']}` = :$key";
+					$params[$key]   = $value;
+					unset($filter[$key]);
+				}
+			}
+			if (!empty($whereFilters)) {
+				$filterClauses['where'] = 'WHERE '.implode(' AND ', $whereFilters);
+			}
+
+			// If a filter is in properties, but wasn't found in propertyDbMap, use a HAVING clause
+			$havingFilters = [];
+			foreach ($filter as $key => $value) {
+				if (isset($properties[$key])) {
+					$havingFilters[] = "$key = :$key";
+					$params[$key]    = $value;
+				}
+			}
+			if (!empty($havingFilters)) {
+				$filterClauses['having'] = 'HAVING '.implode(' AND ', $havingFilters);
+			}
+		}
+		$filterClauses['params'] = $params;
+		return $filterClauses;
 	}
 	/**
 	 * @param array $filter Array of property names and values to filter by
