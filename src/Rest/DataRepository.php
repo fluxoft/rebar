@@ -143,30 +143,34 @@ class DataRepository implements RepositoryInterface {
 						get_class($this->mapper)
 					));
 				} else {
-					if ($this->authUserFilter) {
-						$parent = $this->mapper->GetOneById($id);
+					$parent = $this->mapper->GetOneById($id);
 
-						if (!isset($parent) ||
-							($parent->{$this->authUserIDProperty} !== $this->authUser->GetID())
-						) {
-							$reply->Status = 404;
-							$reply->Error  = new Error(404, 'The requested item could not be found.');
-						} else {
-							$subset = $this->mapper->$getter($parent->GetID(), $page, $pageSize);
-							$count  = $this->mapper->$counter($parent->GetID());
-							$pages  = (isset($pageSize) && $pageSize > 0) ? ceil($count/$pageSize) : 1;
-
-							$reply->Data = $subset;
-							$reply->Meta = [
-								'page' => $page,
-								'pages' => $pages,
-								'count' => $count
-							];
-						}
+					if (!isset($parent) ||
+						($this->authUserFilter && $parent->{$this->authUserIDProperty} !== $this->authUser->GetID())
+					) {
+						$reply->Status = 404;
+						$reply->Error  = new Error(
+							404,
+							'The requested item could not be found.',
+							sprintf(
+								'The parent with id "%s" was not found.',
+								$id
+							)
+						);
+					} elseif ($this->authUserFilter && $parent->{$this->authUserIDProperty} !== $this->authUser->GetID()) {
+						$reply->Status = 404;
+						$reply->Error  = new Error(
+							404,
+							'The requested item could not be found.',
+							sprintf(
+								'The parent with id "%s" was not found.',
+								$id
+							)
+						);
 					} else {
-						$subset = $this->mapper->$getter($id, $page, $pageSize);
+						$subset = $this->mapper->$getter($parent->GetID(), $page, $pageSize);
 						if (isset($subset)) {
-							$count = $this->mapper->$counter($id);
+							$count = $this->mapper->$counter($parent->GetID());
 							$pages = (isset($pageSize) && $pageSize > 0) ? ceil($count/$pageSize) : 1;
 
 							$reply->Data = $subset;
@@ -177,7 +181,14 @@ class DataRepository implements RepositoryInterface {
 							];
 						} else {
 							$reply->Status = 404;
-							$reply->Error  = new Error(404, 'The subset returned a null result.');
+							$reply->Error  = new Error(
+								404,
+								'The requested item could not be found.',
+								sprintf(
+									'The subset "%s" returned a null result.',
+									$subsetName
+								)
+							);
 						}
 					}
 				}
@@ -227,12 +238,18 @@ class DataRepository implements RepositoryInterface {
 			$reply->Status = 422;
 			$reply->Error  = new Error(
 				422,
-				$e->getMessage(),
-				['invalidProperties' => $new->GetValidationErrors()]
+				'Validation failed.',
+				['invalidProperties' => $new->GetValidationErrors()],
+				$e
 			);
 		} catch (\InvalidArgumentException $e) {
 			$reply->Status = 422;
-			$reply->Error  = new Error(422, $e->getMessage());
+			$reply->Error  = new Error(
+				422,
+				'Invalid argument',
+				$e->getMessage(),
+				$e
+			);
 		} catch (UniqueConstraintViolationException $e) {
 			$reply->Status = 409;
 			$reply->Error  = new Error(409, 'Object already exists');
@@ -242,17 +259,17 @@ class DataRepository implements RepositoryInterface {
 			$reply->Error  = new Error(
 				500,
 				'Database error. Please try again later.',
-				[
-					'Code' => $e->getCode(),
-					'Message' => $e->getMessage(),
-					'Line' => $e->getLine(),
-					'File' => $e->getFile(),
-					'Trace' => $e->getTraceAsString()
-				]
+				null,
+				$e
 			);
 		} catch (\Exception $e) {
 			$reply->Status = 500;
-			$reply->Error  = new Error(500, $e->getMessage());
+			$reply->Error  = new Error(
+				500,
+				'Unknown error occurred.',
+				null,
+				$e
+			);
 		}
 		return $reply;
 	}
@@ -301,7 +318,12 @@ class DataRepository implements RepositoryInterface {
 							422,
 							[],
 							[],
-							new Error(422, $e->getMessage(), ['invalidProperties' => $update->GetValidationErrors()])
+							new Error(
+								422,
+								'Validation failed.',
+								['invalidProperties' => $update->GetValidationErrors()],
+								$e
+							)
 						);
 					}
 				} else {

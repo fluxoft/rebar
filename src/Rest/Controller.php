@@ -116,7 +116,9 @@ abstract class Controller extends BaseController {
 
 		if ($reply instanceof Reply) {
 			$this->response->Status = $reply->Status;
-			$this->set('meta', $reply->Meta);
+			if (!empty($reply->Meta)) {
+				$this->set('meta', $reply->Meta);
+			}
 			if (!empty($reply->Error)) {
 				$this->set('error', $reply->Error);
 			} else {
