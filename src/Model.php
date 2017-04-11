@@ -16,7 +16,7 @@ abstract class Model implements \Iterator, \ArrayAccess {
 	public function __construct(array $properties = []) {
 		if (!empty($properties)) {
 			foreach ($properties as $name => $value) {
-				$this->$properties[$name] = $value;
+				$this->properties[$name] = $value;
 			}
 		}
 	}
