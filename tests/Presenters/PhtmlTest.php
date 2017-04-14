@@ -2,16 +2,18 @@
 
 namespace Fluxoft\Rebar\Presenters;
 
-class PhtmlTest extends \PHPUnit_Framework_TestCase {
-    protected function setup() {
-    
-    }
-    
-    protected function teardown() {
-    
-    }
-    
-    public function testFooNotEqualBar() {
-        $this->assertNotEquals('foo','bar');
-    }
+use PHPUnit\Framework\TestCase;
+
+class PhtmlTest extends TestCase {
+	protected function setup() {
+
+	}
+
+	protected function teardown() {
+
+	}
+
+	public function testFooNotEqualBar() {
+		$this->assertNotEquals('foo', 'bar');
+	}
 }

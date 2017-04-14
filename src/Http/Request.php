@@ -25,21 +25,31 @@ class Request extends Model {
 	/** @var ParameterSet  */
 	protected $deleteParamSet;
 
+	protected $properties = [
+		'Method' => 'GET',
+		'PathInfo' => '/',
+		'Headers' => [],
+		'Environment' => null,
+		'Body' => ''
+	];
+
 	/**
 	 * @param Environment $environment
 	 */
 	public function __construct(Environment $environment) {
-		$this->properties['Method']      = $environment['method'];
-		$this->properties['PathInfo']    = $environment['pathInfo'];
-		$this->properties['Headers']     = $environment['headers'];
-		$this->properties['Environment'] = $environment;
-		$this->properties['Body']        = $environment['rebar.input'];
-
 		$this->getParamSet    = new ParameterSet($environment['get']);
 		$this->postParamSet   = new ParameterSet($environment['post']);
 		$this->putParamSet    = new ParameterSet($environment['put']);
 		$this->patchParamSet  = new ParameterSet($environment['patch']);
 		$this->deleteParamSet = new ParameterSet($environment['delete']);
+
+		parent::__construct([
+			'Method' => $environment['method'],
+			'PathInfo' => $environment['pathInfo'],
+			'Headers' => $environment['headers'],
+			'Environment' => $environment,
+			'Body' => $environment['rebar.input']
+		]);
 	}
 
 	public function Get($var = null, $default = null) {

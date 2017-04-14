@@ -1,12 +1,13 @@
 <?php
+
 namespace Fluxoft\Rebar;
 
 use Fluxoft\Rebar\Auth\Web;
 use Fluxoft\Rebar\Http\Request;
 use Fluxoft\Rebar\Http\Response;
+use PHPUnit\Framework\TestCase;
 
-class ControllerTest extends \PHPUnit_Framework_TestCase
-{
+class ControllerTest extends TestCase {
 	/** @var Request */
 	protected $request;
 	/** @var Response */
@@ -39,7 +40,10 @@ class ControllerTest extends \PHPUnit_Framework_TestCase
 	}
 }
 
+// Ignore the phpcs warning about two classes in one file
+// @codingStandardsIgnoreStart
 class DummyController extends Controller {
+	// @codingStandardsIgnoreEnd
 	public function GetRequest() {
 		return $this->request;
 	}
@@ -50,4 +54,3 @@ class DummyController extends Controller {
 		return $this->auth;
 	}
 }
- 

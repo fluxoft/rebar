@@ -1,20 +1,16 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: joehart
- * Date: 11/3/14
- * Time: 12:23 AM
- */
 
 namespace Fluxoft\Rebar\Auth\Db;
 
-class TokenTest extends \PHPUnit_Framework_TestCase {
+use PHPUnit\Framework\TestCase;
+
+class TokenTest extends TestCase {
 	protected function setup() {}
 
 	protected function teardown() {}
 
 	public function testNullToken () {
-		$this->setExpectedException('Fluxoft\Rebar\Auth\Exceptions\InvalidTokenException');
+		$this->expectException('Fluxoft\Rebar\Auth\Exceptions\InvalidTokenException');
 
 		// will throw exception (cannot create with all nulls)
 		$token = new Token(null, null, null, null);
