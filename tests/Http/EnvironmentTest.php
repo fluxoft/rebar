@@ -1,15 +1,10 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: joehart
- * Date: 11/1/14
- * Time: 6:15 PM
- */
 
 namespace Fluxoft\Rebar\Http;
 
+use PHPUnit\Framework\TestCase;
 
-class EnvironmentTest extends \PHPUnit_Framework_TestCase {
+class EnvironmentTest extends TestCase {
 	protected function setup() {}
 
 	protected function teardown() {}
