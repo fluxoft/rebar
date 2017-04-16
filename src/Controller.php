@@ -16,6 +16,7 @@ use Fluxoft\Rebar\Exceptions\CrossOriginException;
 use Fluxoft\Rebar\Exceptions\MethodNotAllowedException;
 use Fluxoft\Rebar\Http\Request;
 use Fluxoft\Rebar\Http\Response;
+use Fluxoft\Rebar\Presenters\Exceptions\InvalidPresenterException;
 
 abstract class Controller {
 	/**
@@ -76,6 +77,12 @@ abstract class Controller {
 	/** @var AuthInterface */
 	protected $auth;
 
+	/**
+	 * Controller constructor.
+	 * @param Request $request
+	 * @param Response $response
+	 * @param AuthInterface|null $auth
+	 */
 	public function __construct(
 		Request $request,
 		Response $response,
@@ -86,76 +93,86 @@ abstract class Controller {
 		$this->auth     = $auth;
 	}
 
+	/**
+	 * @param $method
+	 * @return bool
+	 * @throws AccessDeniedException
+	 * @throws CrossOriginException
+	 * @throws MethodNotAllowedException
+	 */
 	public function Authorize($method) {
 		$allowedMethods = array_map('strtoupper', $this->allowedMethods);
+		$requestHeaders = $this->request->Headers;
+		$requestMethod  = $this->request->Method;
+
 		// always allow OPTIONS requests
 		if (!in_array('OPTIONS', $allowedMethods)) {
 			array_push($allowedMethods, 'OPTIONS');
 		}
 		// set CORS headers if configured
 		if ($this->crossOriginEnabled) {
-			$headers = $this->request->Headers;
-			if (isset($headers['Origin'])) {
-				$allowedHeaders = (isset($headers['Access-Control-Request-Headers']) ?
-					$headers['Access-Control-Request-Headers'] : '');
-				$origin         = $headers['Origin'];
+			if (isset($requestHeaders['Origin'])) {
+				$allowedHeaders = (isset($requestHeaders['Access-Control-Request-Headers']) ?
+					$requestHeaders['Access-Control-Request-Headers'] : '');
+				$origin         = $requestHeaders['Origin'];
 				if (in_array($origin, $this->crossOriginDomainsAllowed)) {
 					$this->response->AddHeader('Access-Control-Allow-Origin', $origin);
 					$this->response->AddHeader('Access-Control-Allow-Credentials', 'true');
 					$this->response->AddHeader('Access-Control-Allow-Methods', implode(',', $allowedMethods));
 					$this->response->AddHeader('Access-Control-Allow-Headers', $allowedHeaders);
 				} else {
-					throw new CrossOriginException(sprintf(
-						'The origin "%s" is not permitted.',
-						$origin
-					));
+					throw new CrossOriginException(sprintf('The origin "%s" is not permitted.', $origin));
 				}
 			}
 		}
-		if (!in_array($this->request->Method, $allowedMethods)) {
+		if (!in_array($requestMethod, $allowedMethods)) {
 			throw new MethodNotAllowedException(sprintf(
 				'The %s method is not permitted here (118).',
-				$this->request->Method
+				$requestMethod
 			));
 		}
 		/*
 		 * Issue #30: Authorize any OPTIONS request.
 		 */
-		if (strtoupper($this->request->Method) === 'OPTIONS') {
+		if (strtoupper($requestMethod) === 'OPTIONS') {
 			return true;
 		}
-		$authorized = true;
-		if (isset($this->auth)) {
-			if (!(in_array($method, $this->skipAuthentication) ||
-				in_array('*', $this->skipAuthentication))
-			) {
-				$requireAuth = false;
-				// If requireAuthentication is empty, prevent access by default.
-				if (empty($this->requireAuthentication)) {
-					$requireAuth = true;
-				} else {
-					if (in_array($method, $this->requireAuthentication) ||
-						in_array('*', $this->requireAuthentication)
-					) {
-						$requireAuth = true;
-					}
-				}
-				if ($requireAuth) {
-					/** @var \Fluxoft\Rebar\Auth\Reply $authReply */
-					$authReply = $this->auth->GetAuthenticatedUser($this->request);
-					if (!$authReply->Auth) {
-						// method is limited and user is not authenticated
-						throw new AccessDeniedException(sprintf(
-							'Access denied for %s',
-							$method
-						));
-					}
-				}
+		if (isset($this->auth) && $this->methodRequiresAuthentication($method)) {
+			/** @var \Fluxoft\Rebar\Auth\Reply $authReply */
+			$authReply = $this->auth->GetAuthenticatedUser($this->request);
+			if (!$authReply->Auth) {
+				// method is limited and user is not authenticated
+				throw new AccessDeniedException(
+					sprintf('Access denied for %s', $method)
+				);
 			}
 		}
-		return $authorized;
+		return true;
 	}
 
+	protected function methodRequiresAuthentication($method) {
+		$requiresAuth = true;
+		if (in_array($method, $this->skipAuthentication) ||
+			in_array('*', $this->skipAuthentication)
+		) {
+			$requiresAuth = false;
+		} else {
+			if (in_array($method, $this->requireAuthentication) ||
+				in_array('*', $this->requireAuthentication)
+			) {
+				$requiresAuth = true;
+			}
+		}
+		return $requiresAuth;
+	}
+
+	/**
+	 * Uses the set PresenterInterface implementing class to Render to the Response using the internal data of the
+	 * controller. If no presenter is set on the class, atttempt to create one from the class name in
+	 * $this->presenterClass. If that is not a class, create an instance of \Fluxoft\Rebar\Presenters\Debug and use
+	 * that to Render.
+	 * @throws InvalidPresenterException If no valid Presenter was set or able to be created.
+	 */
 	public function Display() {
 		if (!isset($this->presenter)) {
 			if (isset($this->presenterClass)) {
@@ -174,7 +191,7 @@ abstract class Controller {
 		if ($this->presenter instanceof Presenters\PresenterInterface) {
 			$this->presenter->Render($this->response, $this->getData());
 		} else {
-			throw new \Exception('Invalid presenter class.');
+			throw new InvalidPresenterException('Presenter must implement PresenterInterface.');
 		}
 	}
 
@@ -182,7 +199,7 @@ abstract class Controller {
 	 * Add $val to the $data array with key $var.
 	 *
 	 * <code>
-	 * $this->Set("Key","Value");
+	 * $this->set("Key","Value");
 	 * </code>
 	 *
 	 * @param string $var

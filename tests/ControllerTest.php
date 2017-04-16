@@ -2,11 +2,19 @@
 
 namespace Fluxoft\Rebar;
 
+use Fluxoft\Rebar\Auth\Reply;
 use Fluxoft\Rebar\Auth\Web;
 use Fluxoft\Rebar\Http\Request;
 use Fluxoft\Rebar\Http\Response;
+use Fluxoft\Rebar\Presenters\Debug;
+use Fluxoft\Rebar\Presenters\Exceptions\InvalidPresenterException;
 use PHPUnit\Framework\TestCase;
 
+/**
+ * Class ControllerTest
+ * @package Fluxoft\Rebar
+ * @coversDefaultClass \Fluxoft\Rebar\Controller
+ */
 class ControllerTest extends TestCase {
 	/** @var Request */
 	protected $request;
@@ -14,29 +22,370 @@ class ControllerTest extends TestCase {
 	protected $response;
 	/** @var Web */
 	protected $webAuth;
-	/** @var Controller */
+	/** @var Debug */
+	protected $debugPresenter;
+
 	protected $controller;
 
 	protected function setup() {
-		$this->request  = $this->getMockBuilder('\Fluxoft\Rebar\Http\Request')
+		$this->request        = $this->getMockBuilder('\Fluxoft\Rebar\Http\Request')
 			->disableOriginalConstructor()
 			->getMock();
-		$this->response = $this->getMockBuilder('\Fluxoft\Rebar\Http\Response')
+		$this->response       = $this->getMockBuilder('\Fluxoft\Rebar\Http\Response')
 			->disableOriginalConstructor()
 			->getMock();
-		$this->webAuth  = $this->getMockBuilder('\Fluxoft\Rebar\Auth\Web')
+		$this->webAuth        = $this->getMockBuilder('\Fluxoft\Rebar\Auth\Web')
 			->disableOriginalConstructor()
 			->getMock();
-
-		$this->controller = new DummyController($this->request, $this->response, $this->webAuth);
+		$this->debugPresenter = $this->getMockBuilder('\Fluxoft\Rebar\Presenters\Debug')
+			->disableOriginalConstructor()
+			->getMock();
 	}
 	protected function teardown() {
+		unset($this->debugPresenter);
+		unset($this->webAuth);
 		unset($this->request);
 		unset($this->response);
 	}
 
-	public function testDisplay() {
-		$this->controller->Display();
+	/**
+	 * @dataProvider authorizeProvider
+	 * @covers ::Authorize()
+	 * @covers ::methodRequiresAuthentication()
+	 * @param array $headers
+	 * @param array $allowedMethods
+	 * @param string $requestMethod
+	 * @param string $controllerMethod
+	 * @param array $skipAuthentication
+	 * @param array $requireAuthentication
+	 * @param bool $authenticationRequired
+	 * @param bool $authUser
+	 * @param bool $authorized
+	 */
+	public function testAuthorize(
+		array $headers,
+		array $allowedMethods,
+		string $requestMethod,
+		string $controllerMethod,
+		array $skipAuthentication,
+		array $requireAuthentication,
+		bool $authenticationRequired,
+		bool $authUser,
+		bool $authorized
+	) {
+		$controller = new DummyController($this->request, $this->response, $this->webAuth);
+		$controller->SetSkipAuthentication($skipAuthentication);
+		$controller->SetRequireAuthentication($requireAuthentication);
+
+		$authReply       = new Reply();
+		$authReply->Auth = $authUser;
+		$this->webAuth
+			->expects($this->any())
+			->method('GetAuthenticatedUser')
+			->will($this->returnValue($authReply));
+
+		if (!empty($allowedMethods)) {
+			$controller->SetAllowedMethods($allowedMethods);
+		}
+		if (!in_array('OPTIONS', $allowedMethods)) {
+			array_push($allowedMethods, 'OPTIONS');
+		}
+		$this->request
+			->expects($this->at(0))
+			->method('__get')
+			->with($this->equalTo('Headers'))
+			->will($this->returnValue($headers));
+		$this->request
+			->expects($this->at(1))
+			->method('__get')
+			->with($this->equalTo('Method'))
+			->will($this->returnValue($requestMethod));
+
+		if (isset($headers['Origin'])) {
+			$allowedHeaders = (isset($headers['Access-Control-Request-Headers']) ?
+				$headers['Access-Control-Request-Headers'] : '');
+			$allowedDomains = $controller->GetCrossOriginDomainsAllowed();
+			if (!in_array($headers['Origin'], $allowedDomains)) {
+				$this->expectException('\Fluxoft\Rebar\Exceptions\CrossOriginException');
+			} else {
+				$this->response
+					->expects($this->at(0))
+					->method('AddHeader')
+					->with(
+						$this->equalTo('Access-Control-Allow-Origin'),
+						$this->equalTo($headers['Origin'])
+					);
+				$this->response
+					->expects($this->at(1))
+					->method('AddHeader')
+					->with(
+						$this->equalTo('Access-Control-Allow-Credentials'),
+						$this->equalTo('true')
+					);
+				$this->response
+					->expects($this->at(2))
+					->method('AddHeader')
+					->with(
+						$this->equalTo('Access-Control-Allow-Methods'),
+						$this->equalTo(implode(',', $allowedMethods))
+					);
+				$this->response
+					->expects($this->at(3))
+					->method('AddHeader')
+					->with(
+						$this->equalTo('Access-Control-Allow-Headers'),
+						$this->equalTo($allowedHeaders)
+					);
+			}
+		}
+		if (!in_array($requestMethod, $allowedMethods)) {
+			$this->expectException('\Fluxoft\Rebar\Exceptions\MethodNotAllowedException');
+		}
+		$this->assertEquals(
+			$authenticationRequired,
+			$controller->PublicMethodRequiresAuthentication($requestMethod)
+		);
+		if ($authenticationRequired && !$authUser) {
+			$this->expectException('\Fluxoft\Rebar\Auth\Exceptions\AccessDeniedException');
+		}
+
+		$this->assertEquals($authorized, $controller->Authorize($controllerMethod));
+	}
+	public function authorizeProvider() {
+		return [
+			'optionsAllow' => [
+				'headers' => [],
+				'allowedMethods' => ['GET'],
+				'requestMethod' => 'GET',
+				'controllerMethod' => 'Test',
+				'skipAuthentication' => ['*'],
+				'requireAuthentication' => [],
+				'authenticationRequired' => false,
+				'authUser' => false,
+				'authorized' => true
+			],
+			'badCorsOrigin' => [
+				'headers' => [
+					'Origin' => 'http://badhost.com'
+				],
+				'allowedMethods' => ['GET'],
+				'requestMethod' => 'GET',
+				'controllerMethod' => 'Test',
+				'skipAuthentication' => ['*'],
+				'requireAuthentication' => [],
+				'authenticationRequired' => false,
+				'authUser' => false,
+				'authorized' => false
+			],
+			'headerSet' => [
+				'headers' => [
+					'Origin' => 'http://test.com'
+				],
+				'allowedMethods' => ['GET'],
+				'requestMethod' => 'GET',
+				'controllerMethod' => 'Test',
+				'skipAuthentication' => ['*'],
+				'requireAuthentication' => [],
+				'authenticationRequired' => false,
+				'authUser' => false,
+				'authorized' => true
+			],
+			'disallowedMethod' => [
+				'headers' => [
+					'Origin' => 'http://test.com'
+				],
+				'allowedMethods' => ['GET'],
+				'requestMethod' => 'POST',
+				'controllerMethod' => 'Test',
+				'skipAuthentication' => ['*'],
+				'requireAuthentication' => [],
+				'authenticationRequired' => false,
+				'authUser' => false,
+				'authorized' => true
+			],
+			'optionsAuthorize' => [
+				'headers' => [],
+				'allowedMethods' => ['GET'],
+				'requestMethod' => 'OPTIONS',
+				'controllerMethod' => 'Test',
+				'skipAuthentication' => ['*'],
+				'requireAuthentication' => [],
+				'authenticationRequired' => false,
+				'authUser' => false,
+				'authorized' => true
+			],
+			'methodAllSkippedNoneRequired' => [
+				'headers' => [],
+				'allowedMethods' => ['GET'],
+				'requestMethod' => 'GET',
+				'controllerMethod' => 'Test',
+				'skipAuthentication' => ['*'],
+				'requireAuthentication' => [],
+				'authenticationRequired' => false,
+				'authUser' => false,
+				'authorized' => true
+			],
+			'methodNotSkippedAllRequired' => [
+				'headers' => [],
+				'allowedMethods' => ['GET'],
+				'requestMethod' => 'GET',
+				'controllerMethod' => 'Test',
+				'skipAuthentication' => [],
+				'requireAuthentication' => ['*'],
+				'authenticationRequired' => true,
+				'authUser' => false,
+				'authorized' => true
+			],
+			'methodNotSkippedNoneRequired' => [
+				'headers' => [],
+				'allowedMethods' => ['GET'],
+				'requestMethod' => 'GET',
+				'controllerMethod' => 'Test',
+				'skipAuthentication' => [],
+				'requireAuthentication' => [],
+				'authenticationRequired' => true,
+				'authUser' => false,
+				'authorized' => true
+			],
+			'methodNotSkippedButRequiredByNameNotAuthenticated' => [
+				'headers' => [],
+				'allowedMethods' => ['GET'],
+				'requestMethod' => 'GET',
+				'controllerMethod' => 'Test',
+				'skipAuthentication' => [],
+				'requireAuthentication' => ['Test'],
+				'authenticationRequired' => true,
+				'authUser' => false,
+				'authorized' => true
+			],
+			'methodNotSkippedButRequiredByNameAuthenticated' => [
+				'headers' => [],
+				'allowedMethods' => ['GET'],
+				'requestMethod' => 'GET',
+				'controllerMethod' => 'Test',
+				'skipAuthentication' => [],
+				'requireAuthentication' => ['Test'],
+				'authenticationRequired' => true,
+				'authUser' => true,
+				'authorized' => true
+			]
+		];
+	}
+
+	/**
+	 * @covers ::Display
+	 */
+	public function testDisplayWithNullPresenter() {
+		$controller = new DummyController($this->request, $this->response, $this->webAuth);
+		$controller->SetPresenter(null);
+
+		$this->response
+			->expects($this->once())
+			->method('Send');
+
+		$controller->Display();
+	}
+	/**
+	 * @covers ::Display()
+	 */
+	public function testDisplayWithDebugPresenter() {
+		$controller = new DummyController($this->request, $this->response, $this->webAuth);
+		$controller->SetPresenter($this->debugPresenter);
+
+		$this->debugPresenter
+			->expects($this->once())
+			->method('Render');
+
+		$controller->Display();
+	}
+	/**
+	 * @covers ::Display()
+	 */
+	public function testDisplayWithInvalidPresenter() {
+		$controller = new DummyController($this->request, $this->response, $this->webAuth);
+		$controller->SetPresenter(new \stdClass());
+
+		$this->expectException(InvalidPresenterException::class);
+
+		$controller->Display();
+	}
+	/**
+	 * @covers ::Display()
+	 */
+	public function testDisplayWithDebugPresenterClass() {
+		$controller = new DummyController($this->request, $this->response, $this->webAuth);
+		$controller->SetPresenterClass('Debug');
+
+		$this->response
+			->expects($this->once())
+			->method('Send');
+
+		$controller->Display();
+	}
+	/**
+	 * @covers ::Display()
+	 */
+	public function testDisplayWithDummyPresenterClass() {
+		$controller = new DummyController($this->request, $this->response, $this->webAuth);
+		$controller->SetPresenterClass('\Fluxoft\Rebar\DummyPresenter');
+
+		$this->response
+			->expects($this->once())
+			->method('Send');
+
+		$controller->Display();
+	}
+	/**
+	 * @covers ::Display()
+	 */
+	public function testDisplayWithInvalidPresenterClass() {
+		$controller = new DummyController($this->request, $this->response, $this->webAuth);
+		$controller->SetPresenterClass('InvalidPresenterClassName');
+
+		$this->expectException(InvalidPresenterException::class);
+
+		$controller->Display();
+	}
+
+	/**
+	 * @dataProvider dataArrayProvider
+	 * @param array $dataArray
+	 */
+	public function testSetData(array $dataArray) {
+		$controller = new DummyController($this->request, $this->response, $this->webAuth);
+
+		foreach ($dataArray as $key => $value) {
+			$controller->PublicSet($key, $value);
+		}
+
+		$returnData = $controller->PublicGetData();
+
+		$this->assertEquals($dataArray, $returnData);
+	}
+	public function dataArrayProvider() {
+		return [
+			'foobar' => [
+				[
+					'foo' => 'bar'
+				]
+			],
+			'multiple' => [
+				[
+					'foo' => 'bar',
+					'a' => 'b'
+				]
+			],
+			'objectValue' => [
+				[
+					'someObject' => new \stdClass()
+				]
+			],
+			'arrayValue' => [
+				[
+					'arrayKey' => ['one', 'two', 'three']
+				]
+			]
+		];
 	}
 }
 
@@ -44,13 +393,40 @@ class ControllerTest extends TestCase {
 // @codingStandardsIgnoreStart
 class DummyController extends Controller {
 	// @codingStandardsIgnoreEnd
-	public function GetRequest() {
-		return $this->request;
+	protected $crossOriginEnabled        = true;
+	protected $crossOriginDomainsAllowed = [
+		'http://test.com'
+	];
+
+	public function SetAllowedMethods(array $allowedMethods) {
+		$this->allowedMethods = $allowedMethods;
 	}
-	public function GetResponse() {
-		return $this->response;
+	public function GetCrossOriginDomainsAllowed() {
+		return $this->crossOriginDomainsAllowed;
 	}
-	public function GetAuth() {
-		return $this->auth;
+	public function SetSkipAuthentication(array $skipAuthentication) {
+		$this->skipAuthentication = $skipAuthentication;
+	}
+	public function SetRequireAuthentication(array $requireAuthentication) {
+		$this->requireAuthentication = $requireAuthentication;
+	}
+	public function PublicMethodRequiresAuthentication($method) {
+		$requiresAuth = $this->methodRequiresAuthentication($method);
+		return $requiresAuth;
+	}
+	public function SetPresenter($presenter) {
+		$this->presenter = $presenter;
+	}
+	public function SetPresenterClass($presenterClass) {
+		$this->presenterClass = $presenterClass;
+	}
+	public function PublicSet($key, $value) {
+		$this->set($key, $value);
+	}
+	public function PublicGetData() {
+		return $this->getData();
 	}
 }
+
+// @codingStandardsIgnoreStart
+class DummyPresenter extends Debug {}
