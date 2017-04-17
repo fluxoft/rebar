@@ -4,6 +4,10 @@ namespace Fluxoft\Rebar\Auth\Db;
 
 use PHPUnit\Framework\TestCase;
 
+/**
+ * Class TokenTest
+ * @package Fluxoft\Rebar\Auth\Db
+ */
 class TokenTest extends TestCase {
 	protected function setup() {}
 
@@ -14,7 +18,8 @@ class TokenTest extends TestCase {
 
 		// will throw exception (cannot create with all nulls)
 		$token = new Token(null, null, null, null);
-		echo (string) $token;
+		unset($token);
+		//echo (string) $token;
 	}
 
 	/**
@@ -34,13 +39,13 @@ class TokenTest extends TestCase {
 		$this->assertEquals(true, $this->validateTokenString((string) $token));
 	}
 	public function userIdProvider() {
-		return array(
-			array(1),
-			array(2),
-			array(3),
-			array(4),
-			array(5)
-		);
+		return [
+			[1],
+			[2],
+			[3],
+			[4],
+			[5]
+		];
 	}
 
 	/**
@@ -61,13 +66,13 @@ class TokenTest extends TestCase {
 		$this->assertEquals(true, $this->validateTokenString((string) $token));
 	}
 	public function userIdSeriesIdProvider() {
-		return array(
-			array(1, '54571765e346c1.60640599'),
-			array(2, '545714083383e1.26100867'),
-			array(3, '545714083383e1.26100867'),
-			array(4, '545714083383e1.26100867'),
-			array(5, '545714083383e1.26100867')
-		);
+		return [
+			[1, '54571765e346c1.60640599'],
+			[2, '545714083383e1.26100867'],
+			[3, '545714083383e1.26100867'],
+			[4, '545714083383e1.26100867'],
+			[5, '545714083383e1.26100867']
+		];
 	}
 
 	/**
@@ -89,13 +94,13 @@ class TokenTest extends TestCase {
 		$this->assertEquals(true, $this->validateTokenString((string) $token));
 	}
 	public function userIdSeriesIdTokenProvider() {
-		return array(
-			array(1, '54571765e346c1.60640599', '{3B99B6DD-892A-4135-3AC1-498115339856}'),
-			array(2, '545714083383e1.26100867', '{3B99B6DD-892A-4135-3AC1-498115339856}'),
-			array(3, '545714083383e1.26100867', '{3B99B6DD-892A-4135-3AC1-498115339856}'),
-			array(4, '545714083383e1.26100867', '{3B99B6DD-892A-4135-3AC1-498115339856}'),
-			array(5, '545714083383e1.26100867', '{3B99B6DD-892A-4135-3AC1-498115339856}')
-		);
+		return [
+			[1, '54571765e346c1.60640599', '{3B99B6DD-892A-4135-3AC1-498115339856}'],
+			[2, '545714083383e1.26100867', '{3B99B6DD-892A-4135-3AC1-498115339856}'],
+			[3, '545714083383e1.26100867', '{3B99B6DD-892A-4135-3AC1-498115339856}'],
+			[4, '545714083383e1.26100867', '{3B99B6DD-892A-4135-3AC1-498115339856}'],
+			[5, '545714083383e1.26100867', '{3B99B6DD-892A-4135-3AC1-498115339856}']
+		];
 	}
 
 	/**
@@ -115,27 +120,45 @@ class TokenTest extends TestCase {
 		$this->assertEquals($tokenValue, $token->Token);
 	}
 	public function tokenStringProvider() {
-		return array(
-			array(base64_encode(
-				implode('|', array(1, '54571765e346c1.60640599', '{3B99B6DD-892A-4135-3AC1-498115339856}'))
-			)),
-			array(base64_encode(
-				implode('|', array(2, '545714083383e1.26100867', '{3B99B6DD-892A-4135-3AC1-498115339856}'))
-			)),
-			array(base64_encode(
-				implode('|', array(3, '545714083383e1.26100867', '{3B99B6DD-892A-4135-3AC1-498115339856}'))
-			)),
-			array(base64_encode(
-				implode('|', array(4, '545714083383e1.26100867', '{3B99B6DD-892A-4135-3AC1-498115339856}'))
-			)),
-			array(base64_encode(
-				implode('|', array(5, '545714083383e1.26100867', '{3B99B6DD-892A-4135-3AC1-498115339856}'))
-			))
-		);
+		return [
+			[base64_encode(
+				implode('|', [1, '54571765e346c1.60640599', '{3B99B6DD-892A-4135-3AC1-498115339856}'])
+			)],
+			[base64_encode(
+				implode('|', [2, '545714083383e1.26100867', '{3B99B6DD-892A-4135-3AC1-498115339856}'])
+			)],
+			[base64_encode(
+				implode('|', [3, '545714083383e1.26100867', '{3B99B6DD-892A-4135-3AC1-498115339856}'])
+			)],
+			[base64_encode(
+				implode('|', [4, '545714083383e1.26100867', '{3B99B6DD-892A-4135-3AC1-498115339856}'])
+			)],
+			[base64_encode(
+				implode('|', [5, '545714083383e1.26100867', '{3B99B6DD-892A-4135-3AC1-498115339856}'])
+			)]
+		];
+	}
+
+	/**
+	 * @dataProvider invalidTokenProvider
+	 */
+	public function testInvalidToken($invalidToken) {
+		$this->expectException('Fluxoft\Rebar\Auth\Exceptions\InvalidTokenException');
+		$token = new Token(null, null, null, $invalidToken);
+	}
+	public function invalidTokenProvider() {
+		return [
+			[base64_encode(
+				implode('|', [1])
+			)],
+			[base64_encode(
+				implode('|', [2, '545714083383e1.26100867'])
+			)]
+		];
 	}
 
 	private function validateSeriesId($seriesID) {
-		// seriesID should be the result of uniqid(), which returns a 13-digit string
+		// seriesID should be the result of uniqid(), which returns a 23-digit string
 		$pattern = '/[a-z0-9\.]{23}/';
 		return (preg_match($pattern, $seriesID) === 1);
 	}
