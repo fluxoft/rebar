@@ -1,6 +1,10 @@
 <?php
 namespace Fluxoft\Rebar;
 
+/**
+ * Class Model
+ * @package Fluxoft\Rebar
+ */
 abstract class Model implements \Iterator, \ArrayAccess {
 	/**
 	 * Holds the internal array of property names and values.
@@ -35,7 +39,12 @@ abstract class Model implements \Iterator, \ArrayAccess {
 		return $this->modProperties;
 	}
 
-	private $validationErrors = [];
+	/**
+	 * Checks any validate[PropertyName] functions, which should be protected and return
+	 * either true or a string representing the validation error, which is set to the
+	 * $validationErrors array.
+	 * @return bool
+	 */
 	public function IsValid() {
 		// Reset the error array
 		$this->validationErrors = [];
@@ -55,6 +64,11 @@ abstract class Model implements \Iterator, \ArrayAccess {
 		}
 		return $valid;
 	}
+	private $validationErrors = [];
+	/**
+	 * Returns any validation errors that were found on the last run of IsValid()
+	 * @return array
+	 */
 	public function GetValidationErrors() {
 		return $this->validationErrors;
 	}
@@ -69,7 +83,7 @@ abstract class Model implements \Iterator, \ArrayAccess {
 	 */
 	public function __set($key, $value) {
 		$fnName = "set$key";
-		if (method_exists($this, $fnName)) {
+		if (is_callable([$this, $fnName])) {
 			$this->$fnName($value);
 			// Set the properties array with the given value so that the
 			// changed value is available, but not the modProperties array,
@@ -103,7 +117,7 @@ abstract class Model implements \Iterator, \ArrayAccess {
 	 */
 	public function __get($key) {
 		$fnName = "get$key";
-		if (method_exists($this, $fnName)) {
+		if (is_callable([$this, $fnName])) {
 			return $this->$fnName();
 		} elseif (array_key_exists($key, $this->properties)) {
 			return $this->properties[$key];
@@ -114,11 +128,10 @@ abstract class Model implements \Iterator, \ArrayAccess {
 
 	public function __isset($key) {
 		$fnName = "get$key";
-		if (method_exists($this, $fnName)) {
+		if (is_callable([$this, $fnName])) {
 			return ($this->$fnName() !== null);
-		} elseif (array_key_exists($key, $this->modProperties) ||
-			array_key_exists($key, $this->properties)) {
-			return true;
+		} elseif (array_key_exists($key, $this->properties)) {
+			return ($this->properties[$key] !== null);
 		} else {
 			throw new \InvalidArgumentException(sprintf('Property %s does not exist', $key));
 		}
@@ -126,10 +139,11 @@ abstract class Model implements \Iterator, \ArrayAccess {
 
 	public function __unset($key) {
 		$fnName = "set$key";
-		if (method_exists($this, $fnName)) {
+		if (is_callable([$this, $fnName])) {
 			$this->$fnName(null);
 		} elseif (array_key_exists($key, $this->modProperties)) {
 			unset($this->modProperties[$key]);
+			$this->properties[$key] = null;
 		} elseif (array_key_exists($key, $this->properties)) {
 			$this->properties[$key] = null;
 		} else {
