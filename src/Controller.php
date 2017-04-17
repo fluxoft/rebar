@@ -150,14 +150,24 @@ abstract class Controller {
 		return true;
 	}
 
+	/**
+	 * If a method has been marked as skipped or all methods are skipped with an element
+	 * of "*", do not require authentication.
+	 * If method not skipped, and requireAuthentication is empty, or the method is set
+	 * as required, or all methods require authentication ("*" element in array), require
+	 * authentication.
+	 * @param $method
+	 * @return bool
+	 */
 	protected function methodRequiresAuthentication($method) {
-		$requiresAuth = true;
+		$requiresAuth = false;
 		if (in_array($method, $this->skipAuthentication) ||
 			in_array('*', $this->skipAuthentication)
 		) {
 			$requiresAuth = false;
 		} else {
-			if (in_array($method, $this->requireAuthentication) ||
+			if (empty($this->requireAuthentication) ||
+				in_array($method, $this->requireAuthentication) ||
 				in_array('*', $this->requireAuthentication)
 			) {
 				$requiresAuth = true;

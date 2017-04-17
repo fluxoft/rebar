@@ -143,7 +143,7 @@ class ControllerTest extends TestCase {
 		}
 		$this->assertEquals(
 			$authenticationRequired,
-			$controller->PublicMethodRequiresAuthentication($requestMethod)
+			$controller->PublicMethodRequiresAuthentication($controllerMethod)
 		);
 		if ($authenticationRequired && !$authUser) {
 			$this->expectException('\Fluxoft\Rebar\Auth\Exceptions\AccessDeniedException');
@@ -267,6 +267,17 @@ class ControllerTest extends TestCase {
 				'requireAuthentication' => ['Test'],
 				'authenticationRequired' => true,
 				'authUser' => true,
+				'authorized' => true
+			],
+			'methodNotSkippedButRequiredByNameDifferentMethod' => [
+				'headers' => [],
+				'allowedMethods' => ['GET'],
+				'requestMethod' => 'GET',
+				'controllerMethod' => 'Blah',
+				'skipAuthentication' => [],
+				'requireAuthentication' => ['Test'],
+				'authenticationRequired' => false,
+				'authUser' => false,
 				'authorized' => true
 			]
 		];
