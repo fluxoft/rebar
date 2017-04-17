@@ -2,7 +2,9 @@
 
 namespace Fluxoft\Rebar\Presenters;
 
-class TwigTest extends \PHPUnit_Framework_TestCase {
+use PHPUnit\Framework\TestCase;
+
+class TwigTest extends TestCase {
 	protected function setup() {
 
 	}
@@ -11,7 +13,7 @@ class TwigTest extends \PHPUnit_Framework_TestCase {
 
 	}
 
-	public function testTest() {
-		$this->assertNotEquals('foo','bar');
+	public function testFooNotEqualBar() {
+		$this->assertNotEquals('foo', 'bar');
 	}
 }
