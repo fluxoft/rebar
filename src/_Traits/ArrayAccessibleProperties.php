@@ -10,12 +10,6 @@ namespace Fluxoft\Rebar\_Traits;
  * @package Fluxoft\Rebar\_Traits
  */
 trait ArrayAccessibleProperties {
-	/**
-	 * Holds the internal array of property names and values.
-	 * @var array $properties
-	 */
-	protected $properties = [];
-
 	// ArrayAccess implementation.
 	public function offsetExists($offset) {
 		return isset($this->$offset);

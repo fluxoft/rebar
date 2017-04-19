@@ -3,9 +3,6 @@
 namespace Fluxoft\Rebar\_Traits;
 
 trait GettableProperties {
-	/** @var array */
-	protected $properties = [];
-
 	/**
 	 * Override the magic __get() method to get the value for
 	 * the specified member of the $properties array.  Use a "get[PropertyName]"

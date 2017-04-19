@@ -3,12 +3,6 @@
 namespace Fluxoft\Rebar\_Traits;
 
 trait IterableProperties {
-	/**
-	 * Holds the internal array of property names and values.
-	 * @var array $properties
-	 */
-	protected $properties = [];
-
 	// Iterator interface implementation.
 	private $position = 0;
 	public function rewind() {

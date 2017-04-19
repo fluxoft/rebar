@@ -4,17 +4,6 @@ namespace Fluxoft\Rebar\_Traits;
 
 trait SettableProperties {
 	/**
-	 * Holds the internal array of property names and values.
-	 * @var array $properties
-	 */
-	protected $properties = [];
-	/**
-	 * Properties that have been changed from their original values but have not yet been written to the database.
-	 * @var array $modProperties
-	 */
-	protected $modProperties = [];
-
-	/**
 	 * Override the magic __set() method to set the values
 	 * for members of the $properties array.
 	 *
