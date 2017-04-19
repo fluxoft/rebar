@@ -15,7 +15,7 @@ before_script:
 
 script:
   - vendor/bin/phpcs src/ --standard=ruleset.xml
-  - phpunit --configuration phpunit.xml.dist --coverage-text
+  - phpunit --configuration phpunit.xml.dist
 
 notifications:
   email:
