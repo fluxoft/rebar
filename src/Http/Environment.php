@@ -1,11 +1,32 @@
 <?php
 namespace Fluxoft\Rebar\Http;
 
-class Environment implements \ArrayAccess {
-	/**
-	 * @var array
-	 */
-	protected $properties;
+use Fluxoft\Rebar\Http\Exceptions\EnvironmentException;
+
+/**
+ * Class Environment
+ * @package Fluxoft\Rebar\Http
+ * @property array ServerParams
+ * @property array GetParams
+ * @property array PostParams
+ * @property array PutParams
+ * @property array PatchParams
+ * @property array DeleteParams
+ * @property array Headers
+ * @property string Input
+ */
+class Environment implements \ArrayAccess, \Iterator {
+	/** @var array */
+	protected $properties = [
+		'ServerParams' => [],
+		'GetParams' => [],
+		'PostParams' => [],
+		'PutParams' => [],
+		'PatchParams' => [],
+		'DeleteParams' => [],
+		'Headers' => [],
+		'Input' => ''
+	];
 
 	/**
 	 * @var \Fluxoft\Rebar\Http\Environment
@@ -13,148 +34,132 @@ class Environment implements \ArrayAccess {
 	protected static $environment = null;
 
 	public static function GetInstance() {
-		if (is_null(self::$environment)) {
-			self::$environment = new self();
+		if (is_null(static::$environment)) {
+			static::$environment = new static();
 		}
-		return self::$environment;
+		return static::$environment;
 	}
-
-	public static function GetMock(array $userSettings = []) {
-		$defaults          = [
-			'method' => 'GET',
-			'SCRIPT_NAME' => '',
-			'pathInfo' => '',
-			'QUERY_STRING' => '',
-			'SERVER_NAME' => 'localhost',
-			'SERVER_PORT' => 80,
-			'ACCEPT' => 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-			'ACCEPT_LANGUAGE' => 'en-US,en;q=0.8',
-			'ACCEPT_CHARSET' => 'ISO-8859-1,utf-8;q=0.7,*;q=0.3',
-			'USER_AGENT' => 'Rebar',
-			'REMOTE_ADDR' => '127.0.0.1',
-			'rebar.protocol' => 'http',
-			'rebar.input' => ''
-		];
-		self::$environment = new self(array_merge($defaults, $userSettings));
-
-		return self::$environment;
+	public function __clone() {
+		throw new EnvironmentException('Cloning not allowed');
 	}
+	private function __construct() {}
 
-	private function __construct(array $settings = null) {
-		if ($settings) {
-			$this->properties = $settings;
-		} else {
-			$env = [];
-
-			// The HTTP request method
-			$env['method'] = strtoupper($_SERVER['REQUEST_METHOD']);
-
-			// The IP address making the request.
-			$env['REMOTE_ADDR'] = $_SERVER['REMOTE_ADDR'];
-
-			/*
-			 * Application paths
-			 *
-			 * This pulls two paths:
-			 * SCRIPT_NAME is the real physical path to the application, be it in the root directory or a subdirectory
-			 * of the public document root.
-			 * pathInfo is the virtual path to the requested resource within the application context.
-			 *
-			 * With .htaccess, SCRIPT_NAME will be the absolute path minus file name. Without .htaccess it will also
-			 * include the file name. If it is "/" it is set to an empty string (cannot have a trailing slash).
-			 *
-			 * pathInfo will be an absolute path with a leading slash, used for application routing.
-			 */
-			if (strpos($_SERVER['REQUEST_URI'], $_SERVER['SCRIPT_NAME']) === 0) {
-				$env['SCRIPT_NAME'] = $_SERVER['SCRIPT_NAME']; //Without URL rewrite
+	/** @var array */
+	private $serverParams = null;
+	protected function getServerParams() {
+		if (!isset($this->serverParams)) {
+			$this->serverParams = $this->superGlobalServer();
+		}
+		return $this->serverParams;
+	}
+	/** @var array */
+	private $getParams = null;
+	protected function getGetParams() {
+		if (!isset($this->getParams)) {
+			$this->getParams = $this->superGlobalGet();
+		}
+		return $this->getParams;
+	}
+	/** @var array */
+	private $postParams = null;
+	protected function getPostParams() {
+		if (!isset($this->postParams)) {
+			if (strtoupper($this->ServerParams['REQUEST_METHOD']) === 'POST' &&
+				!isset($this->Headers['X-HTTP-Method-Override'])
+			) {
+				$this->postParams = $this->superGlobalPost();
+			} elseif (isset($this->Headers['X-HTTP-Method-Override']) &&
+				strtoupper($this->Headers['X-HTTP-Method-Override']) === 'POST'
+			) {
+				$this->postParams = $this->superGlobalPost();
 			} else {
-				$env['SCRIPT_NAME'] = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'])); //With URL rewrite
+				$this->postParams = [];
 			}
-			$env['pathInfo'] = substr_replace($_SERVER['REQUEST_URI'], '', 0, strlen($env['SCRIPT_NAME']));
-			if (strpos($env['pathInfo'], '?') !== false) {
-				$env['pathInfo'] = substr_replace(
-					$env['pathInfo'], '', strpos($env['pathInfo'], '?')
-				); //query string is not removed automatically
+		}
+		return $this->postParams;
+	}
+	/** @var array */
+	private $putParams = null;
+	protected function getPutParams() {
+		if (!isset($this->putParams)) {
+			if (isset($this->Headers['X-HTTP-Method-Override']) &&
+				strtoupper($this->Headers['X-HTTP-Method-Override']) === 'PUT'
+			) {
+				$this->putParams = $this->superGlobalPost();
+			} else {
+				$this->putParams = [];
 			}
-			$env['SCRIPT_NAME'] = rtrim($env['SCRIPT_NAME'], '/');
-			$env['pathInfo']    = '/' . ltrim($env['pathInfo'], '/');
-
-			//The portion of the request URI following the '?'
-			$env['QUERY_STRING'] = isset($_SERVER['QUERY_STRING']) ? $_SERVER['QUERY_STRING'] : '';
-
-			//Name of server host that is running the script
-			$env['SERVER_NAME'] = $_SERVER['SERVER_NAME'];
-
-			//Number of server port that is running the script
-			$env['SERVER_PORT'] = $_SERVER['SERVER_PORT'];
-
-			//HTTP request headers
-			$specialHeaders = [
-				'CONTENT_TYPE',
-				'CONTENT_LENGTH',
-				'PHP_AUTH_USER',
-				'PHP_AUTH_PW',
-				'PHP_AUTH_DIGEST',
-				'AUTH_TYPE'
-			];
-			foreach ($_SERVER as $key => $value) {
-				$value = is_string($value) ? trim($value) : $value;
-				if (strpos($key, 'HTTP_') === 0) {
-					$env[substr($key, 5)] = $value;
-				} elseif (strpos($key, 'X_') === 0 || in_array($key, $specialHeaders)) {
-					$env[$key] = $value;
-				}
+		}
+		return $this->putParams;
+	}
+	/** @var array */
+	private $patchParams = null;
+	protected function getPatchParams() {
+		if (!isset($this->patchParams)) {
+			if (isset($this->Headers['X-HTTP-Method-Override']) &&
+				strtoupper($this->Headers['X-HTTP-Method-Override']) === 'PATCH'
+			) {
+				$this->patchParams = $this->superGlobalPost();
+			} else {
+				$this->patchParams = [];
 			}
-
-			//Is the application running under HTTPS or HTTP protocol?
-			$env['rebar.protocol'] = empty($_SERVER['HTTPS']) || $_SERVER['HTTPS'] === 'off' ? 'http' : 'https';
-
-			//Input stream (readable one time only; not available for multi-part/form-data requests)
+		}
+		return $this->patchParams;
+	}
+	/** @var array */
+	private $deleteParams = null;
+	protected function getDeleteParams() {
+		if (!isset($this->deleteParams)) {
+			if (isset($this->Headers['X-HTTP-Method-Override']) &&
+				strtoupper($this->Headers['X-HTTP-Method-Override']) === 'DELETE'
+			) {
+				$this->deleteParams = $this->superGlobalPost();
+			} else {
+				$this->deleteParams = [];
+			}
+		}
+		return $this->deleteParams;
+	}
+	/** @var array */
+	private $headers = null;
+	protected function getHeaders() {
+		if (!isset($this->headers)) {
+			$this->headers = $this->getAllHeaders();
+		}
+		return $this->headers;
+	}
+	/** @var string */
+	private $input = null;
+	protected function getInput() {
+		if (!isset($this->input)) {
 			$rawInput = file_get_contents('php://input');
 			if ($rawInput === false) {
-				$rawInput = '';
+				$this->input = '';
 			}
-			$env['rebar.input'] = $rawInput;
-
-			$env['headers'] = $this->getAllHeaders();
-
-			// GET and POST arrays
-			$env['get']    = $_GET;
-			$env['post']   = [];
-			$env['put']    = [];
-			$env['patch']  = [];
-			$env['delete'] = [];
-
-			if (isset($env['headers']['X-HTTP-Method-Override'])) {
-				$env['post'] = [];
-				switch ($env['headers']['X-HTTP-Method-Override']) {
-					case 'PUT':
-						$env['method'] = 'PUT';
-						$env['put']    = $_POST;
-						break;
-					case 'PATCH':
-						$env['method'] = 'PATCH';
-						$env['patch']  = $_POST;
-						break;
-					case 'DELETE':
-						$env['method'] = 'DELETE';
-						$env['delete'] = $_POST;
-						break;
-				}
-			} else {
-				$env['post'] = $_POST;
-			}
-
-			$this->properties = $env;
+			$this->input = $rawInput;
 		}
+		return $this->input;
 	}
 
-	private function getAllHeaders() {
+	protected function superGlobalGet() {
+		return $_GET;
+	}
+	protected function superGlobalPost() {
+		return $_POST;
+	}
+	protected function superGlobalRequest() {
+		return $_REQUEST;
+	}
+	protected function superGlobalServer() {
+		return $_SERVER;
+	}
+
+	protected function getAllHeaders() {
 		if (function_exists('getallheaders')) {
 			return getallheaders();
 		} else {
 			$out = [];
-			foreach ($_SERVER as $key => $value) {
+			foreach ($this->superGlobalServer() as $key => $value) {
 				if (substr($key, 0, 5) == "HTTP_") {
 					$key = str_replace(" ", "-", ucwords(strtolower(str_replace("_", " ", substr($key, 5)))));
 
@@ -176,8 +181,13 @@ class Environment implements \ArrayAccess {
 		return $string;
 	}
 
-	public function __get($var) {
-		return $this->properties[$var];
+	public function __get($key) {
+		$fnName = "get$key";
+		if (is_callable([$this, $fnName])) {
+			return $this->$fnName();
+		} else {
+			throw new \InvalidArgumentException(sprintf('Cannot get property: \'%s\' does not exist', $key));
+		}
 	}
 	public function __set($var, $value) {
 		throw new \InvalidArgumentException(sprintf('Read-only object.'));
@@ -198,5 +208,26 @@ class Environment implements \ArrayAccess {
 	}
 	public function offsetUnset($offset) {
 		throw new \InvalidArgumentException('Read-only object.');
+	}
+
+	// Iterator interface implementation.
+	private $position = 0;
+	public function rewind() {
+		$this->position = 0;
+	}
+	public function current() {
+		$keys         = array_keys($this->properties);
+		$propertyName = $keys[$this->position];
+		return $this->$propertyName;
+	}
+	public function key() {
+		$keys = array_keys($this->properties);
+		return $keys[$this->position];
+	}
+	public function next() {
+		++$this->position;
+	}
+	public function valid() {
+		return !($this->position > count($this->properties)-1);
 	}
 }
