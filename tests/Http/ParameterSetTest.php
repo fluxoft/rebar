@@ -9,7 +9,7 @@ class ParameterSetTest extends TestCase {
 	 * @param array $params
 	 * @dataProvider paramsProvider
 	 */
-	public function testParamerSet(array $params) {
+	public function testParameterSet(array $params) {
 		$parameterSet = new ParameterSet($params);
 
 		// test getting entire array with no parameters to Get
