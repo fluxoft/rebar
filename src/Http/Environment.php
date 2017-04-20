@@ -1,6 +1,11 @@
 <?php
 namespace Fluxoft\Rebar\Http;
 
+use Fluxoft\Rebar\_Traits\ArrayAccessibleProperties;
+use Fluxoft\Rebar\_Traits\GettableProperties;
+use Fluxoft\Rebar\_Traits\IterableProperties;
+use Fluxoft\Rebar\_Traits\StringableProperties;
+use Fluxoft\Rebar\_Traits\UnsettableProperties;
 use Fluxoft\Rebar\Http\Exceptions\EnvironmentException;
 
 /**
@@ -16,6 +21,12 @@ use Fluxoft\Rebar\Http\Exceptions\EnvironmentException;
  * @property string Input
  */
 class Environment implements \ArrayAccess, \Iterator {
+	use GettableProperties;
+	use UnsettableProperties;
+	use IterableProperties;
+	use ArrayAccessibleProperties;
+	use StringableProperties;
+
 	/** @var array */
 	protected $properties = [
 		'ServerParams' => [],
@@ -40,12 +51,12 @@ class Environment implements \ArrayAccess, \Iterator {
 		return static::$environment;
 	}
 	public function __clone() {
-		throw new EnvironmentException('Cloning not allowed');
+		throw new EnvironmentException('Cloning not allowed.');
 	}
 	private function __construct() {}
 
 	/** @var array */
-	private $serverParams = null;
+	protected $serverParams = null;
 	protected function getServerParams() {
 		if (!isset($this->serverParams)) {
 			$this->serverParams = $this->superGlobalServer();
@@ -53,7 +64,7 @@ class Environment implements \ArrayAccess, \Iterator {
 		return $this->serverParams;
 	}
 	/** @var array */
-	private $getParams = null;
+	protected $getParams = null;
 	protected function getGetParams() {
 		if (!isset($this->getParams)) {
 			$this->getParams = $this->superGlobalGet();
@@ -61,15 +72,16 @@ class Environment implements \ArrayAccess, \Iterator {
 		return $this->getParams;
 	}
 	/** @var array */
-	private $postParams = null;
+	protected $postParams = null;
 	protected function getPostParams() {
 		if (!isset($this->postParams)) {
-			if (strtoupper($this->ServerParams['REQUEST_METHOD']) === 'POST' &&
-				!isset($this->Headers['X-HTTP-Method-Override'])
+			if (isset($this->ServerParams['REQUEST_METHOD']) &&
+				strtoupper($this->ServerParams['REQUEST_METHOD']) === 'POST' &&
+				!isset($this->Headers['X-Http-Method-Override'])
 			) {
 				$this->postParams = $this->superGlobalPost();
-			} elseif (isset($this->Headers['X-HTTP-Method-Override']) &&
-				strtoupper($this->Headers['X-HTTP-Method-Override']) === 'POST'
+			} elseif (isset($this->Headers['X-Http-Method-Override']) &&
+				strtoupper($this->Headers['X-Http-Method-Override']) === 'POST'
 			) {
 				$this->postParams = $this->superGlobalPost();
 			} else {
@@ -79,11 +91,11 @@ class Environment implements \ArrayAccess, \Iterator {
 		return $this->postParams;
 	}
 	/** @var array */
-	private $putParams = null;
+	protected $putParams = null;
 	protected function getPutParams() {
 		if (!isset($this->putParams)) {
-			if (isset($this->Headers['X-HTTP-Method-Override']) &&
-				strtoupper($this->Headers['X-HTTP-Method-Override']) === 'PUT'
+			if (isset($this->Headers['X-Http-Method-Override']) &&
+				strtoupper($this->Headers['X-Http-Method-Override']) === 'PUT'
 			) {
 				$this->putParams = $this->superGlobalPost();
 			} else {
@@ -93,11 +105,11 @@ class Environment implements \ArrayAccess, \Iterator {
 		return $this->putParams;
 	}
 	/** @var array */
-	private $patchParams = null;
+	protected $patchParams = null;
 	protected function getPatchParams() {
 		if (!isset($this->patchParams)) {
-			if (isset($this->Headers['X-HTTP-Method-Override']) &&
-				strtoupper($this->Headers['X-HTTP-Method-Override']) === 'PATCH'
+			if (isset($this->Headers['X-Http-Method-Override']) &&
+				strtoupper($this->Headers['X-Http-Method-Override']) === 'PATCH'
 			) {
 				$this->patchParams = $this->superGlobalPost();
 			} else {
@@ -107,11 +119,11 @@ class Environment implements \ArrayAccess, \Iterator {
 		return $this->patchParams;
 	}
 	/** @var array */
-	private $deleteParams = null;
+	protected $deleteParams = null;
 	protected function getDeleteParams() {
 		if (!isset($this->deleteParams)) {
-			if (isset($this->Headers['X-HTTP-Method-Override']) &&
-				strtoupper($this->Headers['X-HTTP-Method-Override']) === 'DELETE'
+			if (isset($this->Headers['X-Http-Method-Override']) &&
+				strtoupper($this->Headers['X-Http-Method-Override']) === 'DELETE'
 			) {
 				$this->deleteParams = $this->superGlobalPost();
 			} else {
@@ -121,7 +133,7 @@ class Environment implements \ArrayAccess, \Iterator {
 		return $this->deleteParams;
 	}
 	/** @var array */
-	private $headers = null;
+	protected $headers = null;
 	protected function getHeaders() {
 		if (!isset($this->headers)) {
 			$this->headers = $this->getAllHeaders();
@@ -129,105 +141,68 @@ class Environment implements \ArrayAccess, \Iterator {
 		return $this->headers;
 	}
 	/** @var string */
-	private $input = null;
+	protected $input = null;
 	protected function getInput() {
 		if (!isset($this->input)) {
-			$rawInput = file_get_contents('php://input');
-			if ($rawInput === false) {
-				$this->input = '';
-			}
-			$this->input = $rawInput;
+			$this->input = $this->getRawInput();
 		}
 		return $this->input;
 	}
 
+	/**
+	 * @return string
+	 * @codeCoverageIgnore
+	 */
+	protected function getRawInput() {
+		$rawInput = file_get_contents('php://input');
+		return ($rawInput === false) ? '' : $rawInput;
+	}
+
+	protected function superGlobalServer() {
+		return $_SERVER; // @codeCoverageIgnore
+	}
 	protected function superGlobalGet() {
-		return $_GET;
+		return $_GET; // @codeCoverageIgnore
 	}
 	protected function superGlobalPost() {
-		return $_POST;
-	}
-	protected function superGlobalRequest() {
-		return $_REQUEST;
-	}
-	protected function superGlobalServer() {
-		return $_SERVER;
+		return $_POST; // @codeCoverageIgnore
 	}
 
 	protected function getAllHeaders() {
 		if (function_exists('getallheaders')) {
-			return getallheaders();
+			return getallheaders(); // @codeCoverageIgnore
 		} else {
-			$out = [];
-			foreach ($this->superGlobalServer() as $key => $value) {
-				if (substr($key, 0, 5) == "HTTP_") {
-					$key = str_replace(" ", "-", ucwords(strtolower(str_replace("_", " ", substr($key, 5)))));
-
-					$out[$key] = $value;
-				} else {
-					$out[$key] = $value;
+			$headers     = [];
+			$copy_server = array(
+				'CONTENT_TYPE'   => 'Content-Type',
+				'CONTENT_LENGTH' => 'Content-Length',
+				'CONTENT_MD5'    => 'Content-Md5',
+			);
+			foreach ($this->ServerParams as $key => $value) {
+				if (substr($key, 0, 5) === 'HTTP_') {
+					$key = substr($key, 5);
+					if (!isset($copy_server[$key]) || !isset($this->ServerParams[$key])) {
+						$key           = str_replace(' ', '-', ucwords(strtolower(str_replace('_', ' ', $key))));
+						$headers[$key] = $value;
+					}
+				} elseif (isset($copy_server[$key])) {
+					$headers[$copy_server[$key]] = $value;
 				}
 			}
-			return $out;
+			if (!isset($headers['Authorization'])) {
+				//var_dump(isset($_SERVER['REDIRECT_HTTP_AUTHORIZATION']));
+				if (isset($this->ServerParams['REDIRECT_HTTP_AUTHORIZATION'])) {
+					$headers['Authorization'] = $this->ServerParams['REDIRECT_HTTP_AUTHORIZATION'];
+				} elseif (isset($this->ServerParams['PHP_AUTH_USER']) &&
+					isset($this->serverParams['PHP_AUTH_PW'])
+				) {
+					$basic_pass               = isset($this->ServerParams['PHP_AUTH_PW']) ? $this->ServerParams['PHP_AUTH_PW'] : '';
+					$headers['Authorization'] = 'Basic ' . base64_encode($this->ServerParams['PHP_AUTH_USER'] . ':' . $basic_pass);
+				} elseif (isset($this->ServerParams['PHP_AUTH_DIGEST'])) {
+					$headers['Authorization'] = $this->ServerParams['PHP_AUTH_DIGEST'];
+				}
+			}
+			return $headers;
 		}
-	}
-
-	public function __toString() {
-		$string = get_class($this) . " object {\n";
-		foreach ($this->properties as $key => $value) {
-			$string .= "  $key: " . $this->$key . "\n";
-		}
-		$string .= "}\n";
-		return $string;
-	}
-
-	public function __get($key) {
-		$fnName = "get$key";
-		if (is_callable([$this, $fnName])) {
-			return $this->$fnName();
-		} else {
-			throw new \InvalidArgumentException(sprintf('Cannot get property: \'%s\' does not exist', $key));
-		}
-	}
-	public function __set($var, $value) {
-		throw new \InvalidArgumentException(sprintf('Read-only object.'));
-	}
-
-	// ArrayAccess
-	public function offsetExists($offset) {
-		return isset($this->properties[$offset]);
-	}
-	public function offsetGet($offset) {
-		if (!isset($this->properties[$offset])) {
-			throw new \InvalidArgumentException(sprintf('Value "%s" is not defined.', $offset));
-		}
-		return $this->properties[$offset];
-	}
-	public function offsetSet($offset, $value) {
-		throw new \InvalidArgumentException('Read-only object.');
-	}
-	public function offsetUnset($offset) {
-		throw new \InvalidArgumentException('Read-only object.');
-	}
-
-	// Iterator interface implementation.
-	private $position = 0;
-	public function rewind() {
-		$this->position = 0;
-	}
-	public function current() {
-		$keys         = array_keys($this->properties);
-		$propertyName = $keys[$this->position];
-		return $this->$propertyName;
-	}
-	public function key() {
-		$keys = array_keys($this->properties);
-		return $keys[$this->position];
-	}
-	public function next() {
-		++$this->position;
-	}
-	public function valid() {
-		return !($this->position > count($this->properties)-1);
 	}
 }
