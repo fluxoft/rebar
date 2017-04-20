@@ -121,7 +121,11 @@ class Request extends Model {
 	private $protocol = null;
 	protected function getProtocol() {
 		if (!isset($this->protocol)) {
-			$this->protocol = $this->Server('REQUEST_SCHEME', 'http');
+			if (isset($this->Headers['X-Forwarded-Proto'])) {
+				$this->protocol = $this->Headers['X-Forwarded-Proto'];
+			} else {
+				$this->protocol = $this->Server('REQUEST_SCHEME', 'http');
+			}
 		}
 		return $this->protocol;
 	}
@@ -137,7 +141,11 @@ class Request extends Model {
 	private $port = null;
 	protected function getPort() {
 		if (!isset($this->port)) {
-			$this->port = (integer) $this->Server('SERVER_PORT', 80);
+			if (isset($this->Headers['X-Forwarded-Port'])) {
+				$this->port = (integer) $this->Headers['X-Forwarded-Port'];
+			} else {
+				$this->port = (integer) $this->Server('SERVER_PORT', 80);
+			}
 		}
 		return $this->port;
 	}
