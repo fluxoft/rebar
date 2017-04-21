@@ -212,7 +212,6 @@ class Request extends Model {
 			// strip off querystring
 			if (strpos($path, '?') !== false) {
 				$path = substr_replace($path, '', strpos($path, '?'));
-				echo "path: $path\n";
 			}
 			// trim trailing slash
 			$path = rtrim($path, '/');
