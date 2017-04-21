@@ -1,6 +1,7 @@
 <?php
 namespace Fluxoft\Rebar\Http;
 
+use Fluxoft\Rebar\_Traits\UnsettableProperties;
 use Fluxoft\Rebar\Model;
 
 /**
@@ -13,11 +14,12 @@ use Fluxoft\Rebar\Model;
  * @property string URL
  * @property string URI
  * @property string Path
- * @property array Headers
  * @property string Body
  * @property string RemoteIP
  */
 class Request extends Model {
+	use UnsettableProperties;
+
 	protected $properties = [
 		'Method' => 'GET',
 		'Protocol' => 'http',
@@ -39,20 +41,7 @@ class Request extends Model {
 	public function __construct(Environment $environment) {
 		$this->environment = $environment;
 
-		/*$this->getParamSet    = new ParameterSet($environment['get']);
-		$this->postParamSet   = new ParameterSet($environment['post']);
-		$this->putParamSet    = new ParameterSet($environment['put']);
-		$this->patchParamSet  = new ParameterSet($environment['patch']);
-		$this->deleteParamSet = new ParameterSet($environment['delete']);*/
-
 		parent::__construct();
-		/*parent::__construct([
-			'Method' => $environment['method'],
-			'PathInfo' => $environment['pathInfo'],
-			'Headers' => $environment['headers'],
-			'Environment' => $environment,
-			'Body' => $environment['rebar.input']
-		]);*/
 	}
 
 	/** @var ParameterSet  */
@@ -62,6 +51,14 @@ class Request extends Model {
 			$this->serverParamSet = new ParameterSet($this->environment->ServerParams);
 		}
 		return $this->serverParamSet->Get($var, $default);
+	}
+	/** @var ParameterSet */
+	private $headersParamSet = null;
+	public function Headers($var = null, $default = null) {
+		if (!isset($this->headersParamSet)) {
+			$this->headersParamSet = new ParameterSet($this->environment->Headers);
+		}
+		return $this->headersParamSet->Get($var, $default);
 	}
 	/** @var ParameterSet  */
 	private $getParamSet = null;
@@ -75,7 +72,8 @@ class Request extends Model {
 	private $postParamSet = null;
 	public function Post($var = null, $default = null) {
 		if (!isset($this->postParamSet)) {
-			$this->postParamSet = new ParameterSet($this->environment->PostParams);
+			$params             = $this->environment->PostParams;
+			$this->postParamSet = new ParameterSet($this->Method === 'POST' ? $params : []);
 		}
 		return $this->postParamSet->Get($var, $default);
 	}
@@ -83,7 +81,8 @@ class Request extends Model {
 	private $putParamSet = null;
 	public function Put($var = null, $default = null) {
 		if (!isset($this->putParamSet)) {
-			$this->putParamSet = new ParameterSet($this->environment->PutParams);
+			$params            = $this->environment->PutParams;
+			$this->putParamSet = new ParameterSet($this->Method === 'PUT' ? $params : []);
 		}
 		return $this->putParamSet->Get($var, $default);
 	}
@@ -91,7 +90,8 @@ class Request extends Model {
 	private $patchParamSet = null;
 	public function Patch($var = null, $default = null) {
 		if (!isset($this->patchParamSet)) {
-			$this->patchParamSet = new ParameterSet($this->environment->PatchParams);
+			$params              = $this->environment->PatchParams;
+			$this->patchParamSet = new ParameterSet($this->Method === 'PATCH' ? $params : []);
 		}
 		return $this->patchParamSet->Get($var, $default);
 	}
@@ -99,7 +99,8 @@ class Request extends Model {
 	private $deleteParamSet = null;
 	public function Delete($var = null, $default = null) {
 		if (!isset($this->deleteParamSet)) {
-			$this->deleteParamSet = new ParameterSet($this->environment->DeleteParams);
+			$params               = $this->environment->DeleteParams;
+			$this->deleteParamSet = new ParameterSet($this->Method === 'DELETE' ? $params : []);
 		}
 		return $this->deleteParamSet->Get($var, $default);
 	}
@@ -108,8 +109,8 @@ class Request extends Model {
 	private $method = null;
 	protected function getMethod() {
 		if (!isset($this->method)) {
-			if (isset($this->Headers['X-HTTP-Method-Override'])) {
-				$method = $this->Headers['X-HTTP-Method-Override'];
+			if ($this->Headers('X-Http-Method-Override') !== null) {
+				$method = $this->Headers('X-Http-Method-Override');
 			} else {
 				$method = $this->Server('REQUEST_METHOD', 'GET');
 			}
@@ -121,11 +122,12 @@ class Request extends Model {
 	private $protocol = null;
 	protected function getProtocol() {
 		if (!isset($this->protocol)) {
-			if (isset($this->Headers['X-Forwarded-Proto'])) {
-				$this->protocol = $this->Headers['X-Forwarded-Proto'];
+			if ($this->Headers('X-Forwarded-Proto') !== null) {
+				$protocol = $this->Headers('X-Forwarded-Proto');
 			} else {
-				$this->protocol = $this->Server('REQUEST_SCHEME', 'http');
+				$protocol = $this->Server('REQUEST_SCHEME', 'http');
 			}
+			$this->protocol = strtolower($protocol);
 		}
 		return $this->protocol;
 	}
@@ -133,7 +135,7 @@ class Request extends Model {
 	private $host = null;
 	protected function getHost() {
 		if (!isset($this->host)) {
-			$this->host = $this->Server('SERVER_NAME', 'localhost');
+			$this->host = strtolower($this->Server('SERVER_NAME', 'localhost'));
 		}
 		return $this->host;
 	}
@@ -141,8 +143,8 @@ class Request extends Model {
 	private $port = null;
 	protected function getPort() {
 		if (!isset($this->port)) {
-			if (isset($this->Headers['X-Forwarded-Port'])) {
-				$this->port = (integer) $this->Headers['X-Forwarded-Port'];
+			if ($this->Headers('X-Forwarded-Port') !== null) {
+				$this->port = (integer) $this->Headers('X-Forwarded-Port');
 			} else {
 				$this->port = (integer) $this->Server('SERVER_PORT', 80);
 			}
@@ -164,7 +166,7 @@ class Request extends Model {
 			) {
 				$url .= ':'.$this->Port;
 			}
-			$url .= $this->URI;
+			$url .= rtrim($this->URI, '/');
 
 			$this->url = $url;
 		}
@@ -208,7 +210,10 @@ class Request extends Model {
 			// remove script name from request URI
 			$path = substr_replace($requestUri, '', 0, strlen($scriptName));
 			// strip off querystring
-			$path = substr_replace($path, '', strpos($path, '?'));
+			if (strpos($path, '?') !== false) {
+				$path = substr_replace($path, '', strpos($path, '?'));
+				echo "path: $path\n";
+			}
 			// trim trailing slash
 			$path = rtrim($path, '/');
 			// trim leading slash if present and prepend a single slash
@@ -218,37 +223,39 @@ class Request extends Model {
 		}
 		return $this->path;
 	}
+	private $remoteIP = null;
 	protected function getRemoteIP() {
-		if (array_key_exists('X-Forwarded-For', $this->Headers)) {
-			$ips = $this->Headers['X-Forwarded-For'];
-		} elseif (array_key_exists('HTTP_X_FORWARDED_FOR', $this->Headers)) {
-			$ips = $this->Headers['HTTP_X_FORWARDED_FOR'];
-		} else {
-			$ips = $this->Server('REMOTE_ADDR', '');
-			//$ips = $this->Environment['REMOTE_ADDR'];
-		}
-		$ips = explode(',', $ips);
+		if (!isset($this->remoteIP)) {
+			$foundIP = null;
+			$ips     = $this->Headers(
+				'X-Forwarded-For',
+				$this->Server('REMOTE_ADDR', '')
+			);
+			$ips     = explode(',', $ips);
 
-		// return the first non-private IP address (forwarded IP string will list forwarded IPs in order,
-		// so the earliest non-private IP (in case the user is behind a proxy/firewall) is the user's IP
-		foreach ($ips as $ip) {
-			$ip = trim($ip);
-			if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE) !== false) {
-				return $ip;
+			// return the first non-private IP address (forwarded IP string will list forwarded IPs in order,
+			// so the earliest non-private IP (in case the user is behind a proxy/firewall) is the user's IP
+			foreach ($ips as $ip) {
+				$testIP = trim($ip);
+				if (filter_var($testIP, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE) !== false) {
+					$foundIP = $testIP;
+					break;
+				}
 			}
+
+			// if somehow we got to this point, there is somehow only a private IP address
+			if (!isset($foundIP)) {
+				$foundIP = $this->Server('REMOTE_ADDR', 'invalid');
+			}
+			$this->remoteIP = $foundIP;
 		}
-
-		// if somehow we got to this point, there is somehow only a private IP address
-		return $this->Server('REMOTE_ADDR', 'invalid');
+		return $this->remoteIP;
 	}
-	protected function getHeaders() {
-		return $this->environment->Headers;
-	}
+	private $body = null;
 	protected function getBody() {
-		return $this->environment->Input;
-	}
-
-	public function __set($key, $value) {
-		throw new \InvalidArgumentException('Read-only object.');
+		if (!isset($this->body)) {
+			$this->body = $this->environment->Input;
+		}
+		return $this->body;
 	}
 }
