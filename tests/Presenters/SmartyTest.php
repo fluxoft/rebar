@@ -20,6 +20,7 @@ class SmartyTest extends TestCase {
 	}
 
 	protected function teardown() {
+		unset($this->responseObserver);
 		unset($this->smartyObserver);
 	}
 
