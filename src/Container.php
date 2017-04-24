@@ -1,13 +1,11 @@
 <?php
-/**
- * Fluxoft\Rebar\Container
- * 
- * Your basic dependency injection container class.
- * 
- * @author Joe Hart
- */
+
 namespace Fluxoft\Rebar;
 
+/**
+ * Class Container
+ * @package Fluxoft\Rebar
+ */
 class Container implements \ArrayAccess {
 	protected $values  = [];
 	protected $objects = [];
