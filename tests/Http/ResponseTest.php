@@ -133,7 +133,7 @@ class ResponseTest extends TestCase {
 			'body' => ''
 		];
 
-		$mockResponse->Redirect('/someplaceElse');
+		$mockResponse->Redirect('/someplaceElse', true);
 		$this->assertEquals($expectedSent, $mockResponse->GetSent());
 	}
 }
