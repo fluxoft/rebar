@@ -17,6 +17,9 @@ script:
   - vendor/bin/phpcs src/ --standard=ruleset.xml
   - phpunit --configuration phpunit.xml.dist
 
+after_success:
+  - travis_retry php vendor/bin/coveralls -v
+
 notifications:
   email:
     - joe@fluxoft.com

@@ -36,7 +36,7 @@ class ModelTest extends TestCase {
 		$this->assertEquals($testModel->GetModifiedProperties(), []);
 
 		// test toArray() method
-		$this->assertEquals($testModel->asArray(), $defaultProperties);
+		$this->assertEquals($testModel->toArray(), $defaultProperties);
 
 		// test all properties are set to expected values
 		foreach ($defaultProperties as $key => $value) {

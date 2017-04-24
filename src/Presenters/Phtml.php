@@ -6,6 +6,14 @@ use Fluxoft\Rebar\Http\Response;
 
 /**
  * Class Phtml
+ *
+ * This presenter can be used to present using PHTML-style templates.
+ * It's a bad idea and I don't think anyone should actually use this
+ * (use Twig or Smarty or some actual template engine instead), but
+ * it can be helpful when migrating a site that might already have a
+ * lot of these types of templates, so they don't all have to be
+ * transitioned at one time.
+ *
  * @package Fluxoft\Rebar\Presenters
  * @property string Layout
  * @property string Template
@@ -26,20 +34,43 @@ class Phtml implements PresenterInterface {
 	}
 
 	public function Render(Response $response, array $data) {
-		foreach ($data as $var => $val) {
-			${$var} = $val;
-		}
+		// make the data set available to the template as $rebarTemplateData
+		// to hopefully avoid naming collisions
+		$rebarTemplateData = $data;
 
 		if (strlen($this->layout) > 0) {
-			$pageTemplate = $this->template;
-			$include      = $this->templatePath.$this->layout;
+			// this can be used in a layout template to include the template
+			// in the appropriate place on the page
+			$rebarPageTemplate = $this->template;
+			$include           = $this->templatePath.$this->layout;
 		} else {
 			$include = $this->templatePath.$this->template;
 		}
-		if (file_exists($include)) {
-			include ($include);
+		if ($this->fileExists($include)) {
+			$this->includeTemplate($include);
+			$response = null;
+		} else {
+			$response->AddHeader('Content-Type', 'text/plain');
+			$response->Status = 404;
+			$response->Body   = 'Template not found.';
+			$response->Send();
 		}
-		$response = null;
+
+		unset($rebarTemplateData);
+		unset($rebarPageTemplate);
+	}
+
+	/**
+	 * @codeCoverageIgnore
+	 */
+	protected function fileExists($include) {
+		return file_exists($include);
+	}
+	/**
+	 * @codeCoverageIgnore
+	 */
+	protected function includeTemplate($include) {
+		include ($include);
 		exit;
 	}
 

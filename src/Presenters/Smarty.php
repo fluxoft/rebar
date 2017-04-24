@@ -19,20 +19,11 @@ class Smarty implements PresenterInterface {
 	protected $layout;
 
 	public function __construct(
+		\Smarty $smarty,
 		$templatePath,
-		$compilePath,
-		$cachePath,
-		$configPath,
 		$template = '/default.html',
 		$layout = ''
 	) {
-		$smarty = new \Smarty();
-		$smarty->muteExpectedErrors();
-		$smarty->template_dir = $templatePath;
-		$smarty->compile_dir  = $compilePath;
-		$smarty->cache_dir    = $cachePath;
-		$smarty->config_dir   = $configPath;
-
 		$this->smarty       = $smarty;
 		$this->templatePath = $templatePath;
 		$this->template     = $template;
