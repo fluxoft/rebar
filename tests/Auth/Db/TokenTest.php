@@ -178,4 +178,3 @@ class TokenTest extends TestCase {
 		);
 	}
 }
- 

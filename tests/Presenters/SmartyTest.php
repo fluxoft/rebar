@@ -14,7 +14,7 @@ class SmartyTest extends TestCase {
 		$this->responseObserver = $this->getMockBuilder('\Fluxoft\Rebar\Http\Response')
 			->disableOriginalConstructor()
 			->getMock();
-		$this->smartyObserver = $this->getMockBuilder('\Smarty')
+		$this->smartyObserver   = $this->getMockBuilder('\Smarty')
 			->disableOriginalConstructor()
 			->getMock();
 	}

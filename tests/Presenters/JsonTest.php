@@ -144,7 +144,7 @@ class JsonTest extends TestCase {
 class JsonMock extends Json {
 	// @codingStandardsIgnoreEnd
 
-	public function PublicJsonEncode(array $data, $indent = null) {
+	public function PublicJsonEncode(array $data) {
 		return parent::jsonEncode($data);
 	}
 }

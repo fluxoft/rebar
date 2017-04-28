@@ -12,20 +12,7 @@ use Fluxoft\Rebar\Db\MapperFactory;
 
 class UserMapper extends Mapper implements UserMapperInterface {
 	/** @var User */
-	protected $userModel;
-
-	public function __construct(MapperFactory $mapperFactory, Connection $reader, Connection $writer = null) {
-		parent::__construct($mapperFactory, $reader, $writer);
-
-		if (!($this->model instanceof User)) {
-			throw new ModelException(sprintf(
-				'The model %s must be an instance of a class extended from Fluxoft\Rebar\Auth\User',
-				$this->modelClass
-			));
-		}
-
-		$this->userModel = $this->model;
-	}
+	protected $model;
 
 	/**
 	 * @param $username
@@ -37,7 +24,7 @@ class UserMapper extends Mapper implements UserMapperInterface {
 	public function GetAuthorizedUserForUsernameAndPassword($username, $password) {
 		/** @var User $user */
 		$user = $this->GetOneWhere([
-			$this->userModel->GetAuthUsernameProperty() => $username
+			$this->model->GetAuthUsernameProperty() => $username
 		]);
 		if (isset($user)) {
 			if ($user->IsPasswordValid($password)) {

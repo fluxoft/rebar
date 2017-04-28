@@ -9,13 +9,13 @@ use Fluxoft\Rebar\Model;
 /**
  * Class User
  * @package Fluxoft\Rebar\Auth\Users\Simple
- * @property int ID
+ * @property int Id
  * @property string Username
  * @property string Password
  */
 class User extends Model implements UserInterface {
 	protected $properties = [
-		'ID' => null,
+		'Id' => null,
 		'Username' => null,
 		'Password' => null
 	];
@@ -32,15 +32,17 @@ class User extends Model implements UserInterface {
 			isset($password)
 		) {
 			if (!is_int($id)) {
-				throw new InvalidUserException('The ID must be an integer.');
+				throw new InvalidUserException('The Id must be an integer.');
 			} elseif (!is_string($username) || strlen($username) === 0) {
 				throw new InvalidUserException('The Username must be a non-zero length string');
-			} elseif (!is_string($username) || strlen($username) === 0) {
-				throw new InvalidUserException('The Username must be a non-zero length string');
+			} elseif (!is_string($password) || strlen($password) === 0) {
+				throw new InvalidUserException('The Password must be a non-zero length string');
 			} else {
-				$this->ID       = $id;
-				$this->Username = $username;
-				$this->Password = $password;
+				parent::__construct([
+					'Id' => $id,
+					'Username' => $username,
+					'Password' => $password
+				]);
 			}
 		} else {
 			throw new InvalidUserException('User must be initialized with ID, Username, and Password properties');
@@ -51,7 +53,7 @@ class User extends Model implements UserInterface {
 	 * @return int
 	 */
 	public function GetID() {
-		return $this->properties['ID'];
+		return $this->properties['Id'];
 	}
 
 	/**
