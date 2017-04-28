@@ -2,6 +2,11 @@
 
 namespace Fluxoft\Rebar\Error;
 
+/**
+ * Class Handler
+ * @package Fluxoft\Rebar\Error
+ * @codeCoverageIgnore
+ */
 class Handler {
 	/**
 	 * @var NotifierInterface

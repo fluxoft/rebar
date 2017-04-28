@@ -16,13 +16,28 @@ class BasicNotifier implements NotifierInterface {
 	 * @return void
 	 */
 	public function Notify(\Throwable $t) {
+		$this->setHeaders();
+		$this->echoErrorText($this->getErrorText($t));
+		$this->callExit();
+	}
+	protected function getErrorText(\Throwable $throwable) {
+		$text  = "******************************\n";
+		$text .= "***  Unhandled exception:  ***\n";
+		$text .= "******************************\n";
+		$text .= "\n";
+		$text .= (string) $throwable;
+		return $text;
+	}
+	// @codeCoverageIgnoreStart
+	protected function setHeaders() {
 		header('HTTP/1.1 500 Unhandled exception');
 		header('content-type: text/plain');
-		echo "******************************\n";
-		echo "***  Unhandled exception:  ***\n";
-		echo "******************************\n";
-		echo "\n";
-		echo (string) $t;
+	}
+	protected function echoErrorText($text) {
+		echo $text;
+	}
+	protected function callExit() {
 		exit;
 	}
+	// @codeCoverageIgnoreEnd
 }
