@@ -130,7 +130,8 @@ class Jwt implements AuthInterface {
 		$postToken     = $request->Post('AuthToken');
 		if (isset($authorization) && substr($authorization, 0, 7) === 'Bearer ') {
 			$tokenString = substr($authorization, 7);
-		// next 2 conditions ignored because xdebug doesn't like "elseif"
+
+			// next 2 conditions ignored because xdebug doesn't like "elseif"
 		} elseif (isset($getToken)) { // @codeCoverageIgnore
 			$tokenString = $getToken;
 		} elseif (isset($postToken)) { // @codeCoverageIgnore

@@ -243,8 +243,8 @@ class WebTest extends TestCase {
 			$this->sessionObserver
 		);
 
-		$token       = new Token(1);
-		$checksum    = hash('md5', (string) $token);
+		$token    = new Token(1);
+		$checksum = hash('md5', (string) $token);
 
 		$tokenString = base64_encode((string) $token . '|' . $checksum);
 
