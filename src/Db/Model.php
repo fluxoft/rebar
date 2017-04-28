@@ -33,7 +33,7 @@ abstract class Model extends BaseModel {
 
 	/** @var string The name of the property that contains the ID
 	 * (used by Mapper to build certain queries) */
-	protected $idProperty = 'ID';
+	protected $idProperty = 'Id';
 
 	/**
 	 * @param array $properties
