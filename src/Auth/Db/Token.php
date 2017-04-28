@@ -30,22 +30,28 @@ class Token extends Model {
 			$tokenBits = explode('|', base64_decode($tokenString));
 			// token should be in 3 parts
 			if (count($tokenBits) !== 3) {
-				throw new InvalidTokenException('Invalid Token String "%s"', $tokenString);
+				throw new InvalidTokenException(sprintf('Invalid Token String "%s"', $tokenString));
 			} else {
 				list($userID, $seriesID, $token) = $tokenBits;
 
-				$this->UserID   = $userID;
-				$this->SeriesID = $seriesID;
-				$this->Token    = $token;
+				parent::__construct([
+					'UserID' => $userID,
+					'SeriesID' => $seriesID,
+					'Token' => $token
+				]);
 			}
-		} elseif (isset($userID)) {
-			$this->UserID   = $userID;
-			$this->SeriesID = (isset($seriesID)) ? $seriesID : uniqid('', true);
-			$this->Token    = (isset($token)) ? $token : $this->getGUID();
 		} else {
-			throw new InvalidTokenException(sprintf(
-				'You must provide, at minimum, either the $userID or a $tokenString parameter to create a Token.'
-			));
+			if (isset($userID)) {
+				parent::__construct([
+					'UserID' => $userID,
+					'SeriesID' => (isset($seriesID)) ? $seriesID : uniqid('', true),
+					'Token' => (isset($token)) ? $token : $this->getGUID()
+				]);
+			} else {
+				throw new InvalidTokenException(sprintf(
+					'You must provide, at minimum, either the $userID or a $tokenString parameter to create a Token.'
+				));
+			}
 		}
 	}
 
@@ -61,7 +67,7 @@ class Token extends Model {
 
 	private function getGUID() {
 		if (function_exists('com_create_guid')) {
-			return com_create_guid();
+			return com_create_guid(); // @codeCoverageIgnore
 		} else {
 			$charid = strtoupper(md5(uniqid(rand(), true)));
 			$hyphen = chr(45); // "-"

@@ -1,24 +1,19 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: joehart
- * Date: 12/12/15
- * Time: 10:06 PM
- */
 
 namespace Fluxoft\Rebar\Auth;
 
+use PHPUnit\Framework\TestCase;
 
-class BasicUserMapperTest extends \PHPUnit_Framework_TestCase {
-    protected function setup() {
-    
-    }
-    
-    protected function teardown() {
-    
-    }
-    
-    public function testFooNotEqualBar() {
-        $this->assertNotEquals('foo','bar');
-    }
+class BasicUserMapperTest extends TestCase {
+	protected function setup() {
+
+	}
+
+	protected function teardown() {
+
+	}
+
+	public function testFooNotEqualBar() {
+		$this->assertNotEquals('foo', 'bar');
+	}
 }

@@ -12,13 +12,8 @@ class Session extends ParameterSet {
 	 * values of the $_SESSION superglobal array.
 	 */
 	public function __construct() {
-		if (session_status() == PHP_SESSION_NONE) {
-			session_start();
-		}
-
-		foreach ($_SESSION as $key => $value) {
-			$this->params[$key] = $value;
-		}
+		$this->startSession();
+		parent::__construct($this->superGlobalSession());
 	}
 
 	/**
@@ -26,7 +21,7 @@ class Session extends ParameterSet {
 	 * @param $value
 	 */
 	public function Set($key, $value) {
-		$_SESSION[$key] = $value;
+		$this->setSession($key, $value);
 		parent::Set($key, $value);
 	}
 
@@ -34,7 +29,24 @@ class Session extends ParameterSet {
 	 * @param $key
 	 */
 	public function Delete($key) {
-		unset($_SESSION[$key]);
+		$this->unsetSession($key);
 		parent::Delete($key);
 	}
+
+	// @codeCoverageIgnoreStart
+	protected function superGlobalSession() {
+		return $_SESSION;
+	}
+	protected function startSession() {
+		if (session_status() == PHP_SESSION_NONE) {
+			session_start();
+		}
+	}
+	protected function setSession($key, $value) {
+		$_SESSION[$key] = $value;
+	}
+	protected function unsetSession($key) {
+		unset($_SESSION[$key]);
+	}
+	// @codeCoverageIgnoreEnd
 }

@@ -57,13 +57,12 @@ class Jwt implements AuthInterface {
 					$auth->Message = 'The token is expired.';
 				} else {
 					// a valid token was found - use it to pull the correct user
-					$authUser = $this->userMapper->GetAuthorizedUserById($validToken->userID);
+					$authUser = $this->userMapper->GetAuthorizedUserById($validToken->userId);
 					if ($authUser instanceof UserInterface) {
 						$tokenString   = $this->getTokenString($authUser);
 						$auth->Auth    = true;
 						$auth->Token   = $tokenString;
 						$auth->Message = 'Found valid token and logged in';
-						$auth->Message = $validToken;
 					} else {
 						$auth->Message = 'Tried to log in using token but user not found.';
 					}
@@ -106,9 +105,8 @@ class Jwt implements AuthInterface {
 	 * @param \Fluxoft\Rebar\Http\Request $request
 	 * @return Reply
 	 */
-	// @codingStandardsIgnoreStart ($request is unused)
 	public function Logout(Request $request) {
-		// @codingStandardsIgnoreEnd
+		unset($request);
 
 		// You can't really log out of a JWT authentication session, since the same token
 		// could be sent later on and will be accepted for as long as it is valid, so this
@@ -119,22 +117,23 @@ class Jwt implements AuthInterface {
 	protected function getTokenString(UserInterface $user) {
 		$now               = new \DateTime('now', new \DateTimeZone('UTC'));
 		$payload           = [];
-		$payload['userID'] = $user->GetID();
+		$payload['userId'] = $user->GetID();
 		$payload['iat']    = $now->format('U');
 		$payload['exp']    = $now->add($this->expires)->format('U');
 
-		return \Firebase\JWT\JWT::encode($payload, $this->secretKey, 'HS256');
+		return $this->callFirebaseEncode($payload);
 	}
 	protected function getValidTokenPayload(Request $request) {
 		// try to get a token first from the Authorization header, then from the GET and POST vars
-		$headers   = $request->Headers;
-		$getToken  = $request->Get('AuthToken');
-		$postToken = $request->Post('AuthToken');
-		if (isset($headers['Authorization']) && substr($headers['Authorization'], 0, 7) === 'Bearer ') {
-			$tokenString = substr($headers['Authorization'], 7);
-		} elseif (isset($getToken)) {
+		$authorization = $request->Headers('Authorization');
+		$getToken      = $request->Get('AuthToken');
+		$postToken     = $request->Post('AuthToken');
+		if (isset($authorization) && substr($authorization, 0, 7) === 'Bearer ') {
+			$tokenString = substr($authorization, 7);
+		// next 2 conditions ignored because xdebug doesn't like "elseif"
+		} elseif (isset($getToken)) { // @codeCoverageIgnore
 			$tokenString = $getToken;
-		} elseif (isset($postToken)) {
+		} elseif (isset($postToken)) { // @codeCoverageIgnore
 			$tokenString = $postToken;
 		} else {
 			$tokenString = null;
@@ -142,14 +141,30 @@ class Jwt implements AuthInterface {
 
 		if (isset($tokenString)) {
 			try {
-				return \Firebase\JWT\JWT::decode($tokenString, $this->secretKey, ['HS256']);
+				return $this->callFirebaseDecode($tokenString);
 			} catch (ExpiredException $e) {
 				return 'expired';
-			} catch (\Exception $e) {
-				return null;
 			}
 		} else {
 			return null;
 		}
+	}
+
+	/**
+	 * @param $payload
+	 * @return string
+	 * @codeCoverageIgnore
+	 */
+	protected function callFirebaseEncode($payload) {
+		return \Firebase\JWT\JWT::encode($payload, $this->secretKey, 'HS256');
+	}
+
+	/**
+	 * @param $tokenString
+	 * @return object
+	 * @codeCoverageIgnore
+	 */
+	protected function callFirebaseDecode($tokenString) {
+		return \Firebase\JWT\JWT::decode($tokenString, $this->secretKey, ['HS256']);
 	}
 }

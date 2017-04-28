@@ -4,6 +4,8 @@ namespace Fluxoft\Rebar\Auth;
 
 use Fluxoft\Rebar\Auth\Db\Token;
 use Fluxoft\rebar\Auth\Db\TokenMapper;
+use Fluxoft\Rebar\Auth\Db\User;
+use Fluxoft\Rebar\Auth\Db\UserMapper;
 use Fluxoft\Rebar\Http\Cookies;
 use Fluxoft\Rebar\Http\Request;
 use Fluxoft\Rebar\Http\Session;
@@ -13,7 +15,7 @@ use Fluxoft\Rebar\Http\Session;
  * @package Fluxoft\Rebar\Auth
  */
 class Web implements AuthInterface {
-	/** @var UserMapperInterface */
+	/** @var UserMapper */
 	protected $userMapper;
 	/** @var TokenMapper */
 	protected $tokenMapper;
@@ -28,14 +30,14 @@ class Web implements AuthInterface {
 	private $auth = null;
 
 	/**
-	 * @param UserMapperInterface $userMapper
+	 * @param UserMapper $userMapper
 	 * @param TokenMapper $tokenMapper
 	 * @param Cookies $cookies
 	 * @param Session $session
 	 * @param int $expiresDays
 	 */
 	public function __construct(
-		UserMapperInterface $userMapper,
+		UserMapper $userMapper,
 		TokenMapper $tokenMapper,
 		Cookies $cookies,
 		Session $session,
@@ -56,21 +58,22 @@ class Web implements AuthInterface {
 	public function GetAuthenticatedUser(Request $request) {
 		if (!isset($this->auth)) {
 			$auth     = new Reply();
-			$userID   = $this->session->Get('AuthUserID', null);
+			$userID   = $this->session->Get('AuthUserId');
 			$authUser = null;
 			if (!isset($userID)) {
 				// Check that valid tokens are set
 				$validToken = $this->getValidToken($request);
 				if ($validToken === false) {
 					// kill any remaining cookies or sessions in this case
+					$auth->Message = 'No auth tokens found. Authentication failed.';
 					$this->cookies->Delete('AuthToken');
-					$this->session->Delete('AuthUserID');
+					$this->session->Delete('AuthUserId');
 					$this->session->Delete('AuthToken');
 				} else {
 					// a valid token was found - use it to pull the correct user
 					$authUser = $this->userMapper->GetAuthorizedUserById($validToken->UserID);
 					if ($authUser instanceof UserInterface) {
-						$tokenString   = $this->setTokens($authUser, $validToken);
+						$tokenString   = $this->setTokens($authUser, $validToken, true);
 						$auth->Auth    = true;
 						$auth->Token   = $tokenString;
 						$auth->Message = 'Found valid token.';
@@ -123,7 +126,7 @@ class Web implements AuthInterface {
 	 */
 	public function Logout(Request $request) {
 		$auth = $this->GetAuthenticatedUser( $request);
-		if ($auth->User instanceof UserInterface) {
+		if ($auth->User instanceof User) {
 			$token = $this->getValidToken($request);
 			if ($token === false) {
 				$token = null;
@@ -137,15 +140,16 @@ class Web implements AuthInterface {
 			}
 			$this->tokenMapper->DeleteAuthToken($userID, $seriesID);
 			$this->cookies->Delete('AuthToken');
-			$this->session->Delete('AuthUserID');
+			$this->session->Delete('AuthUserId');
 			$this->session->Delete('AuthToken');
 		}
 		$this->auth = new Reply();
+		return $this->auth;
 	}
 
 
 
-	private function getValidToken(Request $request) {
+	protected function getValidToken(Request $request) {
 		$tokenString = $this->cookies->Get('AuthToken');
 		if (!isset($tokenString)) {
 			// See if the token is present in the URL
@@ -155,20 +159,26 @@ class Web implements AuthInterface {
 			}
 		}
 
-		list($authToken, $checksum) = explode('|', base64_decode($tokenString));
+		$tokenParts = explode('|', base64_decode($tokenString));
+		if (is_array($tokenParts) && count($tokenParts) === 2) {
+			list($authToken, $checksum) = $tokenParts;
+		} else {
+			$authToken = 'badToken';
+			$checksum  = 'invalid';
+		}
 
 		if (hash('md5', $authToken) === $checksum) {
 			$checkToken = new Token(null, null, null, $authToken);
-			if (!$this->tokenMapper->CheckAuthToken($checkToken)) {
-				return false;
-			} else {
+			if ($this->tokenMapper->CheckAuthToken($checkToken)) {
 				return $checkToken;
+			} else {
+				return false;
 			}
 		} else {
 			return false;
 		}
 	}
-	private function setTokens(UserInterface $user, Token $token = null, $remember = false) {
+	private function setTokens(User $user, Token $token = null, $remember = false) {
 		if (!isset($token)) {
 			$token = new Token($user->GetID());
 		}
@@ -177,7 +187,7 @@ class Web implements AuthInterface {
 
 		$tokenString = base64_encode((string) $token . '|' . $checksum);
 
-		$this->session->Set('AuthUserID', $token->UserID);
+		$this->session->Set('AuthUserId', $token->UserID);
 		$this->session->Set('AuthToken', $tokenString);
 		$this->cookies->Set('AuthToken', $tokenString, $expires);
 

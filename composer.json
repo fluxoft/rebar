@@ -16,13 +16,17 @@
 		}
 	],
 	"require": {
-		"php": ">=5.4.0",
+		"php": "^7.0.0",
 		"doctrine/dbal": "2.5.*",
 		"psr/log": "^1.0"
 	},
 	"require-dev": {
-		"phpunit/phpunit": "4.1.*",
-		"squizlabs/php_codesniffer": "*"
+		"phpunit/phpunit": "^6.1.0",
+		"squizlabs/php_codesniffer": "*",
+		"smarty/smarty": "^3.1",
+		"twig/twig": "^2.3",
+		"satooshi/php-coveralls": "^1.0",
+		"firebase/php-jwt": "^4.0"
 	},
 	"autoload": {
 		"psr-4": {"Fluxoft\\Rebar\\": "src/"}

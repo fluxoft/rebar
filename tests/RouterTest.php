@@ -1,19 +1,19 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: joehart
- * Date: 6/3/14
- * Time: 4:45 PM
- */
 
 namespace Fluxoft\Rebar;
 
-class RouterTest extends \PHPUnit_Framework_TestCase {
-	protected function setup() {}
+use PHPUnit\Framework\TestCase;
 
-	protected function teardown() {}
+class RouterTest extends TestCase {
+	protected function setup() {
 
-	public function testRoute() {
+	}
+
+	protected function teardown() {
+
+	}
+
+	public function testFooNotEqualBar() {
 		$this->assertNotEquals('foo', 'bar');
 	}
 }

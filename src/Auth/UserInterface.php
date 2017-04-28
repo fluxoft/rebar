@@ -14,11 +14,6 @@ interface UserInterface {
 	public function GetID();
 
 	/**
-	 * @return string
-	 */
-	public function GetUsername();
-
-	/**
 	 * Check the given password to see if it matches the User's Password.
 	 * @param $password
 	 * @return bool

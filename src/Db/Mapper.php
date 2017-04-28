@@ -11,12 +11,10 @@ use Fluxoft\Rebar\Db\Exceptions\MapperException;
  * @package Fluxoft\Rebar\Db
  */
 abstract class Mapper {
-	/** @var string */
-	protected $modelClass = null;
-	/** @var \Fluxoft\Rebar\Db\Model */
-	protected $model = null;
 	/** @var MapperFactory */
 	protected $mapperFactory;
+	/** @var \Fluxoft\Rebar\Db\Model */
+	protected $model = null;
 	/** @var Connection */
 	protected $reader;
 	/** @var Connection */
@@ -28,32 +26,21 @@ abstract class Mapper {
 
 	/**
 	 * @param MapperFactory $mapperFactory
+	 * @param Model $model
 	 * @param Connection $reader
 	 * @param Connection $writer
 	 * @throws MapperException
 	 */
 	public function __construct(
 		MapperFactory $mapperFactory,
-		Connection $reader,
-		Connection $writer = null
+		Model         $model,
+		Connection    $reader,
+		Connection    $writer = null
 	) {
-		if (!isset($this->modelClass)) {
-			throw new MapperException(sprintf(
-				'No modelClass was defined for %s',
-				get_class()
-			));
-		}
-
 		$this->mapperFactory = $mapperFactory;
+		$this->model         = $model;
 		$this->reader        = $reader;
 		$this->writer        = (isset($writer)) ? $writer : $reader;
-
-		$modelClass = $this->modelClass;
-
-		if (!class_exists($modelClass)) {
-			throw new MapperException(sprintf('The model %s could not be found.', $modelClass));
-		}
-		$this->model = new $modelClass();
 	}
 
 	/**

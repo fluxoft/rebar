@@ -23,7 +23,7 @@ class Json implements PresenterInterface {
 		$response->Send();
 	}
 	
-	private function jsonEncode($data) {
+	protected function jsonEncode($data) {
 		if (!is_array($data) && !is_object($data)) {
 			if (is_null($data)) {
 				return 'null';
