@@ -9,15 +9,12 @@ use Fluxoft\Rebar\Controller as BaseController;
 use Fluxoft\Rebar\Presenters\Json;
 
 abstract class Controller extends BaseController {
-	protected function handleAuth(AuthInterface $auth) {
+	public function HandleAuth(AuthInterface $auth) {
 		// Force Json presenter for this type of controller (so all replies are in JSON format)
-		// and set its Callback property from the value in $getVars['callback'], then unset that
-		// value from the array if it exists.
+		// and set its Callback property from the value in the Request.
 		$this->presenterClass = 'Json';
 		$this->presenter      = new Json();
 		$this->presenter->SetCallback($this->request->Get('callback', ''));
-		$getVars = $this->request->Get();
-		unset($getVars['callback']);
 
 		switch ($this->request->Method) {
 			case 'GET':
@@ -42,20 +39,20 @@ abstract class Controller extends BaseController {
 
 					if (!isset($body['credentials']) ||
 						!isset($body['credentials']['username']) ||
-						!isset($body['credentials']['password'])) {
+						!isset($body['credentials']['password'])
+					) {
 						$this->response->Status = 400;
 						$this->set(
 							'error',
 							'A credentials object is required to log in and must contain a username and password'
 						);
 					} else {
-						$email    = $body['credentials']['username'];
+						$username = $body['credentials']['username'];
 						$password = $body['credentials']['password'];
-						$remember = (isset($body['credentials']['remember']) ? $body['credentials']['remember'] : false);
-
+						$remember = $body['credentials']['remember'] ?? false;
 
 						/** @var \Fluxoft\Rebar\Auth\Reply $authReply */
-						$authReply = $auth->Login($email, $password, $remember);
+						$authReply = $auth->Login($username, $password, $remember);
 						$this->set('auth', $authReply);
 					}
 				} catch (UserNotFoundException $e) {
@@ -76,24 +73,19 @@ abstract class Controller extends BaseController {
 		}
 	}
 
-	protected function handleRepository(
+	public function HandleRepository(
 		RepositoryInterface $repository,
 		array $params
 	) {
 		// Force Json presenter for this type of controller (so all replies are in JSON format)
-		// and set its Callback property from the value in $getVars['callback'], then unset that
-		// value from the array if it exists.
+		// and set its Callback property from the value in the Request.
 		$this->presenterClass = 'Json';
 		$this->presenter      = new Json();
-
-		$callback = $this->request->Get('callback', false);
-		if ($callback !== false) {
-			$this->presenter->SetCallback($this->request->Get('callback', ''));
-		}
+		$this->presenter->SetCallback($this->request->Get('callback', ''));
 
 		$reply = new Reply();
 
-		switch (strtoupper($this->request->Method)) {
+		switch ($this->request->Method) {
 			case 'GET':
 				$reply = $repository->Get($this->request, $params);
 				break;

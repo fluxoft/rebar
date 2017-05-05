@@ -43,7 +43,7 @@ class UserMapperTest extends TestCase {
 	 * @dataProvider authorizedUserProvider
 	 */
 	public function testGetAuthorizedUserForUsernameAndPassword(
-		       $returnUser,
+		$returnUser,
 		string $password
 	) {
 		$userMapper = $this->getMockBuilder('Fluxoft\Rebar\Auth\Db\ConcreteUserMapper')
