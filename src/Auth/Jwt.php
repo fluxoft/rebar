@@ -27,7 +27,7 @@ class Jwt implements AuthInterface {
 	 */
 	public function __construct(
 		UserMapperInterface $userMapper,
-		                    $secretKey,
+		$secretKey,
 		\DateInterval       $expires = null
 	) {
 		$this->userMapper = $userMapper;
