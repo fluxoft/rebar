@@ -274,9 +274,15 @@ abstract class Mapper {
 		if (!empty($sort)) {
 			$orderBy = [];
 			foreach ($sort as $item) {
-				list($field) = explode(' ', $item);
+				$itemBits = explode(' ', $item);
+				$field    = $itemBits[0];
+				if (isset($itemBits[1]) && strtolower($itemBits[1]) === 'desc') {
+					$order = 'DESC';
+				} else {
+					$order = 'ASC';
+				}
 				if (array_key_exists($field, $properties)) {
-					$orderBy[] = $item;
+					$orderBy[] = "$field $order";
 				}
 			}
 			if (!empty($orderBy)) {
