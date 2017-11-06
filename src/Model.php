@@ -71,13 +71,6 @@ abstract class Model implements \Iterator, \ArrayAccess {
 		$fnName = "set$key";
 		if (method_exists($this, $fnName)) {
 			$this->$fnName($value);
-			// Set the properties array with the given value so that the
-			// changed value is available, but not the modProperties array,
-			// as the custom setter function defined for this model should
-			// take care of actual modifications.
-			if (array_key_exists($key, $this->properties)) {
-				$this->properties[$key] = $value;
-			}
 		} elseif (array_key_exists($key, $this->properties)) {
 			// set both the properties and modProperties keys
 			if ($this->properties[$key] !== $value) {
