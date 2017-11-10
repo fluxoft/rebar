@@ -232,8 +232,11 @@ class DataRepository implements RepositoryInterface {
 		$reply = new Reply();
 		try {
 			$this->mapper->Save($new);
+			// get a new copy of this from the mapper using the new ID,
+			// so that any calculated fields are included
+			$updated       = $this->mapper->GetOneById($new->GetID());
 			$reply->Status = 201;
-			$reply->Data   = $new;
+			$reply->Data   = $updated;
 		} catch (InvalidModelException $e) {
 			$reply->Status = 422;
 			$reply->Error  = new Error(
