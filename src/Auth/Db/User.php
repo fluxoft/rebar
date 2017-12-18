@@ -58,7 +58,13 @@ abstract class User extends Model implements UserInterface {
 	}
 
 	protected function setPassword($password) {
-		$this->modProperties[$this->authPasswordProperty] = $this->generateHash($password);
+		if (strlen($this->properties[$this->authPasswordProperty]) === 0) {
+			$this->properties[$this->authPasswordProperty] = $password;
+		} else {
+			$hash                                             = $this->generateHash($password);
+			$this->properties[$this->authPasswordProperty]    = $hash;
+			$this->modProperties[$this->authPasswordProperty] = $hash;
+		}
 	}
 
 	private function generateHash ($password, $cost = 11) {

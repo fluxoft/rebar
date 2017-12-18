@@ -18,6 +18,7 @@ abstract class Model implements \Iterator, \ArrayAccess {
 			foreach ($properties as $name => $value) {
 				$this->{$name} = $value;
 			}
+			$this->modProperties = []; // unset any mod properties that might have been set by functions
 		}
 	}
 
