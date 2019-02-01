@@ -41,17 +41,20 @@ abstract class Model extends BaseModel {
 	 */
 	public function __construct(array $properties = []) {
 		if (empty($this->propertyDbMap)) {
-			throw new ModelException(sprintf('You must specify the db column relationships in propertyDbMap'));
+			throw new ModelException('You must specify the db column relationships in propertyDbMap');
 		}
 		if (strlen($this->dbTable) === 0) {
-			throw new ModelException(sprintf('You must specify the database table in dbTable'));
+			throw new ModelException('You must specify the database table in dbTable');
+		}
+		if (!isset($this->propertyDbMap[$this->idProperty])) {
+			throw new ModelException('The idProperty must be present in propertyDbMap');
 		}
 
 		foreach ($this->propertyDbMap as $property => &$dbMap) {
 			if (!is_array($dbMap)) {
 				$dbMap = ['col' => $dbMap, 'type' => \PDO::PARAM_STR, 'value' => null];
 			}
-			$this->properties[$property] = $dbMap['value'];
+			$this->properties[$property] = isset($dbMap['value']) ?? null;
 			// this is no longer needed
 			unset($dbMap['value']);
 		}
@@ -59,7 +62,7 @@ abstract class Model extends BaseModel {
 		parent::__construct($properties);
 
 		if (!isset($properties[$this->idProperty])) {
-			$this->{$this->idProperty} = 0;
+			$this->properties[$this->idProperty] = 0;
 		}
 	}
 
@@ -80,35 +83,35 @@ abstract class Model extends BaseModel {
 	/**
 	 * @return string
 	 */
-	public function GetIDProperty() {
+	public function GetIdProperty() {
 		return $this->idProperty;
 	}
 
 	/**
 	 * @return mixed
 	 */
-	public function GetIDColumn() {
+	public function GetIdColumn() {
 		return $this->propertyDbMap[$this->idProperty]['col'];
 	}
 
 	/**
 	 * @return mixed
 	 */
-	public function GetIDType() {
+	public function GetIdType() {
 		return $this->propertyDbMap[$this->idProperty]['type'];
 	}
 
 	/**
 	 * @return mixed
 	 */
-	public function GetID() {
+	public function GetId() {
 		return $this->properties[$this->idProperty];
 	}
 
 	/**
 	 * @param $id
 	 */
-	public function SetID($id) {
+	public function SetId($id) {
 		$this->properties[$this->idProperty] = $id;
 	}
 }

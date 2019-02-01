@@ -55,7 +55,7 @@ abstract class Mapper {
 	 * @return Model|null
 	 */
 	public function GetOneById($id) {
-		$idProperty = $this->model->GetIDProperty();
+		$idProperty = $this->model->GetIdProperty();
 		$select     = $this->getSelect([$idProperty => $id], [], 1, 1);
 		$results    = $this->reader->fetchAll(
 			$select['sql'],
@@ -113,7 +113,7 @@ abstract class Mapper {
 	 * @param Model $model
 	 */
 	public function Save(Model $model) {
-		if ($model->GetID() === 0) {
+		if ($model->GetId() === 0) {
 			// ID is set to 0, so this is an INSERT
 			$this->Create($model);
 		} else {
@@ -127,9 +127,9 @@ abstract class Mapper {
 	 * @throws \Doctrine\DBAL\DBALException
 	 */
 	public function Delete(Model $model) {
-		$idColumn = $model->GetIDColumn();
+		$idColumn = $model->GetIdColumn();
 		$sql      = "DELETE FROM `{$model->GetDbTable()}` WHERE `$idColumn` = :$idColumn";
-		$this->writer->executeQuery($sql, ['id' => $model->GetID()], [$model->GetIDType()]);
+		$this->writer->executeQuery($sql, ['id' => $model->GetId()], [$model->GetIdType()]);
 		$model = null;
 	}
 
@@ -161,7 +161,7 @@ abstract class Mapper {
 	 */
 	public function Create(Model $model) {
 		if ($model->IsValid()) {
-			$idProperty = $model->GetIDProperty();
+			$idProperty = $model->GetIdProperty();
 			// merged array containing original plus modified properties
 			$merged        = array_replace_recursive(
 				$model->GetProperties(),
@@ -185,7 +185,7 @@ abstract class Mapper {
 				"`) VALUES (:" . implode(',:', $cols) . ")";
 			$this->writer->executeQuery($sql, $values, $types);
 			$insertId = $this->writer->lastInsertId();
-			$model->SetID($insertId);
+			$model->SetId($insertId);
 		} else {
 			throw new InvalidModelException('Model failed validation check.');
 		}
@@ -196,7 +196,7 @@ abstract class Mapper {
 	 * @throws \Doctrine\DBAL\DBALException
 	 */
 	public function Update(Model $model) {
-		$idProperty    = $model->GetIDProperty();
+		$idProperty    = $model->GetIdProperty();
 		$properties    = $model->GetProperties();
 		$modified      = $model->GetModifiedProperties();
 		$propertyDbMap = $model->GetPropertyDbMap();
@@ -261,9 +261,15 @@ abstract class Mapper {
 		if (!empty($sort)) {
 			$orderBy = [];
 			foreach ($sort as $item) {
-				list($field) = explode(' ', $item);
+				$itemBits = explode(' ', $item);
+				$field    = $itemBits[0];
+				if (isset($itemBits[1]) && strtolower($itemBits[1]) === 'desc') {
+					$order = 'DESC';
+				} else {
+					$order = 'ASC';
+				}
 				if (array_key_exists($field, $properties)) {
-					$orderBy[] = $item;
+					$orderBy[] = "$field $order";
 				}
 			}
 			if (!empty($orderBy)) {
@@ -291,7 +297,7 @@ abstract class Mapper {
 		$propertyDbMap = $this->model->GetPropertyDbMap();
 
 		if (!isset($this->countSql)) {
-			$idField        = $propertyDbMap[$this->model->GetIDProperty()]['col'];
+			$idField        = $propertyDbMap[$this->model->GetIdProperty()]['col'];
 			$this->countSql = 'SELECT COUNT('.$idField.') FROM `'.$dbTable.'`';
 		}
 

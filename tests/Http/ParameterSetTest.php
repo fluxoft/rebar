@@ -55,4 +55,14 @@ class ParameterSetTest extends TestCase {
 			]
 		];
 	}
+	public function testWeirdCaps() {
+		$parameterSet = new ParameterSet([]);
+
+		// test set with mixed-case key, get with different casing
+		$parameterSet->Set('weIrdCaPsKEy', 'weird_caps_value');
+		$this->assertEquals(
+			'weird_caps_value',
+			$parameterSet->Get('WeirdCapsKey')
+		);
+	}
 }

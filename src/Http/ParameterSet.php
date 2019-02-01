@@ -10,11 +10,12 @@ class ParameterSet {
 	protected $params;
 
 	public function __construct(array $params) {
-		$this->params = $params;
+		$this->params = array_change_key_case($params);
 	}
 
 	public function Get($key = null, $default = null) {
 		if (isset($key)) {
+			$key = strtolower($key);
 			if (isset($this->params[$key])) {
 				return $this->params[$key];
 			} else {
@@ -26,7 +27,7 @@ class ParameterSet {
 	}
 
 	public function Set($key, $value) {
-		$this->params[$key] = $value;
+		$this->params[strtolower($key)] = $value;
 	}
 
 	public function Delete($key) {
