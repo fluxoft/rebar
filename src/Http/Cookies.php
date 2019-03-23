@@ -26,9 +26,7 @@ class Cookies extends ParameterSet {
 
 		$this->settings = array_merge($defaults, $settings);
 
-		foreach ($_COOKIE as $key => $value) {
-			$this->params[$key] = $value;
-		}
+		parent::__construct($this->superGlobalCookies());
 	}
 
 	/**
@@ -42,7 +40,7 @@ class Cookies extends ParameterSet {
 		$expires = null
 	) {
 		$expires = (isset($expires)) ? $expires : $this->settings['expires'];
-		if (setcookie(
+		if ($this->setCookie(
 			$key,
 			$value,
 			$expires,
@@ -59,7 +57,7 @@ class Cookies extends ParameterSet {
 	 * @param $key
 	 */
 	public function Delete($key) {
-		if (setcookie(
+		if ($this->setCookie(
 			$key,
 			'',
 			0,
@@ -70,5 +68,40 @@ class Cookies extends ParameterSet {
 		)) {
 			parent::Delete($key);
 		}
+	}
+
+	/**
+	 * @param $key
+	 * @param $value
+	 * @param $expires
+	 * @param $path
+	 * @param $domain
+	 * @param $secure
+	 * @param $httponly
+	 * @return bool
+	 * @codeCoverageIgnore
+	 */
+	protected function setCookie(
+		$key,
+		$value,
+		$expires,
+		$path,
+		$domain,
+		$secure,
+		$httponly
+	) {
+		return setcookie(
+			$key,
+			$value,
+			$expires,
+			$path,
+			$domain,
+			$secure,
+			$httponly
+		);
+	}
+
+	protected function superGlobalCookies() {
+		return $_COOKIE; // @codeCoverageIgnore
 	}
 }

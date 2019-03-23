@@ -24,17 +24,30 @@ class Basic implements AuthInterface {
 	 * @param \Fluxoft\Rebar\Http\Request $request
 	 * @return Reply
 	 */
-	// @codingStandardsIgnoreStart ($request is unused)
 	public function GetAuthenticatedUser(Request $request) {
-	// @codingStandardsIgnoreEnd
-		if (!isset($_SERVER['PHP_AUTH_USER'])) {
-			header('WWW-Authenticate: Basic realm="'.$this->realm.'"');
-			header('HTTP/1.0 401 Unauthorized');
-			echo $this->message;
-			exit;
+		$basicAuthUser = $request->Server('PHP_AUTH_USER');
+
+		if (!isset($basicAuthUser)) {
+			$this->sendChallenge($this->realm, $this->message);
+			return null;
+		} else {
+			return $this->Login($basicAuthUser, $request->Server('PHP_AUTH_PW', ''));
 		}
-		return $this->Login($_SERVER['PHP_AUTH_USER'], $_SERVER['PHP_AUTH_PW']);
 	}
+
+	/**
+	 * @param $realm
+	 * @param $message
+	 * @codeCoverageIgnore
+	 */
+	protected function sendChallenge($realm, $message) {
+		header('WWW-Authenticate: Basic realm="'.$realm.'"');
+		header('HTTP/1.0 401 Unauthorized');
+		echo $message;
+		exit;
+	}
+
+
 
 	/**
 	 * Attempt to log the user in using the given $username and $password
@@ -46,7 +59,7 @@ class Basic implements AuthInterface {
 	 */
 	public function Login($username, $password, $remember = false) {
 		// unused in this implementation
-		$remember = null;
+		unset($remember);
 		
 		$reply       = new Reply();
 		$user        = $this->userMapper->GetAuthorizedUserForUsernameAndPassword($username, $password);
@@ -60,9 +73,9 @@ class Basic implements AuthInterface {
 	 * @param \Fluxoft\Rebar\Http\Request $request
 	 * @return Reply
 	 */
-	// @codingStandardsIgnoreStart ($request is unused)
 	public function Logout(Request $request) {
-	// @codingStandardsIgnoreEnd
+		//unused
+		unset($request);
 
 		// You can't really log out of a basic authentication session, since the browser will
 		// just keep sending the same Authorization header over and over, so this method won't

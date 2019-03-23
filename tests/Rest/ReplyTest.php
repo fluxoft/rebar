@@ -1,24 +1,21 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: joehart
- * Date: 12/12/15
- * Time: 10:24 PM
- */
 
 namespace Fluxoft\Rebar\Rest;
 
+use PHPUnit\Framework\TestCase;
 
-class ReplyTest extends \PHPUnit_Framework_TestCase {
-    protected function setup() {
-    
-    }
-    
-    protected function teardown() {
-    
-    }
-    
-    public function testFooNotEqualBar() {
-        $this->assertNotEquals('foo','bar');
-    }
+class ReplyTest extends TestCase {
+	public function testReply() {
+		$error = new Error('blah');
+		$reply = new Reply(
+			200,
+			['data' => 'foo'],
+			['meta' => 'bar'],
+			new Error('blah')
+		);
+		$this->assertEquals(200, $reply->Status);
+		$this->assertEquals(['data' => 'foo'], $reply->Data);
+		$this->assertEquals(['meta' => 'bar'], $reply->Meta);
+		$this->assertEquals($error, $reply->Error);
+	}
 }

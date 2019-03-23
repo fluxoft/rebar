@@ -11,12 +11,10 @@ use Fluxoft\Rebar\Db\Exceptions\MapperException;
  * @package Fluxoft\Rebar\Db
  */
 abstract class Mapper {
-	/** @var string */
-	protected $modelClass = null;
-	/** @var \Fluxoft\Rebar\Db\Model */
-	protected $model = null;
 	/** @var MapperFactory */
 	protected $mapperFactory;
+	/** @var \Fluxoft\Rebar\Db\Model */
+	protected $model = null;
 	/** @var Connection */
 	protected $reader;
 	/** @var Connection */
@@ -28,32 +26,21 @@ abstract class Mapper {
 
 	/**
 	 * @param MapperFactory $mapperFactory
+	 * @param Model $model
 	 * @param Connection $reader
 	 * @param Connection $writer
 	 * @throws MapperException
 	 */
 	public function __construct(
 		MapperFactory $mapperFactory,
-		Connection $reader,
-		Connection $writer = null
+		Model         $model,
+		Connection    $reader,
+		Connection    $writer = null
 	) {
-		if (!isset($this->modelClass)) {
-			throw new MapperException(sprintf(
-				'No modelClass was defined for %s',
-				get_class()
-			));
-		}
-
 		$this->mapperFactory = $mapperFactory;
+		$this->model         = $model;
 		$this->reader        = $reader;
 		$this->writer        = (isset($writer)) ? $writer : $reader;
-
-		$modelClass = $this->modelClass;
-
-		if (!class_exists($modelClass)) {
-			throw new MapperException(sprintf('The model %s could not be found.', $modelClass));
-		}
-		$this->model = new $modelClass();
 	}
 
 	/**
@@ -68,7 +55,7 @@ abstract class Mapper {
 	 * @return Model|null
 	 */
 	public function GetOneById($id) {
-		$idProperty = $this->model->GetIDProperty();
+		$idProperty = $this->model->GetIdProperty();
 		$select     = $this->getSelect([$idProperty => $id], [], 1, 1);
 		$results    = $this->reader->fetchAll(
 			$select['sql'],
@@ -126,7 +113,7 @@ abstract class Mapper {
 	 * @param Model $model
 	 */
 	public function Save(Model $model) {
-		if ($model->GetID() === 0) {
+		if ($model->GetId() === 0) {
 			// ID is set to 0, so this is an INSERT
 			$this->Create($model);
 		} else {
@@ -139,10 +126,10 @@ abstract class Mapper {
 	 * @param Model $model
 	 * @throws \Doctrine\DBAL\DBALException
 	 */
-	public function Delete(Model $model) {
-		$idColumn = $model->GetIDColumn();
+	public function Delete(Model &$model) {
+		$idColumn = $model->GetIdColumn();
 		$sql      = "DELETE FROM `{$model->GetDbTable()}` WHERE `$idColumn` = :$idColumn";
-		$this->writer->executeQuery($sql, ['id' => $model->GetID()], [$model->GetIDType()]);
+		$this->writer->executeQuery($sql, ['id' => $model->GetId()], [$model->GetIdType()]);
 		$model = null;
 	}
 
@@ -174,7 +161,7 @@ abstract class Mapper {
 	 */
 	public function Create(Model $model) {
 		if ($model->IsValid()) {
-			$idProperty = $model->GetIDProperty();
+			$idProperty = $model->GetIdProperty();
 			// merged array containing original plus modified properties
 			$merged        = array_replace_recursive(
 				$model->GetProperties(),
@@ -198,7 +185,7 @@ abstract class Mapper {
 				"`) VALUES (:" . implode(',:', $cols) . ")";
 			$this->writer->executeQuery($sql, $values, $types);
 			$insertId = $this->writer->lastInsertId();
-			$model->SetID($insertId);
+			$model->SetId($insertId);
 		} else {
 			throw new InvalidModelException('Model failed validation check.');
 		}
@@ -207,37 +194,43 @@ abstract class Mapper {
 	/**
 	 * @param Model $model
 	 * @throws \Doctrine\DBAL\DBALException
+	 * @throws InvalidModelException
 	 */
 	public function Update(Model $model) {
-		$idProperty    = $model->GetIDProperty();
-		$properties    = $model->GetProperties();
-		$modified      = $model->GetModifiedProperties();
-		$propertyDbMap = $model->GetPropertyDbMap();
-		if (!empty($modified)) {
-			$cols   = [];
-			$types  = [];
-			$values = [];
-			foreach ($modified as $property => $value) {
-				if (isset($propertyDbMap[$property])) {
-					$cols[]  = $propertyDbMap[$property]['col'];
-					$types[] = $propertyDbMap[$property]['type'];
+		if ($model->IsValid()) {
+			$idProperty    = $model->GetIdProperty();
+			$properties    = $model->GetProperties();
+			$modified      = $model->GetModifiedProperties();
+			$propertyDbMap = $model->GetPropertyDbMap();
+			if (!empty($modified)) {
+				$cols   = [];
+				$types  = [];
+				$values = [];
+				foreach ($modified as $property => $value) {
+					if (isset($propertyDbMap[$property])) {
+						$cols[]  = $propertyDbMap[$property]['col'];
+						$types[] = $propertyDbMap[$property]['type'];
 
-					$values[$propertyDbMap[$property]['col']] = $value;
+						$values[$propertyDbMap[$property]['col']] = $value;
+					}
+				}
+				if (!empty($cols)) {
+					$values[$propertyDbMap[$idProperty]['col']] = $properties[$idProperty];
+
+					$types[] = $propertyDbMap[$idProperty]['type'];
+
+					$sql = "UPDATE `{$model->GetDbTable()}` SET ";
+					foreach ($cols as $col) {
+						$sql .= "`$col` = :$col,";
+					}
+					$sql  = substr($sql, 0, -1); // remove trailing comma
+					$sql .= " WHERE `{$propertyDbMap[$idProperty]['col']}` = :{$propertyDbMap[$idProperty]['col']}";
+
+					$this->writer->executeQuery($sql, $values, $types);
 				}
 			}
-			if (!empty($cols)) {
-				$values[$propertyDbMap[$idProperty]['col']] = $properties[$idProperty];
-				$types[]                                    = $propertyDbMap[$idProperty]['type'];
-
-				$sql = "UPDATE `{$model->GetDbTable()}` SET ";
-				foreach ($cols as $col) {
-					$sql .= "`$col` = :$col,";
-				}
-				$sql  = substr($sql, 0, -1); // remove trailing comma
-				$sql .= " WHERE `{$propertyDbMap[$idProperty]['col']}` = :{$propertyDbMap[$idProperty]['col']}";
-
-				$this->writer->executeQuery($sql, $values, $types);
-			}
+		} else {
+			throw new InvalidModelException('Model failed validation check.');
 		}
 	}
 
@@ -310,7 +303,7 @@ abstract class Mapper {
 		$propertyDbMap = $this->model->GetPropertyDbMap();
 
 		if (!isset($this->countSql)) {
-			$idField        = $propertyDbMap[$this->model->GetIDProperty()]['col'];
+			$idField        = $propertyDbMap[$this->model->GetIdProperty()]['col'];
 			$this->countSql = 'SELECT COUNT('.$idField.') FROM `'.$dbTable.'`';
 		}
 
@@ -386,11 +379,13 @@ abstract class Mapper {
 	protected function getModelSet($rowSet) {
 		$models = [];
 		foreach ($rowSet as $row) {
-			$models[] = new $this->modelClass($row);
+			$models[] = $this->getModel($row);
 		}
 		return $models;
 	}
 	protected function getModel($row) {
-		return new $this->modelClass($row);
+		$model = $this->GetNew();
+		$model->InitializeProperties($row);
+		return $model;
 	}
 }

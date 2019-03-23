@@ -5,15 +5,17 @@ use Fluxoft\Rebar\Http\Response;
 
 class Debug implements PresenterInterface {
 	public function Render(Response $response, array $data) {
+		$body  = "*** The page's data set: ***\n\n";
+		$body .= $this->renderData($data);
+		$body .= "\n****************************\n";
+
 		$response->AddHeader('Content-type', 'text/plain');
-		$response->Body .= "*** The page's data set: ***\n\n";
-		$response->Body .= $this->renderData($data);
-		$response->Body .= "\n****************************\n";
+		$response->Body = $body;
 		$response->Send();
 	}
 	
 	private $tab = "    ";
-	private function renderData($data,$indent = null) {
+	protected function renderData($data, $indent = null) {
 		if (!isset($indent)) {
 			$padding = '';
 		} else {

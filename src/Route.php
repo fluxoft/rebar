@@ -17,13 +17,15 @@ class Route extends Model {
 	];
 
 	/**
-	 * @param array $path
-	 * @param $controller
-	 * @param $action
+	 * @param string $path
+	 * @param string $controller
+	 * @param string $action
 	 */
 	public function __construct($path, $controller, $action) {
-		$this->Path       = $path;
-		$this->Controller = $controller;
-		$this->Action     = $action;
+		parent::__construct([
+			'Path' => $path,
+			'Controller' => $controller,
+			'Action' => $action
+		]);
 	}
 }
