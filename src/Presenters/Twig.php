@@ -17,22 +17,19 @@ class Twig implements PresenterInterface {
 	protected $layout;
 
 	public function __construct(
-		$templatePath,
-		$cachePath,
+		\Twig_Environment $twig,
 		$template = '/default.html.twig',
-		$layout = '',
-		$debug = false
+		$layout = ''
 	) {
-		$loader = new \Twig_Loader_Filesystem($templatePath);
+		/*$loader = new \Twig_Loader_Filesystem($templatePath);
 		$twig   = new \Twig_Environment($loader, array(
 			'cache' => $cachePath,
 			'debug' => $debug
-		));
+		));*/
 
-		$this->twig         = $twig;
-		$this->templatePath = $templatePath;
-		$this->template     = $template;
-		$this->layout       = $layout;
+		$this->twig     = $twig;
+		$this->template = $template;
+		$this->layout   = $layout;
 	}
 
 	public function Render(Response $response, array $data) {

@@ -22,8 +22,40 @@ class DataRepository implements RepositoryInterface {
 	/** @var User */
 	protected $authUser;
 
-	protected $authUserFilter     = false;
-	protected $authUserIDProperty = 'UserID';
+	/**
+	 * @param Mapper $mapper
+	 * @param LoggerInterface $logger
+	 * @param User $authUser
+	 */
+	public function __construct(
+		Mapper $mapper,
+		LoggerInterface $logger = null,
+		User $authUser = null
+	) {
+		$this->mapper   = $mapper;
+		$this->logger   = $logger;
+		$this->authUser = $authUser;
+	}
+
+	/** @var bool If true, filter results by using the $authUserIdProperty */
+	protected $authUserFilter = false;
+	/**
+	 * @param bool $authUserFilter
+	 */
+	public function SetAuthUserFilter(bool $authUserFilter) {
+		$this->authUserFilter = $authUserFilter;
+	}
+
+	/** @var string The property for models mapped by $this->mapper that indicates the
+	 * authorized user that owns them.
+	 */
+	protected $authUserIdProperty = 'UserId';
+	/**
+	 * @param string $authUserIdProperty
+	 */
+	public function SetAuthUserIdProperty(string $authUserIdProperty) {
+		$this->authUserIdProperty = $authUserIdProperty;
+	}
 
 	/**
 	 * If specified for a repository, this is the default page size
@@ -32,14 +64,10 @@ class DataRepository implements RepositoryInterface {
 	protected $defaultPageSize = null;
 
 	/**
-	 * @param Mapper $mapper
-	 * @param LoggerInterface $logger
-	 * @param User $authUser
+	 * @param int $defaultPageSize
 	 */
-	public function __construct(Mapper $mapper, LoggerInterface $logger = null, User $authUser = null) {
-		$this->mapper   = $mapper;
-		$this->logger   = $logger;
-		$this->authUser = $authUser;
+	public function SetDefaultPageSize(int $defaultPageSize) {
+		$this->defaultPageSize = $defaultPageSize;
 	}
 
 	/**
@@ -55,31 +83,6 @@ class DataRepository implements RepositoryInterface {
 		 * GET /{item}/{id}/{children} <- retrieve the children of {item} with id {id}
 		 *     ** the above only works on Mappers which have a Get{children} method accepting {id} as an argument
 		 */
-		$page     = 1;
-		$pageSize = null;
-		$get      = $request->Get();
-		if (isset($this->defaultPageSize) && is_int($this->defaultPageSize)) {
-			$pageSize = $this->defaultPageSize;
-		}
-		if (isset($get['page'])) {
-			if (is_array($get['page'])) {
-				if (isset($get['page']['number']) && is_numeric($get['page']['number'])) {
-					$page = (int) $get['page']['number'];
-				}
-				if (isset($get['page']['size']) && is_numeric($get['page']['size'])) {
-					$pageSize = (int) $get['page']['size'];
-				}
-			} elseif (is_numeric($get['page'])) {
-				$page = (int) $get['page'];
-			}
-			if (isset($get['pageSize']) && is_numeric($get['pageSize'])) {
-				$pageSize = (int) $get['pageSize'];
-			}
-		}
-
-		unset($get['page']);
-		unset($get['callback']);
-
 		if ($this->authUserFilter && !isset($this->authUser)) {
 			return new Reply(403, [], [], new Error(403, 'Must be logged in to access this resource.'));
 		}
@@ -87,8 +90,32 @@ class DataRepository implements RepositoryInterface {
 		$reply = new Reply();
 		switch (count($params)) {
 			case 0:
+				$page     = 1;
+				$pageSize = null;
+				$get      = $request->Get();
+				if (isset($this->defaultPageSize) && is_int($this->defaultPageSize)) {
+					$pageSize = $this->defaultPageSize;
+				}
+				if (isset($get['page'])) {
+					if (is_array($get['page'])) {
+						if (isset($get['page']['number']) && is_numeric($get['page']['number'])) {
+							$page = (int) $get['page']['number'];
+						}
+						if (isset($get['page']['size']) && is_numeric($get['page']['size'])) {
+							$pageSize = (int) $get['page']['size'];
+						}
+					} elseif (is_numeric($get['page'])) {
+						$page = (int) $get['page'];
+					}
+					if (isset($get['pageSize']) && is_numeric($get['pageSize'])) {
+						$pageSize = (int) $get['pageSize'];
+					}
+				}
+				unset($get['page']);
+				unset($get['callback']);
+
 				if ($this->authUserFilter && isset($this->authUser)) {
-					$get[$this->authUserIDProperty] = $this->authUser->GetID();
+					$get[$this->authUserIdProperty] = $this->authUser->GetId();
 				}
 
 				$order = [];
@@ -118,7 +145,7 @@ class DataRepository implements RepositoryInterface {
 					$reply->Error  = new Error(404, 'The requested item could not be found.');
 				} else {
 					if ($this->authUserFilter &&
-						$item->{$this->authUserIDProperty} !== $this->authUser->GetID()
+						$item->{$this->authUserIdProperty} !== $this->authUser->GetId()
 					) {
 						$reply->Status = 404;
 						$reply->Error  = new Error(404, 'The requested item could not be found.');
@@ -132,10 +159,10 @@ class DataRepository implements RepositoryInterface {
 				$subsetName = $params[1];
 				$getter     = 'Get'.ucwords($subsetName);
 				$counter    = 'Count'.ucwords($subsetName);
-				if (!method_exists($this->mapper, $getter)) {
+				if (!is_callable([$this->mapper, $getter])) {
 					$reply->Status = 404;
 					$reply->Error  = new Error(404, sprintf('"%s" not found.', $subsetName));
-				} elseif (!method_exists($this->mapper, $counter)) {
+				} elseif (!is_callable([$this->mapper, $counter])) {
 					$reply->Status = 500;
 					$reply->Error  = new Error(500, sprintf(
 						'Counter method "%s" not found in mapper "%s"',
@@ -146,7 +173,7 @@ class DataRepository implements RepositoryInterface {
 					$parent = $this->mapper->GetOneById($id);
 
 					if (!isset($parent) ||
-						($this->authUserFilter && $parent->{$this->authUserIDProperty} !== $this->authUser->GetID())
+						($this->authUserFilter && $parent->{$this->authUserIdProperty} !== $this->authUser->GetId())
 					) {
 						$reply->Status = 404;
 						$reply->Error  = new Error(
@@ -157,20 +184,34 @@ class DataRepository implements RepositoryInterface {
 								$id
 							)
 						);
-					} elseif ($this->authUserFilter && $parent->{$this->authUserIDProperty} !== $this->authUser->GetID()) {
-						$reply->Status = 404;
-						$reply->Error  = new Error(
-							404,
-							'The requested item could not be found.',
-							sprintf(
-								'The parent with id "%s" was not found.',
-								$id
-							)
-						);
 					} else {
-						$subset = $this->mapper->$getter($parent->GetID(), $page, $pageSize);
+						$page     = 1;
+						$pageSize = null;
+						$get      = $request->Get();
+						if (isset($this->defaultPageSize) && is_int($this->defaultPageSize)) {
+							$pageSize = $this->defaultPageSize;
+						}
+						if (isset($get['page'])) {
+							if (is_array($get['page'])) {
+								if (isset($get['page']['number']) && is_numeric($get['page']['number'])) {
+									$page = (int) $get['page']['number'];
+								}
+								if (isset($get['page']['size']) && is_numeric($get['page']['size'])) {
+									$pageSize = (int) $get['page']['size'];
+								}
+							} elseif (is_numeric($get['page'])) {
+								$page = (int) $get['page'];
+							}
+							if (isset($get['pageSize']) && is_numeric($get['pageSize'])) {
+								$pageSize = (int) $get['pageSize'];
+							}
+						}
+
+						$parentId = $parent->GetId();
+
+						$subset = $this->mapper->$getter($parentId, $page, $pageSize);
 						if (isset($subset)) {
-							$count = $this->mapper->$counter($parent->GetID());
+							$count = $this->mapper->$counter($parentId);
 							$pages = (isset($pageSize) && $pageSize > 0) ? ceil($count/$pageSize) : 1;
 
 							$reply->Data = $subset;
@@ -211,17 +252,17 @@ class DataRepository implements RepositoryInterface {
 		// $params is unused in this implementation
 		$params = null;
 
-		$model = $this->getPostData($request);
+		$model = $this->getInputData($request);
 
 		if ($this->authUserFilter) {
 			if (!isset($this->authUser)) {
 				return new Reply(403, [], [], new Error(403, 'Must be logged in to access this resource.'));
 			} else {
-				// Just change the $post's UserID to the user's. This will let the attacker add
+				// Just change the $post's UserId to the user's. This will let the attacker add
 				// something, but to his own account, not someone else's. This actually has the
 				// somewhat dubious side effect of allowing someone to add something without
-				// the need to pass in their UserID.
-				$model[$this->authUserIDProperty] = $this->authUser->GetID();
+				// the need to pass in their UserId.
+				$model[$this->authUserIdProperty] = $this->authUser->GetId();
 			}
 		}
 		$new = $this->mapper->GetNew();
@@ -290,20 +331,21 @@ class DataRepository implements RepositoryInterface {
 			if ($this->authUserFilter && !isset($this->authUser)) {
 				return new Reply(403, [], [], new Error(403, 'Must be logged in to access this resource.'));
 			}
-
 			$id = $params[0];
+
 			/** @var \Fluxoft\Rebar\Db\Model $update */
 			$update = $this->mapper->GetOneById($id);
-			if ($this->authUserFilter) {
-				if ($update->{$this->authUserIDProperty} !== $this->authUser->GetID()) {
-					$update = false;
-				}
-			}
 			if (!isset($update)) {
 				return new Reply(404, [], [], new Error(404, 'The object to be updated was not found.'));
 			} else {
+				if ($this->authUserFilter) {
+					if ($update->{$this->authUserIdProperty} !== $this->authUser->GetId()) {
+						return new Reply(404, [], [], new Error(404, 'The object to be updated was not found.'));
+					}
+				}
+
 				$errors = [];
-				$model  = $this->getPutData($request);
+				$model  = $this->getInputData($request);
 
 				foreach ($model as $key => $value) {
 					try {
@@ -365,13 +407,13 @@ class DataRepository implements RepositoryInterface {
 			$id = $params[0];
 
 			$delete = $this->mapper->GetOneById($id);
-			if ($this->authUserFilter) {
-				if ($delete->{$this->authUserIDProperty} !== $this->authUser->GetID()) {
-					$delete = null;
-				}
-			}
-			if (!isset($delete)) {
-				return new Reply(403, [], [], new Error(403, 'Must be logged in to access this resource.'));
+			if (!isset($delete) ||
+				(
+					$this->authUserFilter &&
+					($delete->{$this->authUserIdProperty} !== $this->authUser->GetId())
+				)
+			) {
+				return new Reply(404, [], [], new Error(404, 'The object to be deleted was not found.'));
 			} else {
 				$this->mapper->Delete($delete);
 				return new Reply(204, ['success' => 'The item was deleted.']);
@@ -379,63 +421,31 @@ class DataRepository implements RepositoryInterface {
 		}
 	}
 
-	private $postData = null;
-
+	protected $inputData = null;
 	/**
 	 * Will return the request's data as an array from whatever source it can find.
-	 * Can be called in child classes to modify the contents of the data before saving.
+	 * Can be called in child classes to modify the contents of the data before returning.
 	 * @param Request $request
 	 * @return array
 	 */
-	protected function getPostData(Request $request) {
-		if (!isset($this->postData)) {
-			$body = $request->Body;
-			/** @var array $postVars */
-			$postVars = $request->Post();
+	protected function getInputData(Request $request) {
+		if (!isset($this->inputData)) {
+			$body   = $request->Body;
+			$method = $request->Method;
+			/** @var array $vars */
+			$vars = $request->$method();
 
-			if (isset($postVars['model'])) {
-				$this->postData = json_decode($postVars['model'], true);
-			} elseif (!empty($postVars)) {
-				$this->postData = $postVars;
+			if (isset($vars['model'])) {
+				$this->inputData = json_decode($vars['model'], true);
+			} elseif (!empty($vars)) {
+				$this->inputData = $vars;
 			} elseif (strlen($body) > 0) {
-				$this->postData = json_decode($body, true);
+				$this->inputData = json_decode($body, true);
 			} else {
-				$this->postData = [];
+				$this->inputData = [];
 			}
 		}
-		return $this->postData;
-	}
-	protected function setPostData(array $postData) {
-		$this->postData = $postData;
-	}
-
-	private $putData = null;
-
-	/**
-	 * Will return the request's data as an array from whatever source it can find.
-	 * Can be called in child classes to modify the contents of the data before saving.
-	 * @param Request $request
-	 * @return array
-	 */
-	protected function getPutData(Request $request) {
-		if (!isset($this->putData)) {
-			$body    = $request->Body;
-			$putVars = $request->Put();
-
-			if (isset($putVars['model'])) {
-				$this->putData = json_decode($putVars['model'], true);
-			} elseif (!empty($putVars)) {
-				$this->putData = $putVars;
-			} elseif (strlen($body) > 0) {
-				$this->putData = json_decode($body, true);
-			} else {
-				$this->putData = [];
-			}
-		}
-		return $this->putData;
-	}
-	protected function setPutData(array $putData) {
-		$this->putData = $putData;
+		return $this->inputData;
 	}
 
 	protected function log($type, $message) {

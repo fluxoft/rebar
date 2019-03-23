@@ -3,7 +3,7 @@
 namespace Fluxoft\Rebar\Auth\Simple;
 
 use Fluxoft\Rebar\Auth\Exceptions\InvalidPasswordException;
-use Fluxoft\rebar\Auth\Exceptions\UserMapperException;
+use Fluxoft\Rebar\Auth\Exceptions\UserMapperException;
 use Fluxoft\Rebar\Auth\Exceptions\UserNotFoundException;
 use Fluxoft\Rebar\Auth\UserMapperInterface;
 
@@ -27,7 +27,7 @@ class UserMapper implements UserMapperInterface {
 	public function AddUser(User $user) {
 		// Do not allow adding User with the same ID or Username as an existing one.
 		$users = array_filter($this->users, function (User $existingUser) use ($user) {
-			return ($user->ID === $existingUser->ID || $user->Username === $existingUser->Username);
+			return ($user->ID === $existingUser->Id || $user->Username === $existingUser->Username);
 		}) ;
 		if (!empty($users)) {
 			throw new UserMapperException(sprintf(

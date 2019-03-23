@@ -8,8 +8,9 @@ namespace Fluxoft\Rebar;
  */
 interface FactoryInterface {
 	/**
-	 * @param $className
+	 * @param string $className
+	 * @param array $extra
 	 * @return mixed
 	 */
-	public function Build($className);
+	public function Build(string $className, array $extra = []);
 }

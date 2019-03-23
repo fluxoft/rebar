@@ -5,12 +5,13 @@ namespace Fluxoft\Rebar\Http;
  * Class Response
  * @package Fluxoft\Rebar\Http
  * @property int Status
+ * @property string StatusMessage
  * @property string Body
  * @property array Headers
  */
 class Response {
 	protected $status;
-	protected $statusMessage;
+	protected $statusMessage = null;
 	protected $body;
 	protected $headers;
 
@@ -74,8 +75,8 @@ class Response {
 			'Content-type' => 'text/html'
 		]
 	) {
-		$this->status  = $status;
-		$this->body    = $body;
+		$this->Status  = $status;
+		$this->Body    = $body;
 		$this->headers = $headers;
 	}
 
@@ -83,8 +84,11 @@ class Response {
 		$this->headers[$type] = $content;
 	}
 
+	/**
+	 * @codeCoverageIgnore
+	 */
 	public function Send() {
-		header('HTTP/1.1 '.$this->status.' '.$this->messages[$this->status]);
+		header($this->getHttpHeader($this->Status));
 		if (!empty($this->headers)) {
 			foreach ($this->headers as $type => $content) {
 				header("$type: $content");
@@ -94,16 +98,24 @@ class Response {
 		exit;
 	}
 
-	public function Halt($status, $message) {
+	protected function getHttpHeader($status) {
+		$statusMessage = isset($this->StatusMessage) ?? $this->messages[$status];
+		return 'HTTP/1.1 '.$status.' '.$statusMessage;
+	}
+
+	public function Halt($status, $body, $message = null) {
 		$this->Status = $status;
-		$this->Body   = $message;
+		$this->Body   = $body;
+		if (isset($message)) {
+			$this->StatusMessage = $message;
+		}
 		$this->Send();
 	}
 
 	public function Redirect($location, $permanent = false) {
-		$this->status = ($permanent) ? 301 : 302;
+		$this->Status = ($permanent) ? 301 : 302;
 		$this->AddHeader('Location', $location);
-		$this->body = '';
+		$this->Body = '';
 		$this->Send();
 	}
 
@@ -111,17 +123,11 @@ class Response {
 		return $this->status;
 	}
 	protected function setStatus($status) {
-		if (is_array($status)) {
-			$this->status        = $status[0];
-			$this->statusMessage = $status[1];
+		if (isset($this->messages[$status])) {
+			$this->status        = $status;
+			$this->StatusMessage = $this->messages[$status];
 		} else {
-			$code = $status;
-			if (isset($this->messages[$code])) {
-				$this->status        = $code;
-				$this->statusMessage = $this->messages[$code];
-			} else {
-				throw new Exceptions\InvalidStatusException(sprintf('Status %s is not supported.', $value));
-			}
+			throw new Exceptions\InvalidStatusException(sprintf('Status %s is not supported.', $status));
 		}
 	}
 	protected function getStatusMessage() {
@@ -139,7 +145,7 @@ class Response {
 
 	public function __get($key) {
 		$fn = "get$key";
-		if (method_exists($this, $fn)) {
+		if (is_callable([$this, $fn])) {
 			return $this->$fn();
 		} else {
 			throw new \InvalidArgumentException(sprintf('Cannot get property: \'%s\' does not exist', $key));
@@ -147,10 +153,13 @@ class Response {
 	}
 	public function __set($key, $value) {
 		$fn = "set$key";
-		if (method_exists($this, $fn)) {
+		if (is_callable([$this, $fn])) {
 			$this->$fn($value);
 		} else {
 			throw new \InvalidArgumentException(sprintf('Cannot set property: \'%s\' does not exist', $key));
 		}
+	}
+	public function __isset($key) {
+		return $this->$key !== null;
 	}
 }

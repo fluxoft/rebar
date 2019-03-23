@@ -2,11 +2,16 @@
 
 namespace Fluxoft\Rebar\Error;
 
+/**
+ * Class Handler
+ * @package Fluxoft\Rebar\Error
+ * @codeCoverageIgnore
+ */
 class Handler {
 	/**
 	 * @var NotifierInterface
 	 */
-	static protected $notifier;
+	protected static $notifier;
 
 	/**
 	 * @param NotifierInterface $notifier A class implementing NotifierInterface can be included
@@ -26,7 +31,7 @@ class Handler {
 	public static function ErrorHandler($severity, $message, $filename, $lineno) {
 		throw new \ErrorException($message, 0, $severity, $filename, $lineno);
 	}
-	public static function ExceptionHandler($t) {
+	public static function ExceptionHandler(\Throwable $t) {
 		self::$notifier->Notify($t);
 	}
 }
