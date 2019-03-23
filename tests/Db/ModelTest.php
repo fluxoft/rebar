@@ -171,6 +171,32 @@ class ModelTest extends TestCase {
 			]
 		];
 	}
+
+	public function testInitializeProperties() {
+		$model = new ConcreteModel(
+			[],
+			[
+				'Id' => 'id',
+				'PropertyOne' => 'property_one'
+			],
+			'db_table',
+			'Id',
+			[]
+		);
+
+		$unsetProperties = [
+			'Id' => null,
+			'PropertyOne' => null
+		];
+		$this->assertEquals($unsetProperties, $model->GetProperties());
+
+		$initializeProperties = [
+			'Id' => 66,
+			'PropertyOne' => 'ValueOne'
+		];
+		$model->InitializeProperties($initializeProperties);
+		$this->assertEquals($initializeProperties, $model->GetProperties());
+	}
 }
 
 // @codingStandardsIgnoreStart

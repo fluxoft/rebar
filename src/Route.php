@@ -17,9 +17,9 @@ class Route extends Model {
 	];
 
 	/**
-	 * @param $path
-	 * @param $controller
-	 * @param $action
+	 * @param string $path
+	 * @param string $controller
+	 * @param string $action
 	 */
 	public function __construct($path, $controller, $action) {
 		parent::__construct([

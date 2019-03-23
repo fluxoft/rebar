@@ -8,7 +8,7 @@ class MapperFactoryTest extends TestCase {
 	private $connectionObserver;
 	private $concreteModelObserver;
 	protected function setup() {
-		$this->connectionObserver = $this->getMockBuilder('\Doctrine\DBAL\Connection')
+		$this->connectionObserver    = $this->getMockBuilder('\Doctrine\DBAL\Connection')
 			->disableOriginalConstructor()
 			->getMock();
 		$this->concreteModelObserver = $this->getMockBuilder('\Fluxoft\Rebar\Db\ConcreteModel')
@@ -118,8 +118,8 @@ class BadConcreteModel {}
 class ConcreteMapperFactory extends MapperFactory {}
 class ConcreteModelForMapperFactoryTestMapper extends Mapper {}
 class ConcreteModelForMapperFactoryTest extends Model {
-	// @codingStandardsIgnoreEnd
-	protected $idProperty = 'Foo';
-	protected $dbTable = 'foo';
+	protected $idProperty    = 'Foo';
+	protected $dbTable       = 'foo';
 	protected $propertyDbMap = ['Foo' => 'foo'];
 }
+// @codingStandardsIgnoreEnd

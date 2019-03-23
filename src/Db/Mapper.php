@@ -126,7 +126,7 @@ abstract class Mapper {
 	 * @param Model $model
 	 * @throws \Doctrine\DBAL\DBALException
 	 */
-	public function Delete(Model $model) {
+	public function Delete(Model &$model) {
 		$idColumn = $model->GetIdColumn();
 		$sql      = "DELETE FROM `{$model->GetDbTable()}` WHERE `$idColumn` = :$idColumn";
 		$this->writer->executeQuery($sql, ['id' => $model->GetId()], [$model->GetIdType()]);
@@ -194,37 +194,42 @@ abstract class Mapper {
 	/**
 	 * @param Model $model
 	 * @throws \Doctrine\DBAL\DBALException
+	 * @throws InvalidModelException
 	 */
 	public function Update(Model $model) {
-		$idProperty    = $model->GetIdProperty();
-		$properties    = $model->GetProperties();
-		$modified      = $model->GetModifiedProperties();
-		$propertyDbMap = $model->GetPropertyDbMap();
-		if (!empty($modified)) {
-			$cols   = [];
-			$types  = [];
-			$values = [];
-			foreach ($modified as $property => $value) {
-				if (isset($propertyDbMap[$property])) {
-					$cols[]  = $propertyDbMap[$property]['col'];
-					$types[] = $propertyDbMap[$property]['type'];
+		if ($model->IsValid()) {
+			$idProperty = $model->GetIdProperty();
+			$properties = $model->GetProperties();
+			$modified = $model->GetModifiedProperties();
+			$propertyDbMap = $model->GetPropertyDbMap();
+			if (!empty($modified)) {
+				$cols = [];
+				$types = [];
+				$values = [];
+				foreach ($modified as $property => $value) {
+					if (isset($propertyDbMap[$property])) {
+						$cols[] = $propertyDbMap[$property]['col'];
+						$types[] = $propertyDbMap[$property]['type'];
 
-					$values[$propertyDbMap[$property]['col']] = $value;
+						$values[$propertyDbMap[$property]['col']] = $value;
+					}
+				}
+				if (!empty($cols)) {
+					$values[$propertyDbMap[$idProperty]['col']] = $properties[$idProperty];
+					$types[] = $propertyDbMap[$idProperty]['type'];
+
+					$sql = "UPDATE `{$model->GetDbTable()}` SET ";
+					foreach ($cols as $col) {
+						$sql .= "`$col` = :$col,";
+					}
+					$sql = substr($sql, 0, -1); // remove trailing comma
+					$sql .= " WHERE `{$propertyDbMap[$idProperty]['col']}` = :{$propertyDbMap[$idProperty]['col']}";
+
+					$this->writer->executeQuery($sql, $values, $types);
 				}
 			}
-			if (!empty($cols)) {
-				$values[$propertyDbMap[$idProperty]['col']] = $properties[$idProperty];
-				$types[]                                    = $propertyDbMap[$idProperty]['type'];
-
-				$sql = "UPDATE `{$model->GetDbTable()}` SET ";
-				foreach ($cols as $col) {
-					$sql .= "`$col` = :$col,";
-				}
-				$sql  = substr($sql, 0, -1); // remove trailing comma
-				$sql .= " WHERE `{$propertyDbMap[$idProperty]['col']}` = :{$propertyDbMap[$idProperty]['col']}";
-
-				$this->writer->executeQuery($sql, $values, $types);
-			}
+		} else {
+			throw new InvalidModelException('Model failed validation check.');
 		}
 	}
 
@@ -373,11 +378,13 @@ abstract class Mapper {
 	protected function getModelSet($rowSet) {
 		$models = [];
 		foreach ($rowSet as $row) {
-			$models[] = new $this->modelClass($row);
+			$models[] = $this->getModel($row);
 		}
 		return $models;
 	}
 	protected function getModel($row) {
-		return new $this->modelClass($row);
+		$model = $this->GetNew();
+		$model->InitializeProperties($row);
+		return $model;
 	}
 }
