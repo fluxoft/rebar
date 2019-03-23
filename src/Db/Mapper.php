@@ -198,17 +198,17 @@ abstract class Mapper {
 	 */
 	public function Update(Model $model) {
 		if ($model->IsValid()) {
-			$idProperty = $model->GetIdProperty();
-			$properties = $model->GetProperties();
-			$modified = $model->GetModifiedProperties();
+			$idProperty    = $model->GetIdProperty();
+			$properties    = $model->GetProperties();
+			$modified      = $model->GetModifiedProperties();
 			$propertyDbMap = $model->GetPropertyDbMap();
 			if (!empty($modified)) {
-				$cols = [];
-				$types = [];
+				$cols   = [];
+				$types  = [];
 				$values = [];
 				foreach ($modified as $property => $value) {
 					if (isset($propertyDbMap[$property])) {
-						$cols[] = $propertyDbMap[$property]['col'];
+						$cols[]  = $propertyDbMap[$property]['col'];
 						$types[] = $propertyDbMap[$property]['type'];
 
 						$values[$propertyDbMap[$property]['col']] = $value;
@@ -216,13 +216,14 @@ abstract class Mapper {
 				}
 				if (!empty($cols)) {
 					$values[$propertyDbMap[$idProperty]['col']] = $properties[$idProperty];
+
 					$types[] = $propertyDbMap[$idProperty]['type'];
 
 					$sql = "UPDATE `{$model->GetDbTable()}` SET ";
 					foreach ($cols as $col) {
 						$sql .= "`$col` = :$col,";
 					}
-					$sql = substr($sql, 0, -1); // remove trailing comma
+					$sql  = substr($sql, 0, -1); // remove trailing comma
 					$sql .= " WHERE `{$propertyDbMap[$idProperty]['col']}` = :{$propertyDbMap[$idProperty]['col']}";
 
 					$this->writer->executeQuery($sql, $values, $types);
