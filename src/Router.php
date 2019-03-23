@@ -36,11 +36,11 @@ class Router extends Model {
 	protected $controllerNamespace;
 
 	/**
-	 * @param array $controllerNamespace The namespace where this app's controllers are found.
-	 * @param array $setupArgs An array of properties to be passed to each Controller's Setup method.
-	 * @param array $methodArgs An array of properties that should be passed to each Controller method when called,
+	 * @param string $controllerNamespace The namespace where this app's controllers are found.
+	 * @param array  $setupArgs An array of properties to be passed to each Controller's Setup method.
+	 * @param array  $methodArgs An array of properties that should be passed to each Controller method when called,
 	 * passed in before the URL params.
-	 * @param array $cleanupArgs An array of properties to be passed to each Controller's Cleanup method.
+	 * @param array  $cleanupArgs An array of properties to be passed to each Controller's Cleanup method.
 	 */
 	public function __construct($controllerNamespace, $setupArgs = [], $methodArgs = [], $cleanupArgs = []) {
 		$this->controllerNamespace = $controllerNamespace;

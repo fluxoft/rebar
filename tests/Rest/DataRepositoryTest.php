@@ -7,7 +7,7 @@ use Fluxoft\Rebar\Db\Exceptions\InvalidModelException;
 use Fluxoft\Rebar\Http\Request;
 use PHPUnit\Framework\TestCase;
 
-class BasicTest extends TestCase {
+class DataRepositoryTest extends TestCase {
 	/** @var \PHPUnit_Framework_MockObject_MockObject */
 	private $mapperObserver;
 	/** @var \PHPUnit_Framework_MockObject_MockObject */
@@ -801,6 +801,10 @@ class BasicTest extends TestCase {
 				->expects($this->once())
 				->method('Save')
 				->with($this->dataModelObserver);
+			$this->mapperObserver
+				->expects($this->once())
+				->method('GetOneById')
+				->will($this->returnValue($this->dataModelObserver));
 
 			$expectedReply->Status = 201;
 			$expectedReply->Data   = $this->dataModelObserver;

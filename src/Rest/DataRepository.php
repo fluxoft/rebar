@@ -115,7 +115,7 @@ class DataRepository implements RepositoryInterface {
 				unset($get['callback']);
 
 				if ($this->authUserFilter && isset($this->authUser)) {
-					$get[$this->authUserIdProperty] = $this->authUser->GetID();
+					$get[$this->authUserIdProperty] = $this->authUser->GetId();
 				}
 
 				$order = [];
@@ -145,7 +145,7 @@ class DataRepository implements RepositoryInterface {
 					$reply->Error  = new Error(404, 'The requested item could not be found.');
 				} else {
 					if ($this->authUserFilter &&
-						$item->{$this->authUserIdProperty} !== $this->authUser->GetID()
+						$item->{$this->authUserIdProperty} !== $this->authUser->GetId()
 					) {
 						$reply->Status = 404;
 						$reply->Error  = new Error(404, 'The requested item could not be found.');
@@ -173,7 +173,7 @@ class DataRepository implements RepositoryInterface {
 					$parent = $this->mapper->GetOneById($id);
 
 					if (!isset($parent) ||
-						($this->authUserFilter && $parent->{$this->authUserIdProperty} !== $this->authUser->GetID())
+						($this->authUserFilter && $parent->{$this->authUserIdProperty} !== $this->authUser->GetId())
 					) {
 						$reply->Status = 404;
 						$reply->Error  = new Error(
@@ -207,7 +207,7 @@ class DataRepository implements RepositoryInterface {
 							}
 						}
 
-						$parentId = $parent->GetID();
+						$parentId = $parent->GetId();
 
 						$subset = $this->mapper->$getter($parentId, $page, $pageSize);
 						if (isset($subset)) {
@@ -262,7 +262,7 @@ class DataRepository implements RepositoryInterface {
 				// something, but to his own account, not someone else's. This actually has the
 				// somewhat dubious side effect of allowing someone to add something without
 				// the need to pass in their UserId.
-				$model[$this->authUserIdProperty] = $this->authUser->GetID();
+				$model[$this->authUserIdProperty] = $this->authUser->GetId();
 			}
 		}
 		$new = $this->mapper->GetNew();
@@ -273,8 +273,11 @@ class DataRepository implements RepositoryInterface {
 		$reply = new Reply();
 		try {
 			$this->mapper->Save($new);
+			// get a new copy of this from the mapper using the new ID,
+			// so that any calculated fields are included
+			$updated       = $this->mapper->GetOneById($new->GetID());
 			$reply->Status = 201;
-			$reply->Data   = $new;
+			$reply->Data   = $updated;
 		} catch (InvalidModelException $e) {
 			$reply->Status = 422;
 			$reply->Error  = new Error(
@@ -336,7 +339,7 @@ class DataRepository implements RepositoryInterface {
 				return new Reply(404, [], [], new Error(404, 'The object to be updated was not found.'));
 			} else {
 				if ($this->authUserFilter) {
-					if ($update->{$this->authUserIdProperty} !== $this->authUser->GetID()) {
+					if ($update->{$this->authUserIdProperty} !== $this->authUser->GetId()) {
 						return new Reply(404, [], [], new Error(404, 'The object to be updated was not found.'));
 					}
 				}
@@ -407,7 +410,7 @@ class DataRepository implements RepositoryInterface {
 			if (!isset($delete) ||
 				(
 					$this->authUserFilter &&
-					($delete->{$this->authUserIdProperty} !== $this->authUser->GetID())
+					($delete->{$this->authUserIdProperty} !== $this->authUser->GetId())
 				)
 			) {
 				return new Reply(404, [], [], new Error(404, 'The object to be deleted was not found.'));

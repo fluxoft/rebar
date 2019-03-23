@@ -11,7 +11,7 @@ class Handler {
 	/**
 	 * @var NotifierInterface
 	 */
-	static protected $notifier;
+	protected static $notifier;
 
 	/**
 	 * @param NotifierInterface $notifier A class implementing NotifierInterface can be included

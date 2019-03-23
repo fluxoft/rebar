@@ -135,7 +135,7 @@ class Web implements AuthInterface {
 				$userID   = $token->UserID;
 				$seriesID = $token->SeriesID;
 			} else {
-				$userID   = $auth->User->GetID();
+				$userID   = $auth->User->GetId();
 				$seriesID = null;
 			}
 			$this->tokenMapper->DeleteAuthToken($userID, $seriesID);
@@ -180,7 +180,7 @@ class Web implements AuthInterface {
 	}
 	private function setTokens(User $user, Token $token = null, $remember = false) {
 		if (!isset($token)) {
-			$token = new Token($user->GetID());
+			$token = new Token($user->GetId());
 		}
 		$checksum = hash('md5', (string) $token);
 		$expires  = ($remember) ? strtotime('+'.$this->expiresDays.' day') : 0;

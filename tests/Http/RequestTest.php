@@ -110,8 +110,14 @@ class RequestTest extends TestCase {
 			->with($this->equalTo('Input'))
 			->will($this->returnValue($input));
 
-		$this->assertEquals($headers, $request->Headers());
-		$this->assertEquals($serverParams, $request->Server());
+		$this->assertEquals(
+			array_change_key_case($headers),
+			$request->Headers()
+		);
+		$this->assertEquals(
+			array_change_key_case($serverParams),
+			$request->Server()
+		);
 		$this->assertEquals($expectedGetParams, $request->Get());
 		$this->assertEquals($expectedPostParams, $request->Post());
 		$this->assertEquals($expectedPutParams, $request->Put());

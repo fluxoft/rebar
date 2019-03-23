@@ -169,40 +169,39 @@ class Environment implements \ArrayAccess, \Iterator {
 	}
 
 	protected function getAllHeaders() {
+		$headers = [];
 		if (function_exists('getallheaders')) {
-			return getallheaders(); // @codeCoverageIgnore
-		} else {
-			$headers     = [];
-			$copy_server = array(
-				'CONTENT_TYPE'   => 'Content-Type',
-				'CONTENT_LENGTH' => 'Content-Length',
-				'CONTENT_MD5'    => 'Content-Md5',
-			);
-			foreach ($this->ServerParams as $key => $value) {
-				if (substr($key, 0, 5) === 'HTTP_') {
-					$key = substr($key, 5);
-					if (!isset($copy_server[$key]) || !isset($this->ServerParams[$key])) {
-						$key           = str_replace(' ', '-', ucwords(strtolower(str_replace('_', ' ', $key))));
-						$headers[$key] = $value;
-					}
-				} elseif (isset($copy_server[$key])) {
-					$headers[$copy_server[$key]] = $value;
-				}
-			}
-			if (!isset($headers['Authorization'])) {
-				//var_dump(isset($_SERVER['REDIRECT_HTTP_AUTHORIZATION']));
-				if (isset($this->ServerParams['REDIRECT_HTTP_AUTHORIZATION'])) {
-					$headers['Authorization'] = $this->ServerParams['REDIRECT_HTTP_AUTHORIZATION'];
-				} elseif (isset($this->ServerParams['PHP_AUTH_USER']) &&
-					isset($this->serverParams['PHP_AUTH_PW'])
-				) {
-					$basic_pass               = isset($this->ServerParams['PHP_AUTH_PW']) ? $this->ServerParams['PHP_AUTH_PW'] : '';
-					$headers['Authorization'] = 'Basic ' . base64_encode($this->ServerParams['PHP_AUTH_USER'] . ':' . $basic_pass);
-				} elseif (isset($this->ServerParams['PHP_AUTH_DIGEST'])) {
-					$headers['Authorization'] = $this->ServerParams['PHP_AUTH_DIGEST'];
-				}
-			}
-			return $headers;
+			$headers = getallheaders();
 		}
+
+		$copy_server = array(
+			'CONTENT_TYPE'   => 'Content-Type',
+			'CONTENT_LENGTH' => 'Content-Length',
+			'CONTENT_MD5'    => 'Content-Md5',
+		);
+		foreach ($this->ServerParams as $key => $value) {
+			if (substr($key, 0, 5) === 'HTTP_') {
+				$key = substr($key, 5);
+				if (!isset($copy_server[$key]) || !isset($this->ServerParams[$key])) {
+					$key           = str_replace(' ', '-', ucwords(strtolower(str_replace('_', ' ', $key))));
+					$headers[$key] = $value;
+				}
+			} elseif (isset($copy_server[$key])) {
+				$headers[$copy_server[$key]] = $value;
+			}
+		}
+		if (!isset($headers['Authorization'])) {
+			if (isset($this->ServerParams['REDIRECT_HTTP_AUTHORIZATION'])) {
+				$headers['Authorization'] = $this->ServerParams['REDIRECT_HTTP_AUTHORIZATION'];
+			} elseif (isset($this->ServerParams['PHP_AUTH_USER']) &&
+				isset($this->serverParams['PHP_AUTH_PW'])
+			) {
+				$basic_pass               = isset($this->ServerParams['PHP_AUTH_PW']) ? $this->ServerParams['PHP_AUTH_PW'] : '';
+				$headers['Authorization'] = 'Basic ' . base64_encode($this->ServerParams['PHP_AUTH_USER'] . ':' . $basic_pass);
+			} elseif (isset($this->ServerParams['PHP_AUTH_DIGEST'])) {
+				$headers['Authorization'] = $this->ServerParams['PHP_AUTH_DIGEST'];
+			}
+		}
+		return $headers;
 	}
 }

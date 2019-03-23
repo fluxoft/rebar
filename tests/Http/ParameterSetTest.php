@@ -12,14 +12,16 @@ class ParameterSetTest extends TestCase {
 	public function testParameterSet(array $params) {
 		$parameterSet = new ParameterSet($params);
 
+		$lowerCaseParams = array_change_key_case($params);
+
 		// test getting entire array with no parameters to Get
-		$this->assertEquals($params, $parameterSet->Get());
+		$this->assertEquals($lowerCaseParams, $parameterSet->Get());
 
 		// test getting default value for non-existent key
 		$this->assertEquals('default', $parameterSet->Get('nonExistent', 'default'));
 
 		// test getting each item in passed array
-		foreach ($params as $key => $value) {
+		foreach ($lowerCaseParams as $key => $value) {
 			$this->assertEquals($value, $parameterSet->Get($key));
 		}
 
@@ -52,7 +54,22 @@ class ParameterSetTest extends TestCase {
 					'foo' => 'bar',
 					'obj' => $testClass
 				]
+			],
+			'mixedCaseKey' => [
+				[
+					'mixedKey' => 'value'
+				]
 			]
 		];
+	}
+	public function testWeirdCaps() {
+		$parameterSet = new ParameterSet([]);
+
+		// test set with mixed-case key, get with different casing
+		$parameterSet->Set('weIrdCaPsKEy', 'weird_caps_value');
+		$this->assertEquals(
+			'weird_caps_value',
+			$parameterSet->Get('WeirdCapsKey')
+		);
 	}
 }
