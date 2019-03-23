@@ -57,9 +57,14 @@ class MockableSession extends Session {
 	}
 
 	protected function setSession($key, $value) {
+		//unused
+		$key   = null;
+		$value = null;
 		return true;
 	}
 	protected function unsetSession($key) {
+		//unused
+		$key = null;
 		return true;
 	}
 }

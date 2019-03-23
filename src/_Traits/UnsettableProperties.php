@@ -11,6 +11,9 @@ trait UnsettableProperties {
 	 * @throws \InvalidArgumentException
 	 */
 	public function __set($key, $value) {
+		//unused
+		$key   = null;
+		$value = null;
 		throw new \InvalidArgumentException('Read-only object.');
 	}
 
@@ -21,6 +24,8 @@ trait UnsettableProperties {
 	 * @throws \InvalidArgumentException
 	 */
 	public function __unset($key) {
+		//unused
+		$key = null;
 		throw new \InvalidArgumentException('Read-only object.');
 	}
 }
