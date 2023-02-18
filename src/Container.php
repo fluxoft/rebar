@@ -24,10 +24,11 @@ class Container implements \ArrayAccess {
 	}
 	
 	// ArrayAccess
-	public function offsetExists($offset) {
+	public function offsetExists($offset): bool {
 		return isset($this->values[$offset]);
 	}
-	public function offsetGet($offset) {
+
+	public function offsetGet($offset): mixed {
 		if (!isset($this->values[$offset])) {
 			throw new \InvalidArgumentException(sprintf('Value "%s" is not defined.', $offset));
 		}
@@ -43,11 +44,11 @@ class Container implements \ArrayAccess {
 			return $this->values[$offset];
 		}
 	}
-	public function offsetSet($offset, $value) {
+	public function offsetSet($offset, $value): void {
 		$this->objects[$offset] = false;
 		$this->values[$offset]  = $value;
 	}
-	public function offsetUnset($offset) {
+	public function offsetUnset($offset): void {
 		unset($this->values[$offset]);
 	}
 }

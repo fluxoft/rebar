@@ -41,14 +41,14 @@ abstract class Model implements \Iterator, \ArrayAccess {
 	/**
 	 * @return array
 	 */
-	public function GetProperties() {
+	public function GetProperties(): array {
 		return $this->properties;
 	}
 
 	/**
 	 * @return array
 	 */
-	public function GetModifiedProperties() {
+	public function GetModifiedProperties(): array {
 		return $this->modProperties;
 	}
 
@@ -58,7 +58,7 @@ abstract class Model implements \Iterator, \ArrayAccess {
 	 * $validationErrors array.
 	 * @return bool
 	 */
-	public function IsValid() {
+	public function IsValid(): bool {
 		// Reset the error array
 		$this->validationErrors = [];
 
@@ -77,12 +77,12 @@ abstract class Model implements \Iterator, \ArrayAccess {
 		}
 		return $valid;
 	}
-	private $validationErrors = [];
+	private array $validationErrors = [];
 	/**
 	 * Returns any validation errors that were found on the last run of IsValid()
 	 * @return array
 	 */
-	public function GetValidationErrors() {
+	public function GetValidationErrors(): array {
 		return $this->validationErrors;
 	}
 }
