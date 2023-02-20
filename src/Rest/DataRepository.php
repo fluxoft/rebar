@@ -2,7 +2,7 @@
 
 namespace Fluxoft\Rebar\Rest;
 
-use Doctrine\DBAL\DBALException;
+use Doctrine\DBAL\Exception as DBALException;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Fluxoft\Rebar\Auth\Db\User;
 use Fluxoft\Rebar\Db\Exceptions\InvalidModelException;
@@ -278,14 +278,6 @@ class DataRepository implements RepositoryInterface {
 			$updated       = $this->mapper->GetOneById($new->GetID());
 			$reply->Status = 201;
 			$reply->Data   = $updated;
-		} catch (InvalidModelException $e) {
-			$reply->Status = 422;
-			$reply->Error  = new Error(
-				422,
-				'Validation failed.',
-				['invalidProperties' => $new->GetValidationErrors()],
-				$e
-			);
 		} catch (\InvalidArgumentException $e) {
 			$reply->Status = 422;
 			$reply->Error  = new Error(

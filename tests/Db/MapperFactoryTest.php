@@ -2,12 +2,16 @@
 
 namespace Fluxoft\Rebar\Db;
 
+use Doctrine\DBAL\Connection;
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
 class MapperFactoryTest extends TestCase {
+	/** @var Connection|MockObject */
 	private $connectionObserver;
+	/** @var ConcreteModel|MockObject */
 	private $concreteModelObserver;
-	protected function setup() {
+	protected function setup():void {
 		$this->connectionObserver    = $this->getMockBuilder('\Doctrine\DBAL\Connection')
 			->disableOriginalConstructor()
 			->getMock();
@@ -16,7 +20,7 @@ class MapperFactoryTest extends TestCase {
 			->getMock();
 	}
 
-	protected function teardown() {
+	protected function teardown():void {
 		unset($this->concreteModelObserver);
 		unset($this->connectionObserver);
 	}

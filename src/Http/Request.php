@@ -7,6 +7,7 @@ use Fluxoft\Rebar\Model;
 /**
  * Class Request
  * @package Fluxoft\Rebar\Http
+ * @property string Headers
  * @property string Method
  * @property string Protocol
  * @property string Host
@@ -34,6 +35,10 @@ class Request extends Model {
 	];
 
 	private $environment;
+	/**
+	 * @var mixed
+	 */
+	private $Headers;
 
 	/**
 	 * @param Environment $environment

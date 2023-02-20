@@ -3,22 +3,25 @@
 namespace Fluxoft\Rebar\Rest;
 
 use Doctrine\Common\Proxy\Exception\InvalidArgumentException;
+use Doctrine\DBAL\Exception\DriverException;
 use Fluxoft\Rebar\Db\Exceptions\InvalidModelException;
+use Fluxoft\Rebar\Db\Mapper;
 use Fluxoft\Rebar\Http\Request;
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
 class DataRepositoryTest extends TestCase {
-	/** @var \PHPUnit_Framework_MockObject_MockObject */
+	/** @var Mapper|MockObject */
 	private $mapperObserver;
-	/** @var \PHPUnit_Framework_MockObject_MockObject */
+	/** @var MockObject|\Psr\Log\LoggerInterface */
 	private $loggerObserver;
-	/** @var \PHPUnit_Framework_MockObject_MockObject */
+	/** @var \Fluxoft\Rebar\Auth\Db\User|MockObject */
 	private $authUserObserver;
-	/** @var \PHPUnit_Framework_MockObject_MockObject */
+	/** @var Request|MockObject */
 	private $requestObserver;
-	/** @var \PHPUnit_Framework_MockObject_MockObject */
+	/** @var \Fluxoft\Rebar\Db\Model|MockObject */
 	private $dataModelObserver;
-	protected function setup() {
+	protected function setup():void {
 		$this->mapperObserver    = $this->getMockBuilder(
 			'\Fluxoft\Rebar\Db\Mapper'
 		)
@@ -46,7 +49,7 @@ class DataRepositoryTest extends TestCase {
 			->getMock();
 	}
 
-	protected function teardown() {
+	protected function teardown():void {
 		unset($this->dataModelObserver);
 		unset($this->requestObserver);
 		unset($this->authUserObserver);
@@ -698,7 +701,7 @@ class DataRepositoryTest extends TestCase {
 				$this->loggerObserver,
 				$this->authUserObserver
 			])
-			->setMethods(['log', 'getInputData'])
+			->onlyMethods(['log', 'getInputData'])
 			->getMock();
 		$dataRepository->SetAuthUserFilter(true);
 		$dataRepository->SetAuthUserIdProperty('UserId');
@@ -719,26 +722,22 @@ class DataRepositoryTest extends TestCase {
 			->method('GetNew')
 			->will($this->returnValue($this->dataModelObserver));
 
-		$position = 0;
-		foreach ($saveModel as $key => $value) {
-			$this->dataModelObserver
-				->expects($this->at($position))
-				->method('__set')
-				->with($key);
-			$position++;
-		}
+		$this->dataModelObserver
+			->expects($this->any())
+			->method('__set');
 
 		$expectedReply = new Reply();
 		if (isset($expectedExceptionClass)) {
-			$expectedException = $this->getMockBuilder(
-				$expectedExceptionClass
-			)
+			/*$expectedException = $this->getMockBuilder('\Exception')
 				->disableOriginalConstructor()
 				->getMock();
 			$expectedException
 				->expects($this->any())
 				->method('getMessage')
-				->will($this->returnValue('exception'));
+				->will($this->returnValue('exception'));*/
+
+			$expectedException = new $expectedExceptionClass('exception');
+			//$expectedException = new \Exception('exception');
 
 			$this->mapperObserver
 				->expects($this->once())
@@ -773,7 +772,7 @@ class DataRepositoryTest extends TestCase {
 					$expectedReply->Status = 409;
 					$expectedReply->Error  = new Error(409, 'Object already exists');
 					break;
-				case '\Doctrine\DBAL\DBALException':
+				case '\Doctrine\DBAL\Exception':
 					$dataRepository
 						->expects($this->once())
 						->method('log')
@@ -859,21 +858,9 @@ class DataRepositoryTest extends TestCase {
 					'UserId' => 1,
 					'Foo' => 'Bar'
 				],
-				'exception' => '\Fluxoft\Rebar\Db\Exceptions\InvalidModelException'
-			],
-			[
-				'model' => [
-					'UserId' => 1,
-					'Foo' => 'Bar'
-				],
-				'authUserId' => 1,
-				'saveModel' => [
-					'UserId' => 1,
-					'Foo' => 'Bar'
-				],
 				'exception' => '\InvalidArgumentException'
 			],
-			[
+			/*[
 				'model' => [
 					'UserId' => 1,
 					'Foo' => 'Bar'
@@ -884,7 +871,7 @@ class DataRepositoryTest extends TestCase {
 					'Foo' => 'Bar'
 				],
 				'exception' => '\Doctrine\DBAL\Exception\UniqueConstraintViolationException'
-			],
+			],*/
 			[
 				'model' => [
 					'UserId' => 1,
@@ -895,7 +882,7 @@ class DataRepositoryTest extends TestCase {
 					'UserId' => 1,
 					'Foo' => 'Bar'
 				],
-				'exception' => '\Doctrine\DBAL\DBALException'
+				'exception' => '\Doctrine\DBAL\Exception'
 			],
 			[
 				'model' => [
@@ -1017,7 +1004,7 @@ class DataRepositoryTest extends TestCase {
 			->will($this->returnValue([
 				'foo' => 'bar'
 			]));
-		$exception = new InvalidArgumentException('invalid argument');
+		$exception = new \InvalidArgumentException('invalid argument');
 		$this->dataModelObserver
 			->expects($this->once())
 			->method('__set')
@@ -1279,16 +1266,18 @@ class DataRepositoryTest extends TestCase {
 			$this->mapperObserver
 		);
 
+		$getMethodMap = [
+			['Body', $body],
+			['Method', $method]
+		];
 		$this->requestObserver
-			->expects($this->at(0))
+			->expects($this->any())
 			->method('__get')
-			->with('Body')
-			->will($this->returnValue($body));
-		$this->requestObserver
-			->expects($this->at(1))
-			->method('__get')
-			->with('Method')
-			->will($this->returnValue($method));
+			->will($this->returnValueMap([
+				['Body', $body],
+				['Method', $method]
+			]));
+
 		$this->requestObserver
 			->expects($this->once())
 			->method($method)

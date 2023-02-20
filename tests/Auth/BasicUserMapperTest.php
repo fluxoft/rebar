@@ -5,11 +5,11 @@ namespace Fluxoft\Rebar\Auth;
 use PHPUnit\Framework\TestCase;
 
 class BasicUserMapperTest extends TestCase {
-	protected function setup() {
+	protected function setup():void {
 
 	}
 
-	protected function teardown() {
+	protected function teardown():void {
 
 	}
 

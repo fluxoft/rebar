@@ -2,20 +2,23 @@
 
 namespace Fluxoft\Rebar\Auth\Db;
 
+use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\Statement;
 use Fluxoft\Rebar\Db\MapperFactory;
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
 class UserMapperTest extends TestCase {
-	/** @var \PHPUnit_Framework_MockObject_MockObject */
+	/** @var Connection|MockObject */
 	private $connectionObserver;
-	/** @var \PHPUnit_Framework_MockObject_MockObject */
+	/** @var Statement|MockObject */
 	private $statementObserver;
-	/** @var \PHPUnit_Framework_MockObject_MockObject */
+	/** @var ConcreteUserForUserMapperTest|MockObject */
 	private $userModelObserver;
 	/** @var MapperFactory */
 	private $mapperFactory;
 
-	public function setup() {
+	public function setup():void {
 		$this->connectionObserver = $this->getMockBuilder('\Doctrine\DBAL\Connection')
 			->disableOriginalConstructor()
 			->getMock();
@@ -31,7 +34,7 @@ class UserMapperTest extends TestCase {
 		);
 	}
 
-	public function tearDown() {
+	public function tearDown():void {
 		unset($this->userModelObserver);
 		unset($this->statementObserver);
 		unset($this->connectionObserver);

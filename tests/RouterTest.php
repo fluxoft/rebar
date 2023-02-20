@@ -2,18 +2,22 @@
 
 namespace Fluxoft\Rebar;
 
+use Fluxoft\Rebar\Auth\Basic;
+use Fluxoft\Rebar\Http\Request;
+use Fluxoft\Rebar\Http\Response;
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
 class RouterTest extends TestCase {
-	/** @var \PHPUnit_Framework_MockObject_MockObject */
+	/** @var Basic|MockObject */
 	protected $authMock;
-	/** @var \PHPUnit_Framework_MockObject_MockObject */
+	/** @var Request|MockObject */
 	protected $requestObserver;
-	/** @var \PHPUnit_Framework_MockObject_MockObject */
+	/** @var Response|MockObject */
 	protected $responseObserver;
-	/** @var \PHPUnit_Framework_MockObject_MockObject */
+	/** @var Controller|MockObject */
 	protected $controllerObserver;
-	protected function setup() {
+	protected function setup():void {
 		$this->authMock           = $this->getMockBuilder('\Fluxoft\Rebar\Auth\Basic')
 			->disableOriginalConstructor()
 			->getMock();
@@ -28,7 +32,7 @@ class RouterTest extends TestCase {
 			->getMock();
 	}
 
-	protected function teardown() {
+	protected function teardown():void {
 		unset($this->authMock);
 	}
 

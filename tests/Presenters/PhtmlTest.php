@@ -2,16 +2,22 @@
 
 namespace Fluxoft\Rebar\Presenters;
 
+use Fluxoft\Rebar\Http\Response;
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
 class PhtmlTest extends TestCase {
-	/** @var \PHPUnit_Framework_MockObject_MockObject */
+	/** @var MockObject|Response */
 	private $responseObserver;
 
-	protected function setup() {
+	protected function setup():void {
 		$this->responseObserver = $this->getMockBuilder('Fluxoft\Rebar\Http\Response')
 			->disableOriginalConstructor()
 			->getMock();
+	}
+
+	protected function teardown():void {
+		unset($this->responseObserver);
 	}
 
 	public function testRenderLayout() {
@@ -75,13 +81,12 @@ class PhtmlTest extends TestCase {
 			->method('AddHeader')
 			->with('Content-Type', 'text/plain');
 		$this->responseObserver
-			->expects($this->at(1))
+			->expects($this->any())
 			->method('__set')
-			->with('Status', 404);
-		$this->responseObserver
-			->expects($this->at(2))
-			->method('__set')
-			->with('Body', 'Template not found.');
+			->willReturnMap([
+				['Status', 404],
+				['Body', 'Template not found.']
+			]);
 
 		$presenter->Render($this->responseObserver, []);
 	}

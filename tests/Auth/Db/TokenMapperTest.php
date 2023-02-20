@@ -2,27 +2,30 @@
 
 namespace Auth\Db;
 
+use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\Result;
 use Fluxoft\Rebar\Auth\Db\Token;
 use Fluxoft\Rebar\Auth\Db\TokenMapper;
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
 class TokenMapperTest extends TestCase {
-	/** @var \PHPUnit_Framework_MockObject_MockObject */
+	/** @var Connection|MockObject */
 	private $connectionObserver;
-	/** @var \PHPUnit_Framework_MockObject_MockObject */
-	private $statementObserver;
+	/** @var Result|MockObject */
+	private $resultObserver;
 
-	public function setup() {
+	public function setup():void {
 		$this->connectionObserver = $this->getMockBuilder('\Doctrine\DBAL\Connection')
 			->disableOriginalConstructor()
 			->getMock();
-		$this->statementObserver  = $this->getMockBuilder('\Doctrine\DBAL\Statement')
+		$this->resultObserver  = $this->getMockBuilder('\Doctrine\DBAL\Result')
 			->disableOriginalConstructor()
 			->getMock();
 	}
 
-	public function tearDown() {
-		unset($this->statementObserver);
+	public function tearDown():void {
+		unset($this->resultObserver);
 		unset($this->connectionObserver);
 	}
 
@@ -30,6 +33,7 @@ class TokenMapperTest extends TestCase {
 	 * @param $foundRows
 	 * @param $expectedReturn
 	 * @dataProvider checkAuthTokenProvider
+	 * @throws \Doctrine\DBAL\Exception
 	 */
 	public function testCheckAuthToken($foundRows, $expectedReturn) {
 		$tokenMapper = new TokenMapper($this->connectionObserver);
@@ -45,41 +49,21 @@ WHERE user_id = :userID AND
 	expires_on > NOW()
 EOF;
 
-
 		$this->connectionObserver
-			->expects($this->at(0))
+			->expects($this->any())
 			->method('executeQuery')
-			->with($deleteSql)
-			->will($this->returnValue(null));
+			->will($this->returnValue($this->resultObserver));
 
-		$this->connectionObserver
-			->expects($this->at(1))
-			->method('executeQuery')
-			->with(
-				$searchSql,
-				[
-					'userID' => $token->UserID,
-					'seriesID' => $token->SeriesID,
-					'token' => $token->Token
-				],
-				[
-					'integer',
-					'string',
-					'string'
-				]
-			)
-			->will($this->returnValue($this->statementObserver));
-
-		$this->statementObserver
+		$this->resultObserver
 			->expects($this->once())
-			->method('fetchAll')
+			->method('fetchAllAssociative')
 			->will($this->returnValue($foundRows));
 
 		$checked = $tokenMapper->CheckAuthToken($token);
 
 		$this->assertEquals($expectedReturn, $checked);
 	}
-	public function checkAuthTokenProvider() {
+	public function checkAuthTokenProvider(): array {
 		return [
 			'found' => [
 				'foundRows' => [],

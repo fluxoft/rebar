@@ -2,19 +2,21 @@
 
 namespace Fluxoft\Rebar\Presenters;
 
+use Fluxoft\Rebar\Http\Response;
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
 class JsonTest extends TestCase {
-	/** @var \PHPUnit_Framework_MockObject_MockObject */
+	/** @var MockObject|Response */
 	private $responseObserver;
 
-	protected function setup() {
+	protected function setup():void {
 		$this->responseObserver = $this->getMockBuilder('Fluxoft\Rebar\Http\Response')
 			->disableOriginalConstructor()
 			->getMock();
 	}
 
-	protected function teardown() {
+	protected function teardown():void {
 		unset($this->responseObserver);
 	}
 

@@ -18,6 +18,9 @@ class TokenMapper {
 		$this->writer = (isset($writer)) ? $writer : $reader;
 	}
 
+	/**
+	 * @throws \Doctrine\DBAL\Exception
+	 */
 	public function CheckAuthToken (Token $token) {
 		// first, delete any expired tokens so they can't be returned
 		$sql = 'DELETE FROM auth_tokens WHERE expires_on < NOW()';
@@ -43,7 +46,7 @@ EOF;
 			'string'
 		];
 		$stmt   = $this->writer->executeQuery($sql, $params, $types);
-		$rows   = $stmt->fetchAll();
+		$rows   = $stmt->fetchAllAssociative();
 
 		return (!empty($rows));
 	}

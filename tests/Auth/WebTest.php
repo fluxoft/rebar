@@ -3,23 +3,24 @@
 namespace Fluxoft\Rebar\Auth;
 
 use Fluxoft\Rebar\Auth\Db\Token;
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
 class WebTest extends TestCase {
-	/** @var \PHPUnit_Framework_MockObject_MockObject */
+	/** @var Db\UserMapper|MockObject */
 	private $userMapperObserver;
-	/** @var \PHPUnit_Framework_MockObject_MockObject */
+	/** @var Db\TokenMapper|MockObject */
 	private $tokenMapperObserver;
-	/** @var \PHPUnit_Framework_MockObject_MockObject */
+	/** @var Db\User|MockObject */
 	private $userObserver;
-	/** @var \PHPUnit_Framework_MockObject_MockObject */
+	/** @var \Fluxoft\Rebar\Http\Request|MockObject */
 	private $requestObserver;
-	/** @var \PHPUnit_Framework_MockObject_MockObject */
+	/** @var \Fluxoft\Rebar\Http\Cookies|MockObject */
 	private $cookiesObserver;
-	/** @var \PHPUnit_Framework_MockObject_MockObject */
+	/** @var \Fluxoft\Rebar\Http\Session|MockObject */
 	private $sessionObserver;
 
-	protected function setup() {
+	protected function setup():void {
 		$this->userMapperObserver  = $this->getMockBuilder('\Fluxoft\Rebar\Auth\Db\UserMapper')
 			->disableOriginalConstructor()
 			->getMock();
@@ -40,7 +41,7 @@ class WebTest extends TestCase {
 			->getMock();
 	}
 
-	protected function teardown() {
+	protected function teardown():void {
 		unset($this->sessionObserver);
 		unset($this->cookiesObserver);
 		unset($this->requestObserver);
@@ -57,15 +58,12 @@ class WebTest extends TestCase {
 			$this->sessionObserver
 		);
 		$this->sessionObserver
-			->expects($this->at(0))
+			->expects($this->any())
 			->method('Get')
-			->with('AuthUserId')
-			->will($this->returnValue(1));
-		$this->sessionObserver
-			->expects($this->at(1))
-			->method('Get')
-			->with('AuthToken')
-			->will($this->returnValue('valid-token'));
+			->willReturnMap([
+				['AuthUserId', null, 1],
+				['AuthToken', null, 'valid-token']
+			]);
 		$this->userMapperObserver
 			->expects($this->once())
 			->method('GetAuthorizedUserById')
@@ -90,7 +88,7 @@ class WebTest extends TestCase {
 			$this->sessionObserver
 		);
 		$this->sessionObserver
-			->expects($this->at(0))
+			->expects($this->any())
 			->method('Get')
 			->with('AuthUserId')
 			->will($this->returnValue(1));
@@ -120,7 +118,7 @@ class WebTest extends TestCase {
 		$tokenString = base64_encode((string) $token . '|' . $checksum);
 
 		$this->sessionObserver
-			->expects($this->at(0))
+			->expects($this->any())
 			->method('Get')
 			->with('AuthUserId')
 			->will($this->returnValue(null));
@@ -164,7 +162,7 @@ class WebTest extends TestCase {
 		$tokenString = base64_encode((string) $token . '|' . $checksum);
 
 		$this->sessionObserver
-			->expects($this->at(0))
+			->expects($this->any())
 			->method('Get')
 			->with('AuthUserId')
 			->will($this->returnValue(null));
@@ -205,7 +203,7 @@ class WebTest extends TestCase {
 		$tokenString = 'bad token string';
 
 		$this->sessionObserver
-			->expects($this->at(0))
+			->expects($this->any())
 			->method('Get')
 			->with('AuthUserId')
 			->will($this->returnValue(null));
@@ -249,7 +247,7 @@ class WebTest extends TestCase {
 		$tokenString = base64_encode((string) $token . '|' . $checksum);
 
 		$this->sessionObserver
-			->expects($this->at(0))
+			->expects($this->any())
 			->method('Get')
 			->with('AuthUserId')
 			->will($this->returnValue(null));
@@ -296,7 +294,7 @@ class WebTest extends TestCase {
 		$tokenString = base64_encode((string) $token . '|' . $checksum);
 
 		$this->sessionObserver
-			->expects($this->at(0))
+			->expects($this->any())
 			->method('Get')
 			->with('AuthUserId')
 			->will($this->returnValue(null));
@@ -340,7 +338,7 @@ class WebTest extends TestCase {
 		$tokenString = base64_encode((string) $token . '|' . $checksum);
 
 		$this->sessionObserver
-			->expects($this->at(0))
+			->expects($this->any())
 			->method('Get')
 			->with('AuthUserId')
 			->will($this->returnValue(null));
