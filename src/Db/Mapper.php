@@ -53,11 +53,12 @@ abstract class Mapper {
 	/**
 	 * @param $id
 	 * @return Model|null
+	 * @throws \Doctrine\DBAL\Exception
 	 */
 	public function GetOneById($id) {
 		$idProperty = $this->model->GetIdProperty();
 		$select     = $this->getSelect([$idProperty => $id], [], 1, 1);
-		$results    = $this->reader->fetchAll(
+		$results    = $this->reader->fetchAllAssociative(
 			$select['sql'],
 			$select['params']
 		);
@@ -74,7 +75,7 @@ abstract class Mapper {
 	 */
 	public function GetOneWhere($filter = []) {
 		$select  = $this->getSelect($filter, [], 1, 1);
-		$results = $this->reader->fetchAll(
+		$results = $this->reader->fetchAllAssociative(
 			$select['sql'],
 			$select['params']
 		);
@@ -94,18 +95,21 @@ abstract class Mapper {
 	 */
 	public function GetSetWhere($filter = [], $sort = [], $page = 1, $pageSize = 0) {
 		$select  = $this->getSelect($filter, $sort, $page, $pageSize);
-		$results = $this->reader->fetchAll(
+		$results = $this->reader->fetchAllAssociative(
 			$select['sql'],
 			$select['params']
 		);
 		return $this->getModelSet($results);
 	}
 
+	/**
+	 * @throws \Doctrine\DBAL\Exception
+	 */
 	public function CountWhere($filter = []) {
-		$count = $this->countSelect($filter);
-		$stmt  = $this->reader->prepare($count['sql']);
-		$stmt->execute($count['params']);
-		$total = $stmt->fetchColumn();
+		$count  = $this->countSelect($filter);
+		$stmt   = $this->reader->prepare($count['sql']);
+		$result = $stmt->executeQuery($count['params']);
+		$total  = $result->fetchOne();
 		return (int) $total;
 	}
 
@@ -124,7 +128,7 @@ abstract class Mapper {
 
 	/**
 	 * @param Model $model
-	 * @throws \Doctrine\DBAL\DBALException
+	 * @throws \Doctrine\DBAL\Exception
 	 */
 	public function Delete(Model &$model) {
 		$idColumn = $model->GetIdColumn();
@@ -193,7 +197,7 @@ abstract class Mapper {
 
 	/**
 	 * @param Model $model
-	 * @throws \Doctrine\DBAL\DBALException
+	 * @throws \Doctrine\DBAL\Exception
 	 * @throws InvalidModelException
 	 */
 	public function Update(Model $model) {

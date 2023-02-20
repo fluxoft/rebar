@@ -2,20 +2,24 @@
 
 namespace Fluxoft\Rebar\Rest;
 
+use Fluxoft\Rebar\Auth\AuthInterface;
 use Fluxoft\Rebar\Auth\Reply;
+use Fluxoft\Rebar\Http\Request;
+use Fluxoft\Rebar\Http\Response;
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
 class ControllerTest extends TestCase {
-	/** @var \PHPUnit_Framework_MockObject_MockObject */
+	/** @var Request|MockObject */
 	private $requestObserver;
-	/** @var \PHPUnit_Framework_MockObject_MockObject */
+	/** @var Response|MockObject */
 	private $responseObserver;
-	/** @var \PHPUnit_Framework_MockObject_MockObject */
+	/** @var AuthInterface|MockObject */
 	private $authObserver;
-	/** @var \PHPUnit_Framework_MockObject_MockObject */
+	/** @var Controller|MockObject */
 	private $controllerObserver;
 
-	protected function setup() {
+	protected function setup():void {
 		$this->requestObserver  = $this->getMockBuilder('\Fluxoft\Rebar\Http\Request')
 			->disableOriginalConstructor()
 			->getMock();
@@ -32,11 +36,11 @@ class ControllerTest extends TestCase {
 				$this->responseObserver,
 				$this->authObserver
 			])
-			->setMethods(['set'])
+			->onlyMethods(['set'])
 			->getMock();
 	}
 
-	protected function teardown() {
+	protected function teardown():void {
 		unset($this->controllerObserver);
 		unset($this->authObserver);
 		unset($this->responseObserver);
@@ -142,15 +146,12 @@ class ControllerTest extends TestCase {
 			->with('callback')
 			->will($this->returnValue('callback'));
 		$this->requestObserver
-			->expects($this->at(1))
+			->expects($this->any())
 			->method('__get')
-			->with('Method')
-			->will($this->returnValue('POST'));
-		$this->requestObserver
-			->expects($this->at(2))
-			->method('__get')
-			->with('Body')
-			->will($this->returnValue($body));
+			->willReturnMap([
+				['Method', 'POST'],
+				['Body', $body]
+			]);
 
 		$bodyArray = json_decode($body, true);
 
@@ -307,7 +308,7 @@ class ControllerTest extends TestCase {
 			->with('callback')
 			->will($this->returnValue('callback'));
 		$this->requestObserver
-			->expects($this->at(1))
+			->expects($this->any())
 			->method('__get')
 			->with('Method')
 			->will($this->returnValue('DELETE'));
@@ -339,7 +340,7 @@ class ControllerTest extends TestCase {
 			->with('callback')
 			->will($this->returnValue('callback'));
 		$this->requestObserver
-			->expects($this->at(1))
+			->expects($this->any())
 			->method('__get')
 			->with('Method')
 			->will($this->returnValue($verb));

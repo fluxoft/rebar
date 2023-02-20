@@ -2,24 +2,27 @@
 
 namespace Fluxoft\Rebar\Presenters;
 
+use Fluxoft\Rebar\Http\Response;
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use Twig\Environment;
 
 class TwigTest extends TestCase {
-	/** @var \PHPUnit_Framework_MockObject_MockObject */
+	/** @var Response|MockObject */
 	private $responseObserver;
-	/** @var \PHPUnit_Framework_MockObject_MockObject */
+	/** @var MockObject|Environment */
 	private $twigObserver;
 
-	protected function setup() {
+	protected function setup():void {
 		$this->responseObserver = $this->getMockBuilder('\Fluxoft\Rebar\Http\Response')
 			->disableOriginalConstructor()
 			->getMock();
-		$this->twigObserver     = $this->getMockBuilder('\Twig_Environment')
+		$this->twigObserver     = $this->getMockBuilder('\Twig\Environment')
 			->disableOriginalConstructor()
 			->getMock();
 	}
 
-	protected function teardown() {
+	protected function teardown():void {
 		unset($this->responseObserver);
 		unset($this->twigObserver);
 	}

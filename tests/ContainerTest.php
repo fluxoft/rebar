@@ -5,11 +5,11 @@ namespace Fluxoft\Rebar;
 use PHPUnit\Framework\TestCase;
 
 class ContainerTest extends TestCase {
-	protected function setup() {
+	protected function setup():void {
 
 	}
 
-	protected function teardown() {
+	protected function teardown():void {
 
 	}
 

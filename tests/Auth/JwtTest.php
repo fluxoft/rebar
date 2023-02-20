@@ -3,17 +3,18 @@
 namespace Fluxoft\Rebar\Auth;
 
 use Firebase\JWT\ExpiredException;
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
 class JwtTest extends TestCase {
-	/** @var \PHPUnit_Framework_MockObject_MockObject */
+	/** @var UserMapperInterface|MockObject */
 	private $userMapperObserver;
-	/** @var \PHPUnit_Framework_MockObject_MockObject */
+	/** @var UserInterface|MockObject */
 	private $userObserver;
-	/** @var \PHPUnit_Framework_MockObject_MockObject */
+	/** @var \Fluxoft\Rebar\Http\Request|MockObject */
 	private $requestObserver;
 
-	protected function setup() {
+	protected function setup():void {
 		$this->userMapperObserver = $this->getMockBuilder('\Fluxoft\Rebar\Auth\UserMapperInterface')
 			->getMock();
 		$this->userObserver       = $this->getMockBuilder('\Fluxoft\Rebar\Auth\UserInterface')
@@ -23,7 +24,7 @@ class JwtTest extends TestCase {
 			->getMock();
 	}
 
-	protected function teardown() {
+	protected function teardown():void {
 		unset($this->requestObserver);
 		unset($this->userObserver);
 		unset($this->userMapperObserver);

@@ -27,7 +27,7 @@ class ControllerTest extends TestCase {
 
 	protected $controller;
 
-	protected function setup() {
+	protected function setup():void {
 		$this->request        = $this->getMockBuilder('\Fluxoft\Rebar\Http\Request')
 			->disableOriginalConstructor()
 			->getMock();
@@ -41,7 +41,7 @@ class ControllerTest extends TestCase {
 			->disableOriginalConstructor()
 			->getMock();
 	}
-	protected function teardown() {
+	protected function teardown():void {
 		unset($this->debugPresenter);
 		unset($this->webAuth);
 		unset($this->request);
@@ -91,50 +91,39 @@ class ControllerTest extends TestCase {
 			array_push($allowedMethods, 'OPTIONS');
 		}
 		$this->request
-			->expects($this->at(0))
+			->expects($this->any())
 			->method('__get')
-			->with($this->equalTo('Headers'))
-			->will($this->returnValue($headers));
-		$this->request
-			->expects($this->at(1))
-			->method('__get')
-			->with($this->equalTo('Method'))
-			->will($this->returnValue($requestMethod));
+			->willReturnMap([
+				['Headers', $headers],
+				['Method', $requestMethod]
+			]);
 
 		if (isset($headers['Origin'])) {
-			$allowedHeaders = (isset($headers['Access-Control-Request-Headers']) ?
-				$headers['Access-Control-Request-Headers'] : '');
+			$allowedHeaders = ($headers['Access-Control-Request-Headers'] ?? '');
 			$allowedDomains = $controller->GetCrossOriginDomainsAllowed();
 			if (!in_array($headers['Origin'], $allowedDomains)) {
 				$this->expectException('\Fluxoft\Rebar\Exceptions\CrossOriginException');
 			} else {
 				$this->response
-					->expects($this->at(0))
+					->expects($this->any())
 					->method('AddHeader')
-					->with(
-						$this->equalTo('Access-Control-Allow-Origin'),
-						$this->equalTo($headers['Origin'])
-					);
-				$this->response
-					->expects($this->at(1))
-					->method('AddHeader')
-					->with(
-						$this->equalTo('Access-Control-Allow-Credentials'),
-						$this->equalTo('true')
-					);
-				$this->response
-					->expects($this->at(2))
-					->method('AddHeader')
-					->with(
-						$this->equalTo('Access-Control-Allow-Methods'),
-						$this->equalTo(implode(',', $allowedMethods))
-					);
-				$this->response
-					->expects($this->at(3))
-					->method('AddHeader')
-					->with(
-						$this->equalTo('Access-Control-Allow-Headers'),
-						$this->equalTo($allowedHeaders)
+					->withConsecutive(
+						[
+							$this->equalTo('Access-Control-Allow-Origin'),
+							$this->equalTo($headers['Origin'])
+						],
+						[
+							$this->equalTo('Access-Control-Allow-Credentials'),
+							$this->equalTo('true')
+						],
+						[
+							$this->equalTo('Access-Control-Allow-Methods'),
+							$this->equalTo(implode(',', $allowedMethods))
+						],
+						[
+							$this->equalTo('Access-Control-Allow-Headers'),
+							$this->equalTo($allowedHeaders)
+						]
 					);
 			}
 		}

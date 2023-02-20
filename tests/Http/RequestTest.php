@@ -2,19 +2,20 @@
 
 namespace Fluxoft\Rebar\Http;
 
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
 class RequestTest extends TestCase {
-	/** @var \PHPUnit_Framework_MockObject_MockObject */
+	/** @var MockObject|Environment */
 	private $environmentMock;
 
-	protected function setup() {
+	protected function setup():void {
 		$this->environmentMock = $this->getMockBuilder('Fluxoft\Rebar\Http\Environment')
 			->disableOriginalConstructor()
 			->getMock();
 	}
 
-	protected function teardown() {
+	protected function teardown():void {
 		unset($this->environmentMock);
 	}
 
@@ -70,6 +71,20 @@ class RequestTest extends TestCase {
 		$request = new Request($this->environmentMock);
 
 		$this->environmentMock
+			->expects($this->any())
+			->method('__get')
+			->willReturnMap([
+				['Headers', $headers],
+				['ServerParams', $serverParams],
+				['GetParams', $getParams],
+				['PostParams', $postParams],
+				['PutParams', $putParams],
+				['PatchParams', $patchParams],
+				['DeleteParams', $deleteParams],
+				['Input', $input]
+			]);
+
+		/*$this->environmentMock
 			->expects($this->at(0))
 			->method('__get')
 			->with($this->equalTo('Headers'))
@@ -108,7 +123,7 @@ class RequestTest extends TestCase {
 			->expects($this->at(7))
 			->method('__get')
 			->with($this->equalTo('Input'))
-			->will($this->returnValue($input));
+			->will($this->returnValue($input));*/
 
 		$this->assertEquals(
 			array_change_key_case($headers),
@@ -127,8 +142,8 @@ class RequestTest extends TestCase {
 		$this->assertEquals($expectedProtocol, $request->Protocol);
 		$this->assertEquals($expectedHost, $request->Host);
 		$this->assertEquals($expectedPort, $request->Port);
-		$this->assertEquals($expectedURL, $request->URL);
 		$this->assertEquals($expectedURI, $request->URI);
+		$this->assertEquals($expectedURL, $request->URL);
 		$this->assertEquals($expectedPath, $request->Path);
 		$this->assertEquals($expectedRemoteIP, $request->RemoteIP);
 		$this->assertEquals($expectedBody, $request->Body);
@@ -809,7 +824,6 @@ class RequestTest extends TestCase {
 	}
 
 	public function testUnsettableProperties() {
-		/** @var Request $request */
 		$request = new Request($this->environmentMock);
 
 		$this->expectException('\InvalidArgumentException');

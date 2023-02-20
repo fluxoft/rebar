@@ -2,15 +2,18 @@
 
 namespace Fluxoft\Rebar\Db;
 
+use Doctrine\DBAL\Connection;
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
 class MapperTest extends TestCase {
-	/** @var \PHPUnit_Framework_MockObject_MockObject */
+	/** @var MapperFactory|MockObject */
 	private $mapperFactoryObserver;
+	/** @var ConcreteModelForMapperTest|MockObject */
 	private $concreteModelObserver;
-	/** @var \PHPUnit_Framework_MockObject_MockObject */
+	/** @var Connection|MockObject */
 	private $connectionObserver;
-	protected function setup() {
+	protected function setup():void {
 		$this->mapperFactoryObserver = $this->getMockBuilder('\Fluxoft\Rebar\Db\MapperFactory')
 			->disableOriginalConstructor()
 			->getMock();
@@ -22,7 +25,7 @@ class MapperTest extends TestCase {
 			->getMock();
 	}
 
-	protected function teardown() {
+	protected function teardown():void {
 		unset($this->connectionObserver);
 		unset($this->modelObserver);
 		unset($this->mapperFactoryObserver);
@@ -58,7 +61,7 @@ class MapperTest extends TestCase {
 
 		$this->connectionObserver
 			->expects($this->once())
-			->method('fetchAll')
+			->method('fetchAllAssociative')
 			->will($this->returnValue($results));
 
 		$model = $mapper->GetOneById($requestId);
@@ -108,7 +111,7 @@ class MapperTest extends TestCase {
 
 		$this->connectionObserver
 			->expects($this->once())
-			->method('fetchAll')
+			->method('fetchAllAssociative')
 			->will($this->returnValue($results));
 
 		$model = $mapper->GetOneWhere($filter);
@@ -166,7 +169,7 @@ class MapperTest extends TestCase {
 
 		$this->connectionObserver
 			->expects($this->once())
-			->method('fetchAll')
+			->method('fetchAllAssociative')
 			->will($this->returnValue($results));
 
 		$modelSet = $mapper->GetSetWhere($filter, $sort, $page, $pageSize);
@@ -266,7 +269,10 @@ class MapperTest extends TestCase {
 			$this->connectionObserver
 		);
 
-		$statementObserver = $this->getMockBuilder('\Doctrine\DBAL\Driver\Statement')
+		$statementObserver = $this->getMockBuilder('\Doctrine\DBAL\Statement')
+			->disableOriginalConstructor()
+			->getMock();
+		$resultObserver = $this->getMockBuilder('\Doctrine\DBAL\Result')
 			->disableOriginalConstructor()
 			->getMock();
 
@@ -276,7 +282,11 @@ class MapperTest extends TestCase {
 			->will($this->returnValue($statementObserver));
 		$statementObserver
 			->expects($this->once())
-			->method('fetchColumn')
+			->method('executeQuery')
+			->will($this->returnValue($resultObserver));
+		$resultObserver
+			->expects($this->once())
+			->method('fetchOne')
 			->will($this->returnValue(1));
 
 		$count = $mapper->CountWhere(['Name' => 'foo']);
@@ -413,7 +423,7 @@ class MapperTest extends TestCase {
 
 		$this->connectionObserver
 			->expects($this->once())
-			->method('fetchAll')
+			->method('fetchAllAssociative')
 			->will($this->returnValue([
 				[
 					'Id'   => 1,
@@ -434,7 +444,7 @@ class MapperTest extends TestCase {
 
 		$this->connectionObserver
 			->expects($this->once())
-			->method('fetchAll')
+			->method('fetchAllAssociative')
 			->will($this->returnValue([
 				[
 					'Id'   => 1,

@@ -2,17 +2,19 @@
 
 namespace Fluxoft\Rebar\Auth;
 
+use Fluxoft\Rebar\Http\Request;
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
 class BasicTest extends TestCase {
-	/** @var \PHPUnit_Framework_MockObject_MockObject */
+	/** @var UserMapperInterface|MockObject  */
 	private $userMapperObserver;
-	/** @var \PHPUnit_Framework_MockObject_MockObject */
+	/** @var UserInterface|MockObject */
 	private $userObserver;
-	/** @var \PHPUnit_Framework_MockObject_MockObject */
+	/** @var Request|MockObject */
 	private $requestObserver;
 
-	protected function setup() {
+	protected function setup():void {
 		$this->userMapperObserver = $this->getMockBuilder('\Fluxoft\Rebar\Auth\UserMapperInterface')
 			->getMock();
 		$this->userObserver       = $this->getMockBuilder('\Fluxoft\Rebar\Auth\UserInterface')
@@ -22,7 +24,7 @@ class BasicTest extends TestCase {
 			->getMock();
 	}
 
-	protected function teardown() {
+	protected function teardown():void {
 		unset($this->requestObserver);
 		unset($this->userObserver);
 		unset($this->userMapperObserver);
@@ -39,26 +41,22 @@ class BasicTest extends TestCase {
 				'realm',
 				'message'
 			])
-			->setMethods(['sendChallenge', 'Login'])
+			->onlyMethods(['sendChallenge', 'Login'])
 			->getMock();
 
 		$this->requestObserver
-			->expects($this->at(0))
+			->expects($this->any())
 			->method('Server')
-			->with('PHP_AUTH_USER')
-			->will($this->returnValue($phpAuthUser));
+			->will($this->returnValueMap([
+				['PHP_AUTH_USER', null, $phpAuthUser],
+				['PHP_AUTH_PW', null, '']
+			]));
 
-		$reply = null;
 		if (!isset($phpAuthUser)) {
 			$basicMock
 				->expects($this->once())
 				->method('sendChallenge');
 		} else {
-			$this->requestObserver
-				->expects($this->at(1))
-				->method('Server')
-				->with('PHP_AUTH_PW')
-				->will($this->returnValue(''));
 			$basicMock
 				->expects($this->once())
 				->method('Login')
@@ -68,7 +66,7 @@ class BasicTest extends TestCase {
 		$reply = $basicMock->GetAuthenticatedUser($this->requestObserver);
 		unset($reply);
 	}
-	public function authUserProvider () {
+	public function authUserProvider ():array {
 		return [
 			[
 				'user' => null

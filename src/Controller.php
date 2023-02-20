@@ -100,20 +100,19 @@ abstract class Controller {
 	 * @throws CrossOriginException
 	 * @throws MethodNotAllowedException
 	 */
-	public function Authorize($method) {
+	public function Authorize($method): bool {
 		$allowedMethods = array_map('strtoupper', $this->allowedMethods);
 		$requestHeaders = $this->request->Headers;
 		$requestMethod  = $this->request->Method;
 
 		// always allow OPTIONS requests
 		if (!in_array('OPTIONS', $allowedMethods)) {
-			array_push($allowedMethods, 'OPTIONS');
+			$allowedMethods[] = 'OPTIONS';
 		}
 		// set CORS headers if configured
 		if ($this->crossOriginEnabled) {
 			if (isset($requestHeaders['Origin'])) {
-				$allowedHeaders = (isset($requestHeaders['Access-Control-Request-Headers']) ?
-					$requestHeaders['Access-Control-Request-Headers'] : '');
+				$allowedHeaders = ($requestHeaders['Access-Control-Request-Headers'] ?? '');
 				$origin         = $requestHeaders['Origin'];
 				if (in_array($origin, $this->crossOriginDomainsAllowed)) {
 					$this->response->AddHeader('Access-Control-Allow-Origin', $origin);
@@ -138,7 +137,6 @@ abstract class Controller {
 			return true;
 		}
 		if (isset($this->auth) && $this->methodRequiresAuthentication($method)) {
-			/** @var \Fluxoft\Rebar\Auth\Reply $authReply */
 			$authReply = $this->auth->GetAuthenticatedUser($this->request);
 			if (!$authReply->Auth) {
 				// method is limited and user is not authenticated

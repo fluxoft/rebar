@@ -2,15 +2,17 @@
 
 namespace Fluxoft\Rebar\Presenters;
 
+use Fluxoft\Rebar\Http\Response;
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
 class SmartyTest extends TestCase {
-	/** @var \PHPUnit_Framework_MockObject_MockObject */
+	/** @var Response|MockObject */
 	private $responseObserver;
-	/** @var \PHPUnit_Framework_MockObject_MockObject */
+	/** @var MockObject|\Smarty */
 	private $smartyObserver;
 
-	protected function setup() {
+	protected function setup():void {
 		$this->responseObserver = $this->getMockBuilder('\Fluxoft\Rebar\Http\Response')
 			->disableOriginalConstructor()
 			->getMock();
@@ -19,7 +21,7 @@ class SmartyTest extends TestCase {
 			->getMock();
 	}
 
-	protected function teardown() {
+	protected function teardown():void {
 		unset($this->responseObserver);
 		unset($this->smartyObserver);
 	}
@@ -44,16 +46,19 @@ class SmartyTest extends TestCase {
 
 		if (strlen($layout)) {
 			$this->smartyObserver
-				->expects($this->at(0))
+				->expects($this->any())
 				->method('assign')
-				->with($data);
-			$this->smartyObserver
+				->withConsecutive(
+					[$data],
+					['templateFile', $templatePath.$template]
+				);
+			/*$this->smartyObserver
 				->expects($this->at(1))
 				->method('assign')
 				->with(
 					'templateFile',
 					$templatePath.$template
-				);
+				);*/
 			$renderTemplate = $templatePath.$layout;
 		} else {
 			$this->smartyObserver

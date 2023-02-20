@@ -19,7 +19,8 @@ class ModelTest extends TestCase {
 		$this->expectExceptionMessage('You must specify the database table in dbTable');
 		$model = new ConcreteModel(
 			[],
-			['foo' => 'bar']
+			['foo' => 'bar'],
+			''
 		);
 		unset($model);
 	}
@@ -36,15 +37,15 @@ class ModelTest extends TestCase {
 	}
 
 	/**
-	 * @param array $initialProperties
-	 * @param array $initialPropertyDbMap
+	 * @param array  $initialProperties
+	 * @param array  $initialPropertyDbMap
 	 * @param string $initialDbTable
 	 * @param string $initialIdProperty
-	 * @param array $properties
-	 * @param array $expectProperties
-	 * @param array $expectPropertyDbMap
+	 * @param array  $properties
+	 * @param array  $expectProperties
+	 * @param array  $expectPropertyDbMap
 	 * @param string $expectIdColumn
-	 * @param string $expectIdType
+	 * @param int    $expectIdType
 	 * @dataProvider modelProvider
 	 */
 	public function testModel(
@@ -56,7 +57,7 @@ class ModelTest extends TestCase {
 		array  $expectProperties     = [],
 		array  $expectPropertyDbMap  = [],
 		string $expectIdColumn       = '',
-		string $expectIdType         = ''
+		int    $expectIdType         = 0
 	) {
 		$model = new ConcreteModel(
 			$initialProperties,

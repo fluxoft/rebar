@@ -11,7 +11,7 @@ class CookiesTest extends TestCase {
 	 * @param $cookieReturn
 	 * @dataProvider cookiesProvider
 	 */
-	public function test($settings = [], $cookieSet = [], $cookieReturn) {
+	public function test(bool $cookieReturn, array $settings = [], array $cookieSet = []) {
 		$cookies = new MockableCookies($settings);
 
 		$cookies->SetCookies($cookieSet);
@@ -41,14 +41,14 @@ class CookiesTest extends TestCase {
 	public function cookiesProvider() {
 		return [
 			'blank' => [
+				'cookiesReturn' => true,
 				'settings' => [],
-				'cookieSet' => [],
-				'cookiesReturn' => true
+				'cookieSet' => []
 			],
 			'failedSet' => [
+				'cookiesReturn' => false,
 				'settings' => [],
-				'cookieSet' => [],
-				'cookiesReturn' => false
+				'cookieSet' => []
 			]
 		];
 	}

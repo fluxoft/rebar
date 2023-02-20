@@ -2,6 +2,7 @@
 namespace Fluxoft\Rebar\Presenters;
 
 use \Fluxoft\Rebar\Http\Response;
+use Twig\Environment;
 
 /**
  * Class Twig
@@ -10,19 +11,19 @@ use \Fluxoft\Rebar\Http\Response;
  * @property string Template
  */
 class Twig implements PresenterInterface {
-	/** @var \Twig_Environment */
+	/** @var Environment */
 	protected $twig;
 	protected $templatePath;
 	protected $template;
 	protected $layout;
 
 	public function __construct(
-		\Twig_Environment $twig,
+		Environment $twig,
 		$template = '/default.html.twig',
 		$layout = ''
 	) {
-		/*$loader = new \Twig_Loader_Filesystem($templatePath);
-		$twig   = new \Twig_Environment($loader, array(
+		/*$loader = new \Twig\Loader\FilesystemLoader($templatePath);
+		$twig   = new \Twig\Environment($loader, array(
 			'cache' => $cachePath,
 			'debug' => $debug
 		));*/

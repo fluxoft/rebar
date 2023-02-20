@@ -9,9 +9,9 @@ use PHPUnit\Framework\TestCase;
  * @package Fluxoft\Rebar\Http
  */
 class EnvironmentTest extends TestCase {
-	protected function setup() {}
+	protected function setup():void {}
 
-	protected function teardown() {}
+	protected function teardown():void {}
 
 	public function testGetInstance() {
 		$environment = MockableEnvironment::GetInstance();

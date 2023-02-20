@@ -9,9 +9,9 @@ use PHPUnit\Framework\TestCase;
  * @package Fluxoft\Rebar\Auth\Db
  */
 class TokenTest extends TestCase {
-	protected function setup() {}
+	protected function setup():void {}
 
-	protected function teardown() {}
+	protected function teardown():void {}
 
 	public function testNullToken () {
 		$this->expectException('Fluxoft\Rebar\Auth\Exceptions\InvalidTokenException');
