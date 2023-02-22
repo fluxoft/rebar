@@ -5,22 +5,37 @@ version: 2.1
 # Define a job to be invoked later in a workflow.
 # See: https://circleci.com/docs/2.0/configuration-reference/#jobs
 jobs:
-  say-hello:
+  build:
     # Specify the execution environment. You can specify an image from Dockerhub or use one of our Convenience Images from CircleCI's Developer Hub.
     # See: https://circleci.com/docs/2.0/configuration-reference/#docker-machine-macos-windows-executor
     docker:
-      - image: cimg/base:stable
+      - image: cimg/php:7.4
     # Add steps to the job
     # See: https://circleci.com/docs/2.0/configuration-reference/#steps
     steps:
       - checkout
       - run:
+          name: "update composer"
+          command: 'composer self-update'
+      - restore_cache:
+          key: dependency-cache-{{ checksum "composer.lock" }}
+      - run:
+          name: "composer install"
+          command: "composer install --prefer-dist --no-interaction"
+      - run:
           name: "Say hello"
           command: "echo Hello, World!"
+      - save_cache:
+          key: dependency-cache-{{ checksum "composer.lock" }}
+          paths:
+            - ./vendor
+      - run:
+          name: "PHPUnit Tests"
+          command: "php vendor/phpunit/phpunit/phpunit -c phpunit.xml.dist"
 
 # Invoke jobs via workflows
 # See: https://circleci.com/docs/2.0/configuration-reference/#workflows
 workflows:
-  say-hello-workflow:
+  build-workflow:
     jobs:
-      - say-hello
+      - build
