@@ -14,9 +14,6 @@ jobs:
     # See: https://circleci.com/docs/2.0/configuration-reference/#steps
     steps:
       - checkout
-      - run:
-          name: "update composer"
-          command: 'composer self-update'
       - restore_cache:
           key: dependency-cache-{{ checksum "composer.lock" }}
       - run:
