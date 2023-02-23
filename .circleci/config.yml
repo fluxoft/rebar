@@ -15,6 +15,7 @@ jobs:
     environment:
       CLOVER_PATH: build/logs/clover.xml
       JSON_PATH: build/logs/clover.json
+      COVERALLS_REPO_TOKEN: yobS4YLbb6F1YmnYSjkr6PNKsMdjNY6GA
     # Add steps to the job
     # See: https://circleci.com/docs/2.0/configuration-reference/#steps
     steps:
