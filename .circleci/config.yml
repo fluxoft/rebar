@@ -14,6 +14,7 @@ jobs:
       - image: cimg/php:8.1
     environment:
       CLOVER_PATH: build/logs/clover.xml
+      JSON_PATH: build/logs/clover.json
     # Add steps to the job
     # See: https://circleci.com/docs/2.0/configuration-reference/#steps
     steps:
@@ -35,6 +36,7 @@ jobs:
           command: "phpdbg -qrr vendor/bin/phpunit -c phpunit.xml.dist"
       - php-coveralls/upload:
           clover-path: '${CLOVER_PATH}'
+          json-path: '${JSON_PATH}'
 
 # Invoke jobs via workflows
 # See: https://circleci.com/docs/2.0/configuration-reference/#workflows
