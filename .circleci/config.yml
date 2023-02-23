@@ -25,9 +25,6 @@ jobs:
       - run:
           name: "composer install"
           command: "composer install --prefer-dist --no-interaction"
-      - run:
-          name: "Say hello"
-          command: "echo Hello, World!"
       - save_cache:
           key: dependency-cache-{{ checksum "composer.lock" }}
           paths:
