@@ -28,7 +28,7 @@ jobs:
             - ./vendor
       - run:
           name: "PHPUnit Tests"
-          command: "php vendor/phpunit/phpunit/phpunit -c phpunit.xml.dist"
+          command: "phpdbg -qrr vendor/bin/phpunit -c phpunit.xml.dist"
 
 # Invoke jobs via workflows
 # See: https://circleci.com/docs/2.0/configuration-reference/#workflows
