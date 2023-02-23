@@ -2,6 +2,9 @@
 # See: https://circleci.com/docs/2.0/configuration-reference
 version: 2.1
 
+orbs:
+  php-coveralls: nekman/php-coveralls@1
+
 # Define a job to be invoked later in a workflow.
 # See: https://circleci.com/docs/2.0/configuration-reference/#jobs
 jobs:
@@ -10,6 +13,8 @@ jobs:
     # See: https://circleci.com/docs/2.0/configuration-reference/#docker-machine-macos-windows-executor
     docker:
       - image: cimg/php:8.1
+    environment:
+      CLOVER_PATH: build/logs/clover.xml
     # Add steps to the job
     # See: https://circleci.com/docs/2.0/configuration-reference/#steps
     steps:
@@ -29,10 +34,8 @@ jobs:
       - run:
           name: "PHPUnit Tests"
           command: "phpdbg -qrr vendor/bin/phpunit -c phpunit.xml.dist"
-      - run:
-          name: "Coveralls Upload"
-          command: "php vendor/bin/php-coveralls -v"
-
+      - php-coveralls/upload:
+          clover-path: '${CLOVER_PATH}'
 
 # Invoke jobs via workflows
 # See: https://circleci.com/docs/2.0/configuration-reference/#workflows
