@@ -10,4 +10,4 @@ This is beta software. Use at your own risk (although I feel pretty close to mak
 [![Coverage Status](https://coveralls.io/repos/github/fluxoft/rebar/badge.svg)](https://coveralls.io/github/fluxoft/rebar)
 [![License](https://poser.pugx.org/fluxoft/rebar/license)](https://packagist.org/packages/fluxoft/rebar)
 
-Docs will be forthcoming soon...
+Docs will be forthcoming soon.
