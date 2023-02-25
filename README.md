@@ -12,4 +12,4 @@ This is beta software. Use at your own risk (although I feel pretty close to mak
 
 Docs will be forthcoming soon.
 
-another commit to test CircleCI pull request building
+yet another commit to test CircleCI pull request building
