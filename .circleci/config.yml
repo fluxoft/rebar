@@ -30,7 +30,13 @@ jobs:
           paths:
             - ./vendor
       - run:
-          name: "PHPUnit Tests"
+          name: "PHP CodeSniffer: Source"
+          command: "vendor/bin/phpcs --standard=ruleset.xml src/"
+      - run:
+          name: "PHP CodeSniffer: Tests"
+          command: "vendor/bin/phpcs --standard=ruleset.xml tests/"
+      - run:
+          name: "PHPUnit"
           command: "phpdbg -qrr vendor/bin/phpunit -c phpunit.xml.dist"
       - php-coveralls/upload:
           clover-path: '${CLOVER_PATH}'

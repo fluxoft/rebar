@@ -272,7 +272,7 @@ class MapperTest extends TestCase {
 		$statementObserver = $this->getMockBuilder('\Doctrine\DBAL\Statement')
 			->disableOriginalConstructor()
 			->getMock();
-		$resultObserver = $this->getMockBuilder('\Doctrine\DBAL\Result')
+		$resultObserver    = $this->getMockBuilder('\Doctrine\DBAL\Result')
 			->disableOriginalConstructor()
 			->getMock();
 

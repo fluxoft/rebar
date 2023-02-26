@@ -11,5 +11,3 @@ This is beta software. Use at your own risk (although I feel pretty close to mak
 [![License](https://poser.pugx.org/fluxoft/rebar/license)](https://packagist.org/packages/fluxoft/rebar)
 
 Docs will be forthcoming soon.
-
-trying another config setup to get pull request builds to work on CircleCI
