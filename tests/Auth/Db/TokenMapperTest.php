@@ -19,7 +19,7 @@ class TokenMapperTest extends TestCase {
 		$this->connectionObserver = $this->getMockBuilder('\Doctrine\DBAL\Connection')
 			->disableOriginalConstructor()
 			->getMock();
-		$this->resultObserver  = $this->getMockBuilder('\Doctrine\DBAL\Result')
+		$this->resultObserver     = $this->getMockBuilder('\Doctrine\DBAL\Result')
 			->disableOriginalConstructor()
 			->getMock();
 	}
