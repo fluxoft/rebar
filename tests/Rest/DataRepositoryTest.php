@@ -685,14 +685,12 @@ class DataRepositoryTest extends TestCase {
 	/**
 	 * @param array $model
 	 * @param int $authUserId
-	 * @param array $saveModel
-	 * @param string $expectedExceptionClass
+	 * @param string|null $expectedExceptionClass
 	 * @dataProvider PostProvider
 	 */
 	public function testPost(
 		array  $model,
 		int    $authUserId,
-		array  $saveModel,
 		string $expectedExceptionClass = null
 	) {
 		$dataRepository = $this->getMockBuilder('\Fluxoft\Rebar\Rest\DataRepository')
@@ -728,16 +726,7 @@ class DataRepositoryTest extends TestCase {
 
 		$expectedReply = new Reply();
 		if (isset($expectedExceptionClass)) {
-			/*$expectedException = $this->getMockBuilder('\Exception')
-				->disableOriginalConstructor()
-				->getMock();
-			$expectedException
-				->expects($this->any())
-				->method('getMessage')
-				->will($this->returnValue('exception'));*/
-
 			$expectedException = new $expectedExceptionClass('exception');
-			//$expectedException = new \Exception('exception');
 
 			$this->mapperObserver
 				->expects($this->once())
@@ -821,32 +810,20 @@ class DataRepositoryTest extends TestCase {
 					'UserId' => 1,
 					'Foo' => 'Bar'
 				],
-				'authUserId' => 1,
-				'saveModel' => [
-					'UserId' => 1,
-					'Foo' => 'Bar'
-				]
+				'authUserId' => 1
 			],
 			[
 				'model' => [
 					'UserId' => 2,
 					'Foo' => 'Bar'
 				],
-				'authUserId' => 1,
-				'saveModel' => [
-					'UserId' => 1,
-					'Foo' => 'Bar'
-				]
+				'authUserId' => 1
 			],
 			[
 				'model' => [
 					'Foo' => 'Bar'
 				],
-				'authUserId' => 1,
-				'saveModel' => [
-					'Foo' => 'Bar',
-					'UserId' => 1
-				]
+				'authUserId' => 1
 			],
 			[
 				'model' => [
@@ -854,34 +831,14 @@ class DataRepositoryTest extends TestCase {
 					'Foo' => 'Bar'
 				],
 				'authUserId' => 1,
-				'saveModel' => [
-					'UserId' => 1,
-					'Foo' => 'Bar'
-				],
 				'exception' => '\InvalidArgumentException'
 			],
-			/*[
-				'model' => [
-					'UserId' => 1,
-					'Foo' => 'Bar'
-				],
-				'authUserId' => 1,
-				'saveModel' => [
-					'UserId' => 1,
-					'Foo' => 'Bar'
-				],
-				'exception' => '\Doctrine\DBAL\Exception\UniqueConstraintViolationException'
-			],*/
 			[
 				'model' => [
 					'UserId' => 1,
 					'Foo' => 'Bar'
 				],
 				'authUserId' => 1,
-				'saveModel' => [
-					'UserId' => 1,
-					'Foo' => 'Bar'
-				],
 				'exception' => '\Doctrine\DBAL\Exception'
 			],
 			[
@@ -890,10 +847,6 @@ class DataRepositoryTest extends TestCase {
 					'Foo' => 'Bar'
 				],
 				'authUserId' => 1,
-				'saveModel' => [
-					'UserId' => 1,
-					'Foo' => 'Bar'
-				],
 				'exception' => '\Exception'
 			]
 		];
