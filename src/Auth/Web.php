@@ -2,6 +2,7 @@
 
 namespace Fluxoft\Rebar\Auth;
 
+use Doctrine\DBAL\Exception;
 use Fluxoft\Rebar\Auth\Db\Token;
 use Fluxoft\rebar\Auth\Db\TokenMapper;
 use Fluxoft\Rebar\Auth\Db\User;
@@ -106,17 +107,22 @@ class Web implements AuthInterface {
 	 * @param bool $remember
 	 * @return \Fluxoft\Rebar\Auth\Reply
 	 */
-	public function Login($username, $password, $remember = false) {
+	public function Login($username, $password, $remember = false): Reply {
 		$reply = new Reply();
-		$user  = $this->userMapper->GetAuthorizedUserForUsernameAndPassword($username, $password);
-		if ($user instanceof UserInterface) {
+		try {
+			$user         = $this->userMapper->GetAuthorizedUserForUsernameAndPassword($username, $password);
 			$tokenString  = $this->setTokens($user, null, $remember);
 			$reply->Auth  = true;
 			$reply->User  = $user;
 			$reply->Token = $tokenString;
 			$this->auth   = $reply;
+			return $reply;
+		} catch (Exceptions\InvalidPasswordException|Exceptions\UserNotFoundException $e) {
+			$reply->Auth    = false;
+			$reply->Message = $e->getMessage();
+			$this->auth     = $reply;
+			return $this->auth;
 		}
-		return $reply;
 	}
 
 	/**
