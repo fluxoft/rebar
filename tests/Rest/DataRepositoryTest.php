@@ -1342,7 +1342,7 @@ class MockDataRepository extends DataRepository {
 // @codingStandardsIgnoreStart
 class TestModel extends Model {
 	// @codingStandardsIgnoreEnd
-	protected $dbTable = 'test';
+	protected $dbTable       = 'test';
 	protected $propertyDbMap = [
 		'Id'     => 'id',
 		'UserId' => 'user_id'
