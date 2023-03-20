@@ -12,17 +12,17 @@ use Fluxoft\Rebar\FactoryInterface;
  */
 abstract class MapperFactory implements FactoryInterface {
 	/** @var Connection */
-	protected $reader;
+	protected Connection $reader;
 	/** @var Connection */
-	protected $writer;
+	protected Connection $writer;
 	/** @var string */
-	protected $mapperNamespace = '';
+	protected string $mapperNamespace = '';
 	/** @var string */
-	protected $modelNamespace = '';
+	protected string $modelNamespace = '';
 
 	/**
 	 * @param Connection $reader
-	 * @param Connection $writer
+	 * @param Connection|null $writer
 	 */
 	public function __construct(Connection $reader, Connection $writer = null) {
 		$this->reader = $reader;
@@ -30,13 +30,13 @@ abstract class MapperFactory implements FactoryInterface {
 	}
 
 	/**
-	 * @param string $mapperName
+	 * @param string $className
 	 * @param array $extra Should be either ['model' => {\Fluxoft\Rebar\Db\Model}]
 	 *                     or ['modelClass' => 'ModelClass']
 	 * @return Mapper
 	 * @throws MapperFactoryException
 	 */
-	public function Build(string $mapperName, array $extra = []) {
+	public function Build(string $className, array $extra = []): Mapper {
 		// Mappers need the model to be mapped. If not given in $extra, make a guess based
 		// on the name of the Mapper being constructed. If the $mapperName ends in "Mapper",
 		// strip that word off and use what's left, e.g. a mapper called "ModelMapper" will
@@ -47,10 +47,10 @@ abstract class MapperFactory implements FactoryInterface {
 				$this->modelNamespace.$extra['modelClass'] :
 				null;
 			if (!isset($modelClass)) {
-				if (substr($mapperName, -6) === 'Mapper') {
-					$modelClass = substr($mapperName, 0, strlen($mapperName) - 6);
+				if (str_ends_with($className, 'Mapper')) {
+					$modelClass = $this->modelNamespace.substr($className, 0, strlen($className) - 6);
 				} else {
-					$modelClass = $mapperName;
+					$modelClass = $this->modelNamespace.$className;
 				}
 			}
 			if (class_exists($modelClass)) {
@@ -69,7 +69,7 @@ abstract class MapperFactory implements FactoryInterface {
 			));
 		}
 
-		$mapperClass = $this->mapperNamespace.$mapperName;
+		$mapperClass = $this->mapperNamespace.$className;
 		if (class_exists($mapperClass)) {
 			/** @var Mapper $mapper */
 			$mapper = new $mapperClass(

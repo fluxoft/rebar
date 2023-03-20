@@ -6,6 +6,7 @@ use Doctrine\DBAL\Exception as DBALException;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Fluxoft\Rebar\Auth\Db\User;
 use Fluxoft\Rebar\Db\Exceptions\InvalidModelException;
+use Fluxoft\Rebar\Db\Filter;
 use Fluxoft\Rebar\Db\Mapper;
 use Fluxoft\Rebar\Http\Request;
 use Psr\Log\LoggerInterface;
@@ -91,7 +92,7 @@ class DataRepository implements RepositoryInterface {
 		switch (count($params)) {
 			case 0:
 				$page     = 1;
-				$pageSize = null;
+				$pageSize = 0;
 				$get      = $request->Get();
 				if (isset($this->defaultPageSize) && is_int($this->defaultPageSize)) {
 					$pageSize = $this->defaultPageSize;
@@ -127,8 +128,16 @@ class DataRepository implements RepositoryInterface {
 					}
 					unset($get['order']);
 				}
-				$set   = $this->mapper->GetSetWhere($get, $order, $page, $pageSize);
-				$count = $this->mapper->CountWhere($get);
+				$filters = [];
+				foreach ($get as $key => $value) {
+					$filters[] = new Filter(
+						$key,
+						'=',
+						$value
+					);
+				}
+				$set   = $this->mapper->GetSetWhere($filters, $order, $page, $pageSize);
+				$count = $this->mapper->CountWhere($filters);
 				$pages = (isset($pageSize) && $pageSize > 0) ? ceil($count/$pageSize) : 1;
 
 				$reply->Data = $set;
