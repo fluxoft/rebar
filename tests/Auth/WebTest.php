@@ -3,6 +3,8 @@
 namespace Fluxoft\Rebar\Auth;
 
 use Fluxoft\Rebar\Auth\Db\Token;
+use Fluxoft\Rebar\Auth\Exceptions\InvalidPasswordException;
+use Fluxoft\Rebar\Auth\Exceptions\UserNotFoundException;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
@@ -394,7 +396,7 @@ class WebTest extends TestCase {
 		);
 	}
 
-	public function testLoginFail() {
+	public function testLoginUserNotFound() {
 		$web = new Web(
 			$this->userMapperObserver,
 			$this->tokenMapperObserver,
@@ -402,12 +404,33 @@ class WebTest extends TestCase {
 			$this->sessionObserver
 		);
 
-		$expectedReply = new Reply();
-
+		$expectedReply          = new Reply();
+		$expectedReply->Auth    = false;
+		$expectedReply->Message = 'User not found';
 		$this->userMapperObserver
 			->expects($this->once())
 			->method('GetAuthorizedUserForUsernameAndPassword')
-			->will($this->returnValue(null));
+			->willThrowException(new UserNotFoundException('User not found'));
+
+		$this->assertEquals(
+			$expectedReply, $web->Login('user', 'pass')
+		);
+	}
+	public function testLoginInvalidPassword() {
+		$web = new Web(
+			$this->userMapperObserver,
+			$this->tokenMapperObserver,
+			$this->cookiesObserver,
+			$this->sessionObserver
+		);
+
+		$expectedReply          = new Reply();
+		$expectedReply->Auth    = false;
+		$expectedReply->Message = 'Incorrect password';
+		$this->userMapperObserver
+			->expects($this->once())
+			->method('GetAuthorizedUserForUsernameAndPassword')
+			->willThrowException(new InvalidPasswordException('Incorrect password'));
 
 		$this->assertEquals(
 			$expectedReply, $web->Login('user', 'pass')
@@ -437,10 +460,10 @@ class WebTest extends TestCase {
 		$this->sessionObserver
 			->expects($this->exactly(2))
 			->method('Set')
-			->withConsecutive(
+			->willReturnMap([
 				['AuthUserId', 1],
 				['AuthToken', $this->isType('string')]
-			);
+			]);
 		$this->cookiesObserver
 			->expects($this->once())
 			->method('Set')

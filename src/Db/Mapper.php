@@ -3,8 +3,10 @@
 namespace Fluxoft\Rebar\Db;
 
 use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\Exception;
 use Fluxoft\Rebar\Db\Exceptions\InvalidModelException;
 use Fluxoft\Rebar\Db\Exceptions\MapperException;
+use JetBrains\PhpStorm\ArrayShape;
 
 /**
  * Class Mapper
@@ -12,24 +14,23 @@ use Fluxoft\Rebar\Db\Exceptions\MapperException;
  */
 abstract class Mapper {
 	/** @var MapperFactory */
-	protected $mapperFactory;
-	/** @var \Fluxoft\Rebar\Db\Model */
-	protected $model = null;
+	protected MapperFactory $mapperFactory;
+	/** @var Model */
+	protected Model $model;
 	/** @var Connection */
-	protected $reader;
+	protected Connection $reader;
 	/** @var Connection */
-	protected $writer;
-	/** @var string */
-	protected $selectSql = null;
-	/** @var string */
-	protected $countSql = null;
+	protected Connection $writer;
+	/** @var string|null */
+	protected ?string $selectSql = null;
+	/** @var string|null */
+	protected ?string $countSql = null;
 
 	/**
 	 * @param MapperFactory $mapperFactory
 	 * @param Model $model
 	 * @param Connection $reader
-	 * @param Connection $writer
-	 * @throws MapperException
+	 * @param Connection|null $writer
 	 */
 	public function __construct(
 		MapperFactory $mapperFactory,
@@ -44,20 +45,24 @@ abstract class Mapper {
 	}
 
 	/**
-	 * @return Model
+	 * @return Model|null
 	 */
-	public function GetNew() {
+	public function GetNew(): ?Model {
 		return clone $this->model;
 	}
 
 	/**
 	 * @param $id
 	 * @return Model|null
-	 * @throws \Doctrine\DBAL\Exception
+	 * @throws Exception
 	 */
-	public function GetOneById($id) {
+	public function GetOneById($id): ?Model {
 		$idProperty = $this->model->GetIdProperty();
-		$select     = $this->getSelect([$idProperty => $id], [], 1, 1);
+		$select     = $this->getSelect(
+			[new Filter($idProperty, '=', $id)],
+			[],
+			1,
+			1);
 		$results    = $this->reader->fetchAllAssociative(
 			$select['sql'],
 			$select['params']
@@ -70,11 +75,12 @@ abstract class Mapper {
 	}
 
 	/**
-	 * @param array $filter
-	 * @return null
+	 * @param Filter[] $filters
+	 * @return Model|null
+	 * @throws Exception
 	 */
-	public function GetOneWhere($filter = []) {
-		$select  = $this->getSelect($filter, [], 1, 1);
+	public function GetOneWhere(array $filters = []): ?Model {
+		$select  = $this->getSelect($filters, [], 1, 1);
 		$results = $this->reader->fetchAllAssociative(
 			$select['sql'],
 			$select['params']
@@ -87,14 +93,20 @@ abstract class Mapper {
 	}
 
 	/**
-	 * @param array $filter
+	 * @param Filter[] $filters
 	 * @param array $sort
 	 * @param int $page
 	 * @param int $pageSize
 	 * @return array
+	 * @throws Exception
 	 */
-	public function GetSetWhere($filter = [], $sort = [], $page = 1, $pageSize = 0) {
-		$select  = $this->getSelect($filter, $sort, $page, $pageSize);
+	public function GetSetWhere(
+		array $filters = [],
+		array $sort = [],
+		int   $page = 1,
+		int   $pageSize = 0
+	): array {
+		$select  = $this->getSelect($filters, $sort, $page, $pageSize);
 		$results = $this->reader->fetchAllAssociative(
 			$select['sql'],
 			$select['params']
@@ -103,10 +115,12 @@ abstract class Mapper {
 	}
 
 	/**
-	 * @throws \Doctrine\DBAL\Exception
+	 * @param Filter[] $filters
+	 * @return int
+	 * @throws Exception
 	 */
-	public function CountWhere($filter = []) {
-		$count  = $this->countSelect($filter);
+	public function CountWhere(array $filters = []): int {
+		$count  = $this->countSelect($filters);
 		$stmt   = $this->reader->prepare($count['sql']);
 		$result = $stmt->executeQuery($count['params']);
 		$total  = $result->fetchOne();
@@ -115,6 +129,8 @@ abstract class Mapper {
 
 	/**
 	 * @param Model $model
+	 * @throws InvalidModelException
+	 * @throws Exception
 	 */
 	public function Save(Model $model) {
 		if ($model->GetId() === 0) {
@@ -128,7 +144,7 @@ abstract class Mapper {
 
 	/**
 	 * @param Model $model
-	 * @throws \Doctrine\DBAL\Exception
+	 * @throws Exception
 	 */
 	public function Delete(Model &$model) {
 		$idColumn = $model->GetIdColumn();
@@ -139,29 +155,31 @@ abstract class Mapper {
 
 	/**
 	 * @param $id
+	 * @throws Exception
 	 */
 	public function DeleteOneById($id) {
 		/** @var Model $model */
 		$model = $this->GetOneById($id);
-		if ($model !== false) {
+		if (isset($model)) {
 			$this->Delete($model);
 		}
 	}
 
 	/**
-	 * @param array $filter
+	 * @param array $filters
+	 * @throws Exception
 	 */
-	public function DeleteOneWhere($filter = []) {
+	public function DeleteOneWhere(array $filters = []) {
 		/** @var Model $model */
-		$model = $this->GetOneWhere($filter);
-		if ($model !== false) {
+		$model = $this->GetOneWhere($filters);
+		if (isset($model)) {
 			$this->Delete($model);
 		}
 	}
 
 	/**
 	 * @param Model $model
-	 * @throws InvalidModelException
+	 * @throws InvalidModelException|Exception
 	 */
 	public function Create(Model $model) {
 		if ($model->IsValid()) {
@@ -197,7 +215,7 @@ abstract class Mapper {
 
 	/**
 	 * @param Model $model
-	 * @throws \Doctrine\DBAL\Exception
+	 * @throws Exception
 	 * @throws InvalidModelException
 	 */
 	public function Update(Model $model) {
@@ -239,15 +257,21 @@ abstract class Mapper {
 	}
 
 	/**
-	 * @param array $filter Array of property names and values to filter by
-	 * @param array $sort Array of property names to sort by in the order they should be applied,
+	 * @param Filter[] $filters Array of Filter objects
+	 * @param array    $sort Array of property names to sort by in the order they should be applied,
 	 *                    e.g. ['Name', 'ID DESC']
-	 * @param int $page
-	 * @param int $pageSize
+	 * @param int      $page
+	 * @param int      $pageSize
 	 * @return array Contains 2 elements: 'sql' is the SQL statement, 'params' are the values
 	 *               to be passed to the prepared statement
 	 */
-	protected function getSelect($filter = [], $sort = [], $page = 1, $pageSize = 0) {
+	#[ArrayShape(['sql' => "null|string", 'params' => "array|\array|mixed|mixed"])]
+	protected function getSelect(
+		array $filters = [],
+		array $sort = [],
+		int   $page = 1,
+		int   $pageSize = 0
+	): array {
 		$dbTable       = $this->model->GetDbTable();
 		$properties    = $this->model->GetProperties();
 		$propertyDbMap = $this->model->GetPropertyDbMap();
@@ -261,7 +285,7 @@ abstract class Mapper {
 		}
 
 		$sql    = $this->selectSql;
-		$filter = $this->getFilter($filter);
+		$filter = $this->getFilter($filters);
 		$params = [];
 		if (strlen($filter['sql']) > 0) {
 			$sql   .= $filter['sql'];
@@ -297,13 +321,13 @@ abstract class Mapper {
 	}
 
 	/**
-	 * @param array $filter Array of property names and values to filter by
+	 * @param Filter[] $filters Array of property names and values to filter by
 	 * @return array Contains 2 elements: 'sql' is the SQL statement, 'params' are the values
 	 *               to be passed to the prepared statement
 	 */
-	protected function countSelect($filter = []) {
+	#[ArrayShape(['sql' => "null|string", 'params' => "array|mixed"])]
+	protected function countSelect(array $filters = []): array {
 		$dbTable       = $this->model->GetDbTable();
-		$properties    = $this->model->GetProperties();
 		$propertyDbMap = $this->model->GetPropertyDbMap();
 
 		if (!isset($this->countSql)) {
@@ -312,7 +336,7 @@ abstract class Mapper {
 		}
 
 		$sql    = $this->countSql;
-		$filter = $this->getFilter($filter);
+		$filter = $this->getFilter($filters);
 		$params = [];
 		if (strlen($filter['sql']) > 0) {
 			$sql   .= $filter['sql'];
@@ -325,69 +349,89 @@ abstract class Mapper {
 		];
 	}
 
-	protected function getFilter($filter = []) {
-		$filterString  = '';
-		$filterClauses = $this->getFilterClauses($filter);
+	/**
+	 * @throws MapperException
+	 */
+	#[ArrayShape(['sql' => "string", 'params' => "array|mixed"])]
+	protected function getFilter($filters = []): array {
+		$dbTable       = $this->model->GetDbTable();
+		$properties    = $this->model->GetProperties();
+		$propertyDbMap = $this->model->GetPropertyDbMap();
 		$params        = [];
-		if (isset($filterClauses['where'])) {
-			$filterString .= ' '.$filterClauses['where'];
-			$params        = $filterClauses['params'];
+		$whereFilters  = [];
+		$havingFilters = [];
+		$filterString  = '';
+
+		// Apply filters, if provided.
+		if (!empty($filters)) {
+			// If a filter is in the propertyDbMap, it is filtered in the WHERE clause
+			foreach ($filters as $filter) {
+				switch (strtoupper($filter->Operator)) {
+					case 'IN':
+						$placeHolders = [];
+						foreach ($filter->Value as $phKey => $value) {
+							$placeHolder          = $filter->Property.'_'.$phKey;
+							$placeHolders[]       = ':'.$placeHolder;
+							$params[$placeHolder] = $value;
+						}
+						$filterSql = 'IN ('.
+							implode(',', $placeHolders).')';
+						break;
+					case 'BETWEEN':
+						$filterSql = sprintf(
+							'BETWEEN :%s AND :%s',
+							$filter->Property.'_low',
+							$filter->Property.'_high'
+						);
+
+						$params[$filter->Property.'_low']  = $filter->Value[0];
+						$params[$filter->Property.'_high'] = $filter->Value[1];
+						break;
+					default:
+						$filterSql                 =
+							"$filter->Operator :{$filter->Property}";
+						$params[$filter->Property] = $filter->Value;
+				}
+
+				// If this is in propertyDbMap, it should be part of the WHERE clause
+				if (isset($propertyDbMap[$filter->Property])) {
+					$whereFilters[] = "`$dbTable`.`{$propertyDbMap[$filter->Property]['col']}` $filterSql";
+				}
+				// If not in propertyDbMap but in properties, put it in HAVING clause
+				elseif (isset($properties[$filter->Property])) {
+					$havingFilters[]           = "$filter->Property $filterSql";
+					$params[$filter->Property] = $filter->Value;
+				} else {
+					// If a filter was set that is neither in propertyDbMap nor in properties, it's an error
+					throw new MapperException(sprintf(
+						'Trying to filter on a non-property: %s',
+						$filter->Property
+					));
+				}
+			}
 		}
-		if (isset($filterClauses['having'])) {
-			$filterString .= ' '.$filterClauses['having'];
-			$params        = $filterClauses['params'];
+		if (!empty($whereFilters)) {
+			$filterString .= ' WHERE '.implode(' AND ', $whereFilters);
+		}
+		if (!empty($havingFilters)) {
+			$filterString .= ' HAVING '.implode(' AND ', $havingFilters);
 		}
 		return [
 			'sql' => $filterString,
 			'params' => $params
 		];
+		/*$filterClauses['params'] = $params;
+		return $filterClauses;*/
 	}
 
-	protected function getFilterClauses($filter = []) {
-		$dbTable       = $this->model->GetDbTable();
-		$properties    = $this->model->GetProperties();
-		$propertyDbMap = $this->model->GetPropertyDbMap();
-		$filterClauses = [];
-		$params        = [];
-		// Apply filters, if provided.
-		if (!empty($filter)) {
-			// If a filter is in the propertyDbMap, it is filtered in the WHERE clause
-			$whereFilters = [];
-			foreach ($filter as $key => $value) {
-				if (isset($propertyDbMap[$key])) {
-					$whereFilters[] = "`$dbTable`.`{$propertyDbMap[$key]['col']}` = :$key";
-					$params[$key]   = $value;
-					unset($filter[$key]);
-				}
-			}
-			if (!empty($whereFilters)) {
-				$filterClauses['where'] = 'WHERE '.implode(' AND ', $whereFilters);
-			}
-
-			// If a filter is in properties, but wasn't found in propertyDbMap, use a HAVING clause
-			$havingFilters = [];
-			foreach ($filter as $key => $value) {
-				if (isset($properties[$key])) {
-					$havingFilters[] = "$key = :$key";
-					$params[$key]    = $value;
-				}
-			}
-			if (!empty($havingFilters)) {
-				$filterClauses['having'] = 'HAVING '.implode(' AND ', $havingFilters);
-			}
-		}
-		$filterClauses['params'] = $params;
-		return $filterClauses;
-	}
-
-	protected function getModelSet($rowSet) {
+	protected function getModelSet($rowSet): array {
 		$models = [];
 		foreach ($rowSet as $row) {
 			$models[] = $this->getModel($row);
 		}
 		return $models;
 	}
-	protected function getModel($row) {
+	protected function getModel($row): ?Model {
 		$model = $this->GetNew();
 		$model->InitializeProperties($row);
 		return $model;

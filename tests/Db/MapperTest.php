@@ -133,7 +133,7 @@ class MapperTest extends TestCase {
 			],
 			[
 				'filter' => [
-					'Name' => 'foo'
+					new Filter('Name', '=', 'foo')
 				],
 				'results'   => [
 					[
@@ -220,7 +220,7 @@ class MapperTest extends TestCase {
 				]
 			],
 			[
-				'filter' => ['Name' => 'foo'],
+				'filter' => [new Filter('Name', '=', 'foo')],
 				'sort' => ['Name'],
 				'page' => 1,
 				'pageSize' => 1,
@@ -233,7 +233,7 @@ class MapperTest extends TestCase {
 				]
 			],
 			[
-				'filter' => ['Name' => 'foo'],
+				'filter' => [new Filter('Name', '=', 'foo')],
 				'sort' => ['Name Desc'],
 				'page' => 1,
 				'pageSize' => 1,
@@ -246,7 +246,7 @@ class MapperTest extends TestCase {
 				]
 			],
 			[
-				'filter' => ['CalculatedField' => 'bar'],
+				'filter' => [new Filter('CalculatedField', '=', 'bar')],
 				'sort' => ['Name'],
 				'page' => 1,
 				'pageSize' => 1,
@@ -289,7 +289,7 @@ class MapperTest extends TestCase {
 			->method('fetchOne')
 			->will($this->returnValue(1));
 
-		$count = $mapper->CountWhere(['Name' => 'foo']);
+		$count = $mapper->CountWhere([new Filter('Name', '=', 'foo')]);
 
 		$this->assertEquals($count, 1);
 	}

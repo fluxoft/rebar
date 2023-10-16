@@ -3,9 +3,10 @@
 namespace Fluxoft\Rebar\Rest;
 
 use Doctrine\Common\Proxy\Exception\InvalidArgumentException;
-use Doctrine\DBAL\Exception\DriverException;
 use Fluxoft\Rebar\Db\Exceptions\InvalidModelException;
+use Fluxoft\Rebar\Db\Filter;
 use Fluxoft\Rebar\Db\Mapper;
+use Fluxoft\Rebar\Db\Model;
 use Fluxoft\Rebar\Http\Request;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -19,7 +20,7 @@ class DataRepositoryTest extends TestCase {
 	private $authUserObserver;
 	/** @var Request|MockObject */
 	private $requestObserver;
-	/** @var \Fluxoft\Rebar\Db\Model|MockObject */
+	/** @var Model|MockObject */
 	private $dataModelObserver;
 	protected function setup():void {
 		$this->mapperObserver    = $this->getMockBuilder(
@@ -143,15 +144,24 @@ class DataRepositoryTest extends TestCase {
 			unset($get['order']);
 		}
 
+		$filters = [];
+		foreach ($get as $key => $value) {
+			$filters[] = new Filter(
+				$key,
+				'=',
+				$value
+			);
+		}
+
 		$this->mapperObserver
 			->expects($this->once())
 			->method('GetSetWhere')
-			->with($get, $order, $page, $pageSize)
+			->with($filters, $order, $page, $pageSize)
 			->will($this->returnValue($returnSet));
 		$this->mapperObserver
 			->expects($this->once())
 			->method('CountWhere')
-			->with($get)
+			->with($filters)
 			->will($this->returnValue($returnCount));
 
 		$pages = (isset($pageSize) && $pageSize > 0) ? ceil($returnCount/$pageSize) : 1;
@@ -288,17 +298,10 @@ class DataRepositoryTest extends TestCase {
 			$dataRepository->Get($this->requestObserver, $params)
 		);
 	}
-	public function GetOneProvider() {
-		$returnItem         = new \stdClass();
+	public function GetOneProvider(): array {
+		$returnItem         = new TestModel();
 		$returnItem->UserId = 2;
 		return [
-			[
-				'params' => [1],
-				'returnItem' => [],
-				'authUserFilter' => false,
-				'authUserIdProperty' => 'UserId',
-				'userId' => 1
-			],
 			[
 				'params' => [1],
 				'returnItem' => null,
@@ -1330,4 +1333,18 @@ class MockDataRepository extends DataRepository {
 	public function PublicLog($type, $message) {
 		$this->log($type, $message);
 	}
+}
+
+/**
+ * @property int Id
+ * @property int UserId
+ */
+// @codingStandardsIgnoreStart
+class TestModel extends Model {
+	// @codingStandardsIgnoreEnd
+	protected $dbTable       = 'test';
+	protected $propertyDbMap = [
+		'Id'     => 'id',
+		'UserId' => 'user_id'
+	];
 }
