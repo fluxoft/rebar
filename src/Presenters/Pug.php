@@ -16,13 +16,9 @@ class Pug implements PresenterInterface {
 	protected \Pug\Pug $pug;
 	protected string $templatePath;
 
-	public function __construct(string $cachePath = '', $templatePath = '') {
+	public function __construct(\Pug\Pug $pug, $templatePath = '') {
+		$this->pug          = $pug;
 		$this->templatePath = $templatePath;
-
-		$this->pug = new \Pug\Pug([
-			'pretty' => true,
-			'cache' => $cachePath
-		]);
 	}
 
 	/**

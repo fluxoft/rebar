@@ -26,7 +26,8 @@
 		"smarty/smarty": "^3.1",
 		"twig/twig": "^v3.4.1",
 		"firebase/php-jwt": "^4.0",
-		"php-coveralls/php-coveralls": "^2.1"
+		"php-coveralls/php-coveralls": "^2.1",
+		"pug-php/pug": "^3.5"
 	},
 	"autoload": {
 		"psr-4": {"Fluxoft\\Rebar\\": "src/"}
@@ -34,6 +35,12 @@
 	"suggest": {
 		"smarty/smarty": "Allows the use of the Smarty Presenter class.",
 		"twig/twig": "Allows the use of the Twig Presenter class.",
+		"pug-php/pug": "Allows the use of the Pug Presenter class.",
 		"firebase/php-jwt": "Allows the use of the Auth\\Jwt authentication class."
+	},
+	"config": {
+		"allow-plugins": {
+			"nodejs-php-fallback/nodejs-php-fallback": true
+		}
 	}
 }
