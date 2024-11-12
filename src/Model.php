@@ -85,4 +85,17 @@ abstract class Model implements \Iterator, \ArrayAccess {
 	public function GetValidationErrors(): array {
 		return $this->validationErrors;
 	}
+
+	/**
+	 * This is for initializing a model's properties array without setting the values in the modProperties array,
+	 * as would happen if setting each property through the object's setter methods.
+	 * @param array $initialProperties
+	 */
+	public function InitializeProperties(array $initialProperties): void {
+		foreach ($initialProperties as $key => $value) {
+			if (isset($this->properties[$key])) {
+				$this->properties[$key] = $value;
+			}
+		}
+	}
 }

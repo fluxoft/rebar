@@ -8,6 +8,7 @@ use Fluxoft\Rebar\Model as BaseModel;
 /**
  * Class Model
  * @package Fluxoft\Rebar\Db
+ * @deprecated Use Fluxoft\Rebar\Model instead
  */
 abstract class Model extends BaseModel {
 	/**

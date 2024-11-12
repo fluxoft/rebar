@@ -11,7 +11,8 @@ use Fluxoft\Rebar\Exceptions\FileNotFoundException;
 class Config extends Model {
 	public function __construct($iniFile) {
 		if (file_exists($iniFile)) {
-			$this->properties = parse_ini_file($iniFile, true);
+			$iniFile = parse_ini_file($iniFile, true) ?? [];
+			parent::__construct($iniFile);
 		} else {
 			throw new FileNotFoundException(sprintf('The ini file was not found: %s', $iniFile));
 		}

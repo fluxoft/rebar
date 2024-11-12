@@ -11,6 +11,7 @@ use JetBrains\PhpStorm\ArrayShape;
 /**
  * Class Mapper
  * @package Fluxoft\Rebar\Db
+ * @deprecated Use Fluxoft\Rebar\Mappers instead
  */
 abstract class Mapper {
 	/** @var MapperFactory */
@@ -97,7 +98,7 @@ abstract class Mapper {
 	 * @param array $sort
 	 * @param int $page
 	 * @param int $pageSize
-	 * @return array
+	 * @return Model[]
 	 * @throws Exception
 	 */
 	public function GetSetWhere(
@@ -258,12 +259,13 @@ abstract class Mapper {
 
 	/**
 	 * @param Filter[] $filters Array of Filter objects
-	 * @param array    $sort Array of property names to sort by in the order they should be applied,
+	 * @param array $sort Array of property names to sort by in the order they should be applied,
 	 *                    e.g. ['Name', 'ID DESC']
-	 * @param int      $page
-	 * @param int      $pageSize
+	 * @param int $page
+	 * @param int $pageSize
 	 * @return array Contains 2 elements: 'sql' is the SQL statement, 'params' are the values
 	 *               to be passed to the prepared statement
+	 * @throws MapperException
 	 */
 	#[ArrayShape(['sql' => "null|string", 'params' => "array|\array|mixed|mixed"])]
 	protected function getSelect(

@@ -2,29 +2,30 @@
 
 namespace Fluxoft\Rebar\Db;
 
-use Doctrine\DBAL\Connection;
 use Fluxoft\Rebar\Db\Exceptions\MapperFactoryException;
 use Fluxoft\Rebar\FactoryInterface;
+use Fluxoft\Rebar\Model as RebarModel;
+use PDO;
 
 /**
  * Class MapperFactory
  * @package Fluxoft\Rebar\Db
  */
 abstract class MapperFactory implements FactoryInterface {
-	/** @var Connection */
-	protected Connection $reader;
-	/** @var Connection */
-	protected Connection $writer;
+	/** @var PDO */
+	protected PDO $reader;
+	/** @var PDO */
+	protected PDO $writer;
 	/** @var string */
 	protected string $mapperNamespace = '';
 	/** @var string */
 	protected string $modelNamespace = '';
 
 	/**
-	 * @param Connection $reader
-	 * @param Connection|null $writer
+	 * @param PDO $reader
+	 * @param PDO|null $writer
 	 */
-	public function __construct(Connection $reader, Connection $writer = null) {
+	public function __construct(PDO $reader, PDO $writer = null) {
 		$this->reader = $reader;
 		$this->writer = $writer ?? $reader;
 	}
@@ -36,7 +37,7 @@ abstract class MapperFactory implements FactoryInterface {
 	 * @return Mapper
 	 * @throws MapperFactoryException
 	 */
-	public function Build(string $className, array $extra = []): Mapper {
+	public function Build(string $className, array $extra = []): GenericMapper {
 		// Mappers need the model to be mapped. If not given in $extra, make a guess based
 		// on the name of the Mapper being constructed. If the $mapperName ends in "Mapper",
 		// strip that word off and use what's left, e.g. a mapper called "ModelMapper" will
@@ -62,7 +63,7 @@ abstract class MapperFactory implements FactoryInterface {
 				));
 			}
 		}
-		if (!$model instanceof Model) {
+		if (!$model instanceof RebarModel) {
 			throw new MapperFactoryException(sprintf(
 				'Model %s is not an instance of Model',
 				get_class($model)
@@ -78,7 +79,7 @@ abstract class MapperFactory implements FactoryInterface {
 				$this->reader,
 				$this->writer
 			);
-			if (!$mapper instanceof Mapper) {
+			if (!$mapper instanceof GenericMapper) {
 				throw new MapperFactoryException(sprintf(
 					'Requested class %s is not an instance of Mapper',
 					get_class($mapper)
