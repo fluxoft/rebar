@@ -1,6 +1,8 @@
 <?php
 
-namespace Fluxoft\Rebar;
+namespace Fluxoft\Rebar\Http;
+
+use Fluxoft\Rebar\Model;
 
 /**
  * Class Route

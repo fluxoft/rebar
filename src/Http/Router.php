@@ -1,14 +1,13 @@
 <?php
-namespace Fluxoft\Rebar;
+namespace Fluxoft\Rebar\Http;
 
 use Fluxoft\Rebar\Auth\AuthInterface;
 use Fluxoft\Rebar\Auth\Exceptions\AccessDeniedException;
+use Fluxoft\Rebar\Exceptions\AuthenticationException;
 use Fluxoft\Rebar\Exceptions\CrossOriginException;
 use Fluxoft\Rebar\Exceptions\MethodNotAllowedException;
 use Fluxoft\Rebar\Exceptions\RouterException;
-use Fluxoft\Rebar\Exceptions\AuthenticationException;
-use Fluxoft\Rebar\Http\Request;
-use Fluxoft\Rebar\Http\Response;
+use Fluxoft\Rebar\Model;
 
 /**
  * Class Router
@@ -17,6 +16,7 @@ use Fluxoft\Rebar\Http\Response;
  * @property array SetupArgs
  * @property array MethodArgs
  * @property array CleanupArgs
+ * @property MiddlewareInterface[] $middlewareStack
  */
 class Router extends Model {
 	protected $properties = [
@@ -35,6 +35,9 @@ class Router extends Model {
 	/** @var string */
 	protected $controllerNamespace;
 
+	/** @var MiddlewareInterface[] */
+	protected $middlewareStack = []; // Existing middlewareStack property
+
 	/**
 	 * @param string $controllerNamespace The namespace where this app's controllers are found.
 	 * @param array  $setupArgs An array of properties to be passed to each Controller's Setup method.
@@ -47,6 +50,27 @@ class Router extends Model {
 		$this->SetupArgs           = $setupArgs;
 		$this->MethodArgs          = $methodArgs;
 		$this->CleanupArgs         = $cleanupArgs;
+	}
+
+	/**
+	 * Process each middleware in the stack.
+	 *
+	 * @param Request $request
+	 * @param Response $response
+	 * @return Request
+	 */
+	protected function processMiddleware(Request $request, Response $response) {
+		$middlewareStack = $this->middlewareStack;
+
+		$next = function() use ($request, $response, &$middlewareStack, &$next) {
+			$middleware = array_shift($middlewareStack);
+			if ($middleware) {
+				return $middleware->Process($request, $response, $next);
+			}
+			return $request;			
+		};
+
+		return $next();
 	}
 
 	/**
@@ -91,6 +115,9 @@ class Router extends Model {
 	 * @throws AuthenticationException
 	 */
 	public function Route(Request $request, Response $response) {
+		// Call processMiddleware and overwrite the $request with the processed Request object
+		$request = $this->processMiddleware($request, $response);
+
 		$path = $request->Path;
 		$auth = null;
 		foreach ($this->authTypes as $route => $authInterface) {
@@ -108,7 +135,7 @@ class Router extends Model {
 
 		$route = $this->getRoute($path);
 
-		/** @var $controller \Fluxoft\Rebar\Controller */
+		/** @var $controller \Fluxoft\Rebar\Http\Controller */
 		$controller = new $route['controller']($request, $response, $auth);
 
 		if (!is_callable([$controller, $route['action']])) {
@@ -158,7 +185,7 @@ class Router extends Model {
 		}
 	}
 
-	protected function callControllerMethodWithParams(Controller $controller, $method, array $params) {
+	protected function callControllerMethodWithParams(Controller $controller, $method, array $params): void {
 		switch (count($params)) {
 			case 0:
 				$controller->$method();

@@ -7,7 +7,7 @@ namespace Fluxoft\Rebar\Http;
  * @package Fluxoft\Rebar\Http
  */
 class ParameterSet {
-	protected $params;
+	protected array $params;
 
 	public function __construct(array $params) {
 		$this->params = array_change_key_case($params);
@@ -26,11 +26,11 @@ class ParameterSet {
 		}
 	}
 
-	public function Set($key, $value) {
+	public function Set($key, $value): void {
 		$this->params[strtolower($key)] = $value;
 	}
 
-	public function Delete($key) {
+	public function Delete($key): void {
 		unset($this->params[$key]);
 	}
 }
