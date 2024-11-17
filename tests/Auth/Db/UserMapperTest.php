@@ -18,10 +18,8 @@ class UserMapperTest extends TestCase {
 	/** @var MapperFactory */
 	private $mapperFactory;
 
-	public function setup():void {
-		$this->connectionObserver = $this->getMockBuilder('\Doctrine\DBAL\Connection')
-			->disableOriginalConstructor()
-			->getMock();
+	public function setup(): void {
+		$this->connectionObserver = new \PDO('sqlite::memory:'); // Using an in-memory SQLite database for testing
 		$this->statementObserver  = $this->getMockBuilder('\Doctrine\DBAL\Statement')
 			->disableOriginalConstructor()
 			->getMock();
@@ -34,7 +32,7 @@ class UserMapperTest extends TestCase {
 		);
 	}
 
-	public function tearDown():void {
+	public function tearDown(): void {
 		unset($this->userModelObserver);
 		unset($this->statementObserver);
 		unset($this->connectionObserver);
@@ -85,6 +83,7 @@ class UserMapperTest extends TestCase {
 			$this->assertEquals($returnUser, $authorizedUser);
 		}
 	}
+	
 	public function authorizedUserProvider() {
 		$user           = new ConcreteUserForUserMapperTest();
 		$user->Password = 'password';
