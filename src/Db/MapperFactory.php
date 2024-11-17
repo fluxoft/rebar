@@ -4,7 +4,8 @@ namespace Fluxoft\Rebar\Db;
 
 use Fluxoft\Rebar\Db\Exceptions\MapperFactoryException;
 use Fluxoft\Rebar\FactoryInterface;
-use Fluxoft\Rebar\Model as RebarModel;
+use Fluxoft\Rebar\Model;
+use Fluxoft\Rebar\Db\Mappers\GenericSql;
 use PDO;
 
 /**
@@ -34,10 +35,10 @@ abstract class MapperFactory implements FactoryInterface {
 	 * @param string $className
 	 * @param array $extra Should be either ['model' => {\Fluxoft\Rebar\Db\Model}]
 	 *                     or ['modelClass' => 'ModelClass']
-	 * @return Mapper
+	 * @return GenericSql
 	 * @throws MapperFactoryException
 	 */
-	public function Build(string $className, array $extra = []): GenericMapper {
+	public function Build(string $className, array $extra = []): GenericSql {
 		// Mappers need the model to be mapped. If not given in $extra, make a guess based
 		// on the name of the Mapper being constructed. If the $mapperName ends in "Mapper",
 		// strip that word off and use what's left, e.g. a mapper called "ModelMapper" will
@@ -63,14 +64,14 @@ abstract class MapperFactory implements FactoryInterface {
 				));
 			}
 		}
-		if (!$model instanceof RebarModel) {
+		if (!$model instanceof Model) {
 			throw new MapperFactoryException(sprintf(
 				'Model %s is not an instance of Model',
 				get_class($model)
 			));
 		}
 
-		$mapperClass = $this->mapperNamespace.$className;
+			$mapperClass = $this->mapperNamespace.$className;
 		if (class_exists($mapperClass)) {
 			/** @var Mapper $mapper */
 			$mapper = new $mapperClass(
@@ -79,7 +80,7 @@ abstract class MapperFactory implements FactoryInterface {
 				$this->reader,
 				$this->writer
 			);
-			if (!$mapper instanceof GenericMapper) {
+			if (!$mapper instanceof GenericSql) {
 				throw new MapperFactoryException(sprintf(
 					'Requested class %s is not an instance of Mapper',
 					get_class($mapper)
@@ -88,7 +89,7 @@ abstract class MapperFactory implements FactoryInterface {
 		} else {
 			throw new MapperFactoryException(sprintf(
 				'The mapper could not be found: "%s"',
-					$mapperClass
+				$mapperClass
 			));
 		}
 		return $mapper;

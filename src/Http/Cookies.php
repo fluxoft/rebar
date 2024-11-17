@@ -38,7 +38,7 @@ class Cookies extends ParameterSet {
 		$key,
 		$value,
 		$expires = null
-	) {
+	): void {
 		$expires = (isset($expires)) ? $expires : $this->settings['expires'];
 		if ($this->setCookie(
 			$key,
@@ -56,7 +56,7 @@ class Cookies extends ParameterSet {
 	/**
 	 * @param $key
 	 */
-	public function Delete($key) {
+	public function Delete($key): void {
 		if ($this->setCookie(
 			$key,
 			'',
