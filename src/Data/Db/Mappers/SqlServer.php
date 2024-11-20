@@ -1,6 +1,6 @@
 <?php
 
-namespace Fluxoft\Rebar\Db\Mappers;
+namespace Fluxoft\Rebar\Data\Db\Mappers;
 
 use PDO;
 
@@ -9,7 +9,7 @@ use PDO;
  * This class is a SQL Server database mapper, extending the GenericSql mapper.
  * It can be used to implement SQL Server-specific logic as needed.
  *
- * @package Fluxoft\Rebar\Db\Mappers
+ * @package Fluxoft\Rebar\Data\Db\Mappers
  */
 class SqlServer extends GenericSql {
 	/**

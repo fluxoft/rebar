@@ -1,11 +1,11 @@
 <?php
 
-namespace Fluxoft\Rebar\Db;
+namespace Fluxoft\Rebar\Data\Db;
 
-use Fluxoft\Rebar\Db\Exceptions\MapperFactoryException;
+use Fluxoft\Rebar\Data\Db\Exceptions\MapperFactoryException;
 use Fluxoft\Rebar\FactoryInterface;
 use Fluxoft\Rebar\Model;
-use Fluxoft\Rebar\Db\Mappers\GenericSql;
+use Fluxoft\Rebar\Data\Db\Mappers\GenericSql;
 use PDO;
 
 /**
@@ -33,7 +33,7 @@ abstract class MapperFactory implements FactoryInterface {
 
 	/**
 	 * @param string $className
-	 * @param array $extra Should be either ['model' => {\Fluxoft\Rebar\Db\Model}]
+	 * @param array $extra Should be either ['model' => {\Fluxoft\Rebar\Data\Db\Model}]
 	 *                     or ['modelClass' => 'ModelClass']
 	 * @return GenericSql
 	 * @throws MapperFactoryException

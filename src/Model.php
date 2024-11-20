@@ -19,23 +19,10 @@ abstract class Model implements \Iterator, \ArrayAccess {
 	use ArrayAccessibleProperties;
 	use StringableProperties;
 
-	/**
-	 * Holds the internal array of property names and values.
-	 * @var array $properties
-	 */
-	protected $properties = [];
-	/**
-	 * Properties that have been changed from their original values but have not yet been written to the database.
-	 * @var array $modProperties
-	 */
-	protected $modProperties = [];
+	protected static $defaultProperties = []; // Define defaults in subclasses
 
 	public function __construct(array $properties = []) {
-		if (!empty($properties)) {
-			foreach ($properties as $name => $value) {
-				$this->properties[$name] = $value;
-			}
-		}
+		$this->properties = array_merge(static::$defaultProperties, $properties);
 	}
 
 	/**

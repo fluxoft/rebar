@@ -1,4 +1,4 @@
 <?php
-namespace Fluxoft\Rebar\Db\Exceptions;
+namespace Fluxoft\Rebar\Data\Db\Exceptions;
 
 class ModelException extends \Exception {}

@@ -1,6 +1,6 @@
 <?php
 
-namespace Fluxoft\Rebar\Db;
+namespace Fluxoft\Rebar\Data\Db;
 
 /**
  * Class Join

@@ -1,6 +1,6 @@
 <?php
 
-namespace Fluxoft\Rebar\Db;
+namespace Fluxoft\Rebar\Data\Db;
 
 /**
  * Class Property
@@ -16,11 +16,6 @@ class Property {
 	use \Fluxoft\Rebar\_Traits\GettableProperties;
 	use \Fluxoft\Rebar\_Traits\SettableProperties;
 
-	private $properties = [
-		'Column' => '',
-		'Type' => 'string'
-	];
-	
 	protected ?bool $isAggregate = null;
 	protected ?bool $isWriteable = null;
 
@@ -43,6 +38,10 @@ class Property {
 	 * @param string $type Data type of the property (e.g., string, integer).
 	 */
 	public function __construct(string $column, string $type = 'string') {
+		$this->properties = [
+			'Column' => $column,
+			'Type' => $type
+		];
 		$this->Column = $column;
 		$this->Type   = $type;
 	}

@@ -1,15 +1,15 @@
 <?php
 
-namespace Fluxoft\Rebar\Db\Mappers;
+namespace Fluxoft\Rebar\Data\Db\Mappers;
 
-use Fluxoft\Rebar\Db\Exceptions\InvalidModelException;
-use Fluxoft\Rebar\Db\Exceptions\MapperException;
-use Fluxoft\Rebar\Db\Filter;
+use Fluxoft\Rebar\Data\Db\Exceptions\InvalidModelException;
+use Fluxoft\Rebar\Data\Db\Exceptions\MapperException;
+use Fluxoft\Rebar\Data\Db\Filter;
+use Fluxoft\Rebar\Data\Db\Join;
+use Fluxoft\Rebar\Data\Db\MapperFactory;
+use Fluxoft\Rebar\Data\Db\Property;
 use Fluxoft\Rebar\Model;
-use Fluxoft\Rebar\Db\MapperFactory;
 use PDO;
-use Fluxoft\Rebar\Db\Property;
-use Fluxoft\Rebar\Db\Join;
 
 /**
  * Class Generic
@@ -21,7 +21,7 @@ use Fluxoft\Rebar\Db\Join;
  * CRUD operations on the model. Generally speaking, the mapper should be the only place in
  * the application where SQL is written (if the automatically-generated SQL isn't sufficient).
  *
- * @package Fluxoft\Rebar\Db\Mappers
+ * @package Fluxoft\Rebar\Data\Db\Mappers
  */
 abstract class GenericSql implements MapperInterface {
 	/** @var MapperFactory */
@@ -66,9 +66,9 @@ abstract class GenericSql implements MapperInterface {
 	 * ];
 	 */
 	protected string $dbTable;
-	protected string $idProperty;
+	protected string $idProperty = 'Id';
 	protected array $propertyDbMap;
-	protected array $joins;
+	protected array $joins = [];
 
 	/**
 	 * Generic constructor.

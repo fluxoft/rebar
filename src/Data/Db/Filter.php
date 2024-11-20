@@ -1,12 +1,12 @@
 <?php
 
-namespace Fluxoft\Rebar\Db;
+namespace Fluxoft\Rebar\Data\Db;
 
 use Fluxoft\Rebar\_Traits\ArrayAccessibleProperties;
 use Fluxoft\Rebar\_Traits\GettableProperties;
 use Fluxoft\Rebar\_Traits\IterableProperties;
 use Fluxoft\Rebar\_Traits\SettableProperties;
-use Fluxoft\Rebar\Db\Exceptions\InvalidFilterException;
+use Fluxoft\Rebar\Data\Db\Exceptions\InvalidFilterException;
 
 /**
  * @property string Property
@@ -19,22 +19,16 @@ class Filter implements \ArrayAccess, \Iterator {
 	use ArrayAccessibleProperties;
 	use IterableProperties;
 
-	/**
-	 * Holds the internal array of property names and values.
-	 * @var array $properties
-	 */
-	protected $properties    = [
-		'Property' => '',
-		'Operator' => null,
-		'Value' => null
-	];
-	protected $modProperties = [];
-
 	public function __construct(
 		string $property,
 		string $operator,
 		mixed  $value
 	) {
+		$this->properties = [
+			'Property' => $property,
+			'Operator' => $operator,
+			'Value'    => $value
+		];
 		$this->Property = $property;
 		$this->Operator = $operator;
 		$this->Value    = $value;

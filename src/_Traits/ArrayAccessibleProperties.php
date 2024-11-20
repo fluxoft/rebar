@@ -3,13 +3,15 @@
 namespace Fluxoft\Rebar\_Traits;
 
 /**
+ * Trait ArrayAccessibleProperties
  * Should only be used with classes that are also using GettableProperties
  * and either SettableProperties or UnsettableProperties
  *
- * Trait ArrayAccessibleProperties
  * @package Fluxoft\Rebar\_Traits
  */
 trait ArrayAccessibleProperties {
+	use Properties;
+
 	// ArrayAccess implementation.
 	public function offsetExists($offset): bool {
 		return isset($this->$offset);

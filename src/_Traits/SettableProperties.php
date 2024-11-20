@@ -2,7 +2,15 @@
 
 namespace Fluxoft\Rebar\_Traits;
 
+/**
+ * Trait SettableProperties
+ * For classes that need to have properties that can be set.
+ *
+ * @package Fluxoft\Rebar\_Traits
+ */
 trait SettableProperties {
+	use Properties;
+
 	/**
 	 * Override the magic __set() method to set the values
 	 * for members of the $properties array.
