@@ -1,11 +1,11 @@
 <?php
 
-namespace Fluxoft\Rebar\Db;
+namespace Fluxoft\Rebar\Data\Db\Mappers;
 
-use Fluxoft\Rebar\Db\Property;
+use Fluxoft\Rebar\Data\Db\MapperFactory;
+use Fluxoft\Rebar\Data\Db\Mappers\GenericSql;
+use Fluxoft\Rebar\Data\Db\Property;
 use Fluxoft\Rebar\Model;
-use Fluxoft\Rebar\Db\MapperFactory;
-use Fluxoft\Rebar\Db\Mappers\GenericSql;
 use PHPUnit\Framework\TestCase;
 
 class GenericSqlTest extends TestCase {

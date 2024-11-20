@@ -1,18 +1,23 @@
 <?php
 
-namespace Fluxoft\Rebar\Db;
+namespace Fluxoft\Rebar\Data\Db;
 
-use Doctrine\DBAL\Connection;
+use Fluxoft\Rebar\Data\Db\Exceptions\MapperFactoryException;
+use Fluxoft\Rebar\Data\Db\MapperFactory;
+use Fluxoft\Rebar\Data\Db\Mappers\ConcreteModel;
+use Fluxoft\Rebar\Data\Db\Mappers\GenericSql;
+use Fluxoft\Rebar\Model;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
 class MapperFactoryTest extends TestCase {
-	/** @var Connection|MockObject */
+	/** @var \PDO|MockObject */
 	private $connectionObserver;
 	/** @var ConcreteModel|MockObject */
 	private $concreteModelObserver;
+
 	protected function setup():void {
-		$this->connectionObserver    = $this->getMockBuilder('\Doctrine\DBAL\Connection')
+		$this->connectionObserver    = $this->getMockBuilder(\PDO::class)
 			->disableOriginalConstructor()
 			->getMock();
 		$this->concreteModelObserver = $this->getMockBuilder('\Fluxoft\Rebar\Db\ConcreteModel')
@@ -27,10 +32,24 @@ class MapperFactoryTest extends TestCase {
 
 	public function testModelNotFound() {
 		$mapperFactory = new ConcreteMapperFactory($this->connectionObserver);
-		$mapperClass   = '\Fluxoft\Rebar\Db\NonExistentMapper';
-		$modelClass    = '\Fluxoft\Rebar\Db\NonExistent';
+		$mapperClass   = ConcreteModelForMapperFactoryTestMapper::class;
+		$modelClass    = '\Fluxoft\Rebar\Data\Db\NonExistent';
 
-		$this->expectException('\Fluxoft\Rebar\Db\Exceptions\MapperFactoryException');
+		$this->expectException(MapperFactoryException::class);
+		$this->expectExceptionMessage(sprintf(
+			'The model could not be found: "%s"',
+			$modelClass
+		));
+
+		$mapperFactory->Build($mapperClass, ['modelClass' => $modelClass]);
+	}
+
+	public function testModelFromMapperNameNotFound() {
+		$mapperFactory = new ConcreteMapperFactory($this->connectionObserver);
+		$mapperClass   = NoModelMapper::class;
+		$modelClass    = 'Fluxoft\Rebar\Data\Db\NoModel';
+
+		$this->expectException(MapperFactoryException::class);
 		$this->expectExceptionMessage(sprintf(
 			'The model could not be found: "%s"',
 			$modelClass
@@ -39,26 +58,12 @@ class MapperFactoryTest extends TestCase {
 		$mapperFactory->Build($mapperClass);
 	}
 
-	public function testModelFromMapperNameNotFound() {
-		$mapperFactory = new ConcreteMapperFactory($this->connectionObserver);
-		$mapperClass   = '\Fluxoft\Rebar\Db\BadConcreteModel';
-		$modelClass    = 'Fluxoft\Rebar\Db\BadConcreteModel';
-
-		$this->expectException('\Fluxoft\Rebar\Db\Exceptions\MapperFactoryException');
-		$this->expectExceptionMessage(sprintf(
-			'Model %s is not an instance of Model',
-			$modelClass
-		));
-
-		$mapperFactory->Build($mapperClass);
-	}
-
 	public function testModelFromClassNotModel() {
 		$mapperFactory = new ConcreteMapperFactory($this->connectionObserver);
-		$mapperClass   = '\Fluxoft\Rebar\Db\BadConcreteModelMapper';
-		$modelClass    = '\Fluxoft\Rebar\Db\BadConcreteModel';
+		$mapperClass   = ConcreteModelForMapperFactoryTestMapper::class;
+		$modelClass    = '\Fluxoft\Rebar\Data\Db\BadConcreteModel';
 
-		$this->expectException('\Fluxoft\Rebar\Db\Exceptions\MapperFactoryException');
+		$this->expectException(MapperFactoryException::class);
 		$this->expectExceptionMessage(sprintf(
 			'Model %s is not an instance of Model',
 			substr($modelClass, 1)
@@ -69,11 +74,13 @@ class MapperFactoryTest extends TestCase {
 
 	public function testModelGivenNotModel() {
 		$mapperFactory = new ConcreteMapperFactory($this->connectionObserver);
-		$mapperClass   = '\Fluxoft\Rebar\Db\ConcreteModelMapper';
+		$mapperClass   = ConcreteModelForMapperFactoryTestMapper::class;
 		$model         = new BadConcreteModel();
-		$modelClass    = '\Fluxoft\Rebar\Db\BadConcreteModel';
+		$modelClass    = '\Fluxoft\Rebar\Data\Db\BadConcreteModel';
 
-		$this->expectException('\Fluxoft\Rebar\Db\Exceptions\MapperFactoryException');
+		$model = new $modelClass();
+
+		$this->expectException(MapperFactoryException::class);
 		$this->expectExceptionMessage(sprintf(
 			'Model %s is not an instance of Model',
 			substr($modelClass, 1)
@@ -86,7 +93,7 @@ class MapperFactoryTest extends TestCase {
 		$mapperFactory = new ConcreteMapperFactory($this->connectionObserver);
 		$mapperClass   = 'NonExistentClass';
 
-		$this->expectException('\Fluxoft\Rebar\Db\Exceptions\MapperFactoryException');
+		$this->expectException(MapperFactoryException::class);
 		$this->expectExceptionMessage(sprintf('The mapper could not be found: "%s"', $mapperClass));
 
 		$mapperFactory->Build($mapperClass, ['model' => $this->concreteModelObserver]);
@@ -94,11 +101,11 @@ class MapperFactoryTest extends TestCase {
 
 	public function testNotMapper() {
 		$mapperFactory = new ConcreteMapperFactory($this->connectionObserver);
-		$mapperClass   = '\Fluxoft\Rebar\Db\BadConcreteModelMapper';
+		$mapperClass   = '\Fluxoft\Rebar\Data\Db\BadConcreteModelMapper';
 
-		$this->expectException('\Fluxoft\Rebar\Db\Exceptions\MapperFactoryException');
+		$this->expectException(MapperFactoryException::class);
 		$this->expectExceptionMessage(sprintf(
-			'Requested class %s is not an instance of Mapper',
+			'Requested class %s does not extend MapperInterface',
 			substr($mapperClass, 1)
 		));
 
@@ -107,10 +114,10 @@ class MapperFactoryTest extends TestCase {
 
 	public function testBuild() {
 		$mapperFactory = new ConcreteMapperFactory($this->connectionObserver);
-		$mapperClass   = '\Fluxoft\Rebar\Db\ConcreteModelForMapperFactoryTestMapper';
+		$mapperClass   = '\Fluxoft\Rebar\Data\Db\ConcreteModelForMapperFactoryTestMapper';
 
 		$this->assertInstanceOf(
-			'\Fluxoft\Rebar\Db\Mapper',
+			'\Fluxoft\Rebar\Data\Db\Mappers\MapperInterface',
 			$mapperFactory->Build($mapperClass)
 		);
 	}
@@ -120,10 +127,15 @@ class MapperFactoryTest extends TestCase {
 class BadConcreteModelMapper {}
 class BadConcreteModel {}
 class ConcreteMapperFactory extends MapperFactory {}
-class ConcreteModelForMapperFactoryTestMapper extends Mapper {}
-class ConcreteModelForMapperFactoryTest extends Model {
-	protected $idProperty    = 'Foo';
-	protected $dbTable       = 'foo';
-	protected $propertyDbMap = ['Foo' => 'foo'];
+class ConcreteModelForMapperFactoryTestMapper extends GenericSql {
+	protected string $idProperty = 'Foo';
+	protected string $dbTable       = 'foo';
+	protected array $propertyDbMap = ['Foo' => 'foo'];
+}
+class ConcreteModelForMapperFactoryTest extends Model {}
+class NoModelMapper extends GenericSql { // No corresponding model
+	protected string $idProperty = 'Foo';
+	protected string $dbTable       = 'foo';
+	protected array $propertyDbMap = ['Foo' => 'foo'];
 }
 // @codingStandardsIgnoreEnd
