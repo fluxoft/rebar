@@ -29,9 +29,9 @@ class Filter implements \ArrayAccess, \Iterator {
 			'Operator' => $operator,
 			'Value'    => $value
 		];
-		$this->Property = $property;
-		$this->Operator = $operator;
-		$this->Value    = $value;
+		$this->Property   = $property;
+		$this->Operator   = $operator;
+		$this->Value      = $value;
 	}
 
 	/**

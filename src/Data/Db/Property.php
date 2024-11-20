@@ -42,8 +42,8 @@ class Property {
 			'Column' => $column,
 			'Type' => $type
 		];
-		$this->Column = $column;
-		$this->Type   = $type;
+		$this->Column     = $column;
+		$this->Type       = $type;
 	}
 
 	/**
