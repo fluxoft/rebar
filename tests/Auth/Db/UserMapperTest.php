@@ -46,7 +46,7 @@ class UserMapperTest extends TestCase {
 	public function testGetAuthorizedUserForUsernameAndPassword() {
 		// Arrange: Set up a valid user to be returned by GetOne
 		$user = new ConcreteUserForUserMapperTest([
-			'Id' => 23,
+			'Id' => 1,
 			'Email' => 'joe@fluxoft.com',
 			'Password' => password_hash('password', PASSWORD_BCRYPT)
 		]);
@@ -71,32 +71,49 @@ class UserMapperTest extends TestCase {
 	
 		// Act: Call the method to test
 		$result = $mapper->GetAuthorizedUserForUsernameAndPassword('joe@fluxoft.com', 'password');
-
-		echo "\n\n".var_dump($result)."\n\n";
-		echo "\n\n$result->Id\n\n";
 	
 		// Assert: Verify the result
 		$this->assertInstanceOf(ConcreteUserForUserMapperTest::class, $result);
 		$this->assertEquals(1, $result->Id);
 		$this->assertEquals('joe@fluxoft.com', $result->Email);
+		$this->assertEquals('********', $result->Password);
 	}
 
 	public function testGetAuthorizedUserById() {
-		$mapper         = new ConcreteUserMapper($this->mapperFactory, $this->userModelObserver, $this->connectionMock);
-		$user           = new ConcreteUserForUserMapperTest();
-		$user->Password = password_hash('password', PASSWORD_BCRYPT);
-
-		$mapper->Save($user);
-
-		// Test valid ID
-		$retrievedUser = $mapper->GetAuthorizedUserById(1);
-		$this->assertEquals($user, $retrievedUser);
-
-		// Test invalid ID
+		// Arrange: Set up a valid user to be returned by GetOneById
+		$user = new ConcreteUserForUserMapperTest([
+			'Id'       => 1,
+			'Email'    => 'joe@fluxoft.com',
+			'Password' => password_hash('password', PASSWORD_BCRYPT)
+		]);
+	
+		$mapper = $this->getMockBuilder(ConcreteUserMapper::class)
+			->setConstructorArgs([
+				$this->mapperFactory,
+				$this->userModelObserver,
+				$this->connectionMock
+			])
+			->onlyMethods(['GetOneById'])
+			->getMock();
+	
+		// Mock the GetOneById method to return the user for a valid ID
+		$mapper->expects($this->exactly(2)) // One for valid and one for invalid test case
+			->method('GetOneById')
+			->willReturnCallback(function ($id) use ($user) {
+				return $id === 1 ? $user : null;
+			});
+	
+		// Act & Assert: Test valid ID
+		$result = $mapper->GetAuthorizedUserById(1);
+		$this->assertInstanceOf(ConcreteUserForUserMapperTest::class, $result);
+		$this->assertEquals(1, $result->Id);
+		$this->assertEquals('joe@fluxoft.com', $result->Email);
+	
+		// Act & Assert: Test invalid ID
 		$this->expectException('\Fluxoft\Rebar\Auth\Exceptions\UserNotFoundException');
 		$this->expectExceptionMessage('User not found');
 		$mapper->GetAuthorizedUserById(999);
-	}
+	}	
 }
 
 // @codingStandardsIgnoreStart

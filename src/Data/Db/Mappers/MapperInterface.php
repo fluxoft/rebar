@@ -6,7 +6,6 @@ use Fluxoft\Rebar\Model;
 
 interface MapperInterface {
 	public function GetNew(): Model;
-	public function GetId();
 	public function GetOneById(int $id): ?Model;
 	/**
 	 * @param Filter[] $filters

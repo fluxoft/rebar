@@ -40,14 +40,6 @@ abstract class Model implements \Iterator, \ArrayAccess {
 	}
 
 	/**
-	 * Returns the ID of the model.
-	 * @return mixed
-	 */
-	public function GetId() {
-		return $this->properties['id'] ?? null; // Assuming 'id' is the key for the ID property
-	}
-
-	/**
 	 * Checks any validate[PropertyName] functions, which should be protected and return
 	 * either true or a string representing the validation error, which is set to the
 	 * $validationErrors array.

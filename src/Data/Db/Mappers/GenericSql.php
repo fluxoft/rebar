@@ -88,6 +88,7 @@ abstract class GenericSql implements MapperInterface {
 		$this->reader        = $reader;
 		$this->writer        = $writer ?? $reader;
 
+		// Ensure the propertyDbMap is properly initialized
 		foreach ($this->propertyDbMap as $property => &$dbMap) {
 			if ($dbMap instanceof Property) {
 				continue;
@@ -103,17 +104,18 @@ abstract class GenericSql implements MapperInterface {
 				throw new \InvalidArgumentException("Invalid property definition for $property.");
 			}
 		}
+
+		// Ensure idProperty is properly defined in propertyDbMap
+		if (!isset($this->propertyDbMap[$this->idProperty])) {
+			throw new \InvalidArgumentException(sprintf(
+				"ID property '%s' is not defined in the propertyDbMap.",
+				$this->idProperty
+			));
+		}
 	}
 
 	public function GetNew(): Model {
 		return clone $this->model;
-	}
-
-	/**
-	 * @return mixed
-	 */
-	public function GetId() {
-		return $this->model->GetProperties()[$this->idProperty] ?? null;
 	}
 
 	/**
@@ -191,7 +193,7 @@ abstract class GenericSql implements MapperInterface {
 		$sql  = 'DELETE FROM '.$this->quoteIdentifier($this->dbTable).' WHERE '.
 			$this->quoteIdentifier($this->propertyDbMap[$this->idProperty]->Column).' = :id';
 		$stmt = $this->writer->prepare($sql);
-		$stmt->execute([$this->propertyDbMap[$this->idProperty]->Column => $model->GetId()]);
+		$stmt->execute([$this->propertyDbMap[$this->idProperty]->Column => $model->{$this->idProperty}]);
 		$model = null;
 	}
 
@@ -218,7 +220,7 @@ abstract class GenericSql implements MapperInterface {
 			throw new InvalidModelException('Model failed validation check.');
 		}
 
-		if ($model->GetId() === null || $model->GetId() === 0) {
+		if ($model->{$this->idProperty} === null || $model->{$this->idProperty} === 0) {
 			// ID is null or 0, indicating a new record
 			$this->create($model);
 		} else {
@@ -334,7 +336,7 @@ abstract class GenericSql implements MapperInterface {
 		if (!empty($cols)) {
 			// Add ID to the query for WHERE clause
 			$idColumn          = $this->propertyDbMap[$this->idProperty]->Column;
-			$values[$idColumn] = $model->GetId();
+			$values[$idColumn] = $model->{$this->idProperty};
 
 			// Build SQL
 			$sql = "UPDATE " . $this->quoteIdentifier($this->dbTable) . " SET " .
