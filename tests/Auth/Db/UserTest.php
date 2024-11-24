@@ -66,7 +66,7 @@ class UserTest extends TestCase {
 		$this->assertEquals('********', $user->Password);
 
 		// Set a password and confirm it was hashed correctly.
-		$newPassword      = 'VerySecurePassword';
+		$newPassword    = 'VerySecurePassword';
 		$user->Password = $newPassword;
 
 		// test IsValid function for new password

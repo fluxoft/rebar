@@ -77,6 +77,7 @@ class ResponseTest extends TestCase {
 		// Temporarily override the error handler to catch the warning
 		$triggeredError = null;
 		set_error_handler(function ($errno, $errstr) use (&$triggeredError) {
+			$errno          = null; // Unused
 			$triggeredError = $errstr;
 			return true; // Prevent PHP from displaying the error
 		});
