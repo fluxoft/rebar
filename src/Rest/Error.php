@@ -13,13 +13,6 @@ use Fluxoft\Rebar\Model;
  * @property \Exception Exception
  */
 class Error extends Model {
-	protected $properties = [
-		'Code' => 0,
-		'Message' => '',
-		'Extra' => null,
-		'Exception' => null
-	];
-
 	/**
 	 * Error constructor.
 	 * @param mixed $code

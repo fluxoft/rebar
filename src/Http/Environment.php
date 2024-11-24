@@ -27,18 +27,6 @@ class Environment implements \ArrayAccess, \Iterator {
 	use ArrayAccessibleProperties;
 	use StringableProperties;
 
-	/** @var array */
-	protected $properties = [
-		'ServerParams' => [],
-		'GetParams' => [],
-		'PostParams' => [],
-		'PutParams' => [],
-		'PatchParams' => [],
-		'DeleteParams' => [],
-		'Headers' => [],
-		'Input' => ''
-	];
-
 	/**
 	 * @var \Fluxoft\Rebar\Http\Environment
 	 */
@@ -50,103 +38,107 @@ class Environment implements \ArrayAccess, \Iterator {
 		}
 		return static::$environment;
 	}
+	public static function ResetInstance(): void {
+		static::$environment = null;
+	}	
 	public function __clone() {
 		throw new EnvironmentException('Cloning not allowed.');
 	}
-	private function __construct() {}
+	private function __construct() {
+		$this->properties['ServerParams'] = [];
+		$this->properties['GetParams']    = [];
+		$this->properties['PostParams']   = [];
+		$this->properties['PutParams']    = [];
+		$this->properties['PatchParams']  = [];
+		$this->properties['DeleteParams'] = [];
+		$this->properties['Headers']      = [];
+		$this->properties['Input']        = '';
+	}
 
 	/** @var array */
-	protected $serverParams = null;
 	protected function getServerParams() {
-		if (!isset($this->serverParams)) {
-			$this->serverParams = $this->superGlobalServer();
+		if (!isset($this->properties['ServerParams'])) {
+			$this->properties['ServerParams'] = $this->superGlobalServer();
 		}
-		return $this->serverParams;
+		return $this->properties['ServerParams'];
 	}
 	/** @var array */
-	protected $getParams = null;
 	protected function getGetParams() {
-		if (!isset($this->getParams)) {
-			$this->getParams = $this->superGlobalGet();
+		if (!isset($this->properties['GetParams'])) {
+			$this->properties['GetParams'] = $this->superGlobalGet();
 		}
-		return $this->getParams;
+		return $this->properties['GetParams'];
 	}
 	/** @var array */
-	protected $postParams = null;
 	protected function getPostParams() {
-		if (!isset($this->postParams)) {
+		if (!isset($this->properties['PostParams'])) {
 			if (isset($this->ServerParams['REQUEST_METHOD']) &&
 				strtoupper($this->ServerParams['REQUEST_METHOD']) === 'POST' &&
 				!isset($this->Headers['X-Http-Method-Override'])
 			) {
-				$this->postParams = $this->superGlobalPost();
+				$this->properties['PostParams'] = $this->superGlobalPost();
 			} elseif (isset($this->Headers['X-Http-Method-Override']) &&
 				strtoupper($this->Headers['X-Http-Method-Override']) === 'POST'
 			) {
-				$this->postParams = $this->superGlobalPost();
+				$this->properties['PostParams'] = $this->superGlobalPost();
 			} else {
-				$this->postParams = [];
+				$this->properties['PostParams'] = [];
 			}
 		}
-		return $this->postParams;
+		return $this->properties['PostParams'];
 	}
 	/** @var array */
-	protected $putParams = null;
 	protected function getPutParams() {
-		if (!isset($this->putParams)) {
+		if (!isset($this->properties['PutParams'])) {
 			if (isset($this->Headers['X-Http-Method-Override']) &&
 				strtoupper($this->Headers['X-Http-Method-Override']) === 'PUT'
 			) {
-				$this->putParams = $this->superGlobalPost();
+				$this->properties['PutParams'] = $this->superGlobalPost();
 			} else {
-				$this->putParams = [];
+				$this->properties['PutParams'] = [];
 			}
 		}
-		return $this->putParams;
+		return $this->properties['PutParams'];
 	}
 	/** @var array */
-	protected $patchParams = null;
 	protected function getPatchParams() {
-		if (!isset($this->patchParams)) {
+		if (!isset($this->properties['PatchParams'])) {
 			if (isset($this->Headers['X-Http-Method-Override']) &&
 				strtoupper($this->Headers['X-Http-Method-Override']) === 'PATCH'
 			) {
-				$this->patchParams = $this->superGlobalPost();
+				$this->properties['PatchParams'] = $this->superGlobalPost();
 			} else {
-				$this->patchParams = [];
+				$this->properties['PatchParams'] = [];
 			}
 		}
-		return $this->patchParams;
+		return $this->properties['PatchParams'];
 	}
 	/** @var array */
-	protected $deleteParams = null;
 	protected function getDeleteParams() {
-		if (!isset($this->deleteParams)) {
+		if (!isset($this->properties['DeleteParams'])) {
 			if (isset($this->Headers['X-Http-Method-Override']) &&
 				strtoupper($this->Headers['X-Http-Method-Override']) === 'DELETE'
 			) {
-				$this->deleteParams = $this->superGlobalPost();
+				$this->properties['DeleteParams'] = $this->superGlobalPost();
 			} else {
-				$this->deleteParams = [];
+				$this->properties['DeleteParams'] = [];
 			}
 		}
-		return $this->deleteParams;
+		return $this->properties['DeleteParams'];
 	}
 	/** @var array */
-	protected $headers = null;
 	protected function getHeaders() {
-		if (!isset($this->headers)) {
-			$this->headers = $this->getAllHeaders();
+		if (!isset($this->properties['Headers'])) {
+			$this->properties['Headers'] = $this->getAllHeaders();
 		}
-		return $this->headers;
+		return $this->properties['Headers'];
 	}
 	/** @var string */
-	protected $input = null;
 	protected function getInput() {
-		if (!isset($this->input)) {
-			$this->input = $this->getRawInput();
+		if (!isset($this->properties['Input'])) {
+			$this->properties['Input'] = $this->getRawInput();
 		}
-		return $this->input;
+		return $this->properties['Input'];
 	}
 
 	/**

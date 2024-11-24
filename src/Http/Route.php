@@ -12,12 +12,6 @@ use Fluxoft\Rebar\Model;
  * @property string Action
  */
 class Route extends Model {
-	protected $properties = [
-		'Path' => '/',
-		'Controller' => 'Main',
-		'Action' => 'Index'
-	];
-
 	/**
 	 * @param string $path
 	 * @param string $controller

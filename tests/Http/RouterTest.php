@@ -42,7 +42,7 @@ class RouterTest extends TestCase {
  public function testAddRoutes() {
 	 $router = new TestRouter('\Fluxoft\Rebar');
 
-	 $this->assertEquals('\Fluxoft\Rebar', $router->GetControllerNamespace());
+	 $this->assertEquals('\Fluxoft\Rebar', $router->ControllerNamespace);
 
 	 $routes = [
 		 new Route('/', 'Main', 'Index'),
@@ -83,14 +83,11 @@ class RouterTest extends TestCase {
 
 // @codingStandardsIgnoreStart
 class TestRouter extends Router {
-    public function GetControllerNamespace() {
-  return $this->controllerNamespace;
-    }
-    public function GetRoutes() {
-  return $this->routes;
-    }
-    public function GetAuthTypes() {
-  return $this->authTypes;
-    }
+	public function GetRoutes() {
+		return $this->routes;
+	}
+	public function GetAuthTypes() {
+		return $this->authTypes;
+	}
 }
 // @codingStandardsIgnoreEnd

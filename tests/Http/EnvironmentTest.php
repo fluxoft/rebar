@@ -501,13 +501,15 @@ class MockableEnvironment extends Environment {
 	// @codingStandardsIgnoreEnd
 
 	public function Reset() {
-		$this->serverParams = null;
-		$this->postParams   = null;
-		$this->putParams    = null;
-		$this->patchParams  = null;
-		$this->deleteParams = null;
-		$this->headers      = null;
-		$this->input        = null;
+		// reset the values of the properties to nulls
+		$this->properties['ServerParams'] = null;
+		$this->properties['GetParams']    = null;
+		$this->properties['PostParams']   = null;
+		$this->properties['PutParams']    = null;
+		$this->properties['PatchParams']  = null;
+		$this->properties['DeleteParams'] = null;
+		$this->properties['Headers']      = null;
+		$this->properties['Input']        = null;
 	}
 
 	private $serverGlobal = [];

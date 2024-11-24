@@ -13,12 +13,6 @@ use Fluxoft\Rebar\Model;
  * @property string Token
  */
 class Token extends Model {
-	protected $properties = [
-		'UserID' => 0,
-		'SeriesID' => 0,
-		'Token' => ''
-	];
-
 	public function __construct(
 		$userID      = null,
 		$seriesID    = null,

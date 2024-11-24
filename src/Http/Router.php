@@ -1,13 +1,15 @@
 <?php
 namespace Fluxoft\Rebar\Http;
 
+use Fluxoft\Rebar\_Traits\GettableProperties;
+use Fluxoft\Rebar\_Traits\IterableProperties;
+use Fluxoft\Rebar\_Traits\SettableProperties;
 use Fluxoft\Rebar\Auth\AuthInterface;
 use Fluxoft\Rebar\Auth\Exceptions\AccessDeniedException;
 use Fluxoft\Rebar\Exceptions\AuthenticationException;
 use Fluxoft\Rebar\Exceptions\CrossOriginException;
 use Fluxoft\Rebar\Exceptions\MethodNotAllowedException;
 use Fluxoft\Rebar\Exceptions\RouterException;
-use Fluxoft\Rebar\Model;
 
 /**
  * Class Router
@@ -18,13 +20,9 @@ use Fluxoft\Rebar\Model;
  * @property array CleanupArgs
  * @property MiddlewareInterface[] $middlewareStack
  */
-class Router extends Model {
-	protected $properties = [
-		'ControllerNamespace' => '',
-		'SetupArgs' => [],
-		'MethodArgs' => [],
-		'CleanupArgs' => []
-	];
+class Router {
+	use GettableProperties;
+	use SettableProperties;
 
 	/** @var Route[] */
 	protected $routes = [];
@@ -45,11 +43,18 @@ class Router extends Model {
 	 * passed in before the URL params.
 	 * @param array  $cleanupArgs An array of properties to be passed to each Controller's Cleanup method.
 	 */
-	public function __construct($controllerNamespace, $setupArgs = [], $methodArgs = [], $cleanupArgs = []) {
-		$this->controllerNamespace = $controllerNamespace;
-		$this->SetupArgs           = $setupArgs;
-		$this->MethodArgs          = $methodArgs;
-		$this->CleanupArgs         = $cleanupArgs;
+	public function __construct(
+		string $controllerNamespace,
+		array $setupArgs = [],
+		array $methodArgs = [],
+		array$cleanupArgs = []
+	) {
+		$this->properties = [
+			'ControllerNamespace' => $controllerNamespace,
+			'SetupArgs'           => $setupArgs,
+			'MethodArgs'          => $methodArgs,
+			'CleanupArgs'         => $cleanupArgs
+		];
 	}
 
 	/**
@@ -135,7 +140,7 @@ class Router extends Model {
 
 		$route = $this->getRoute($path);
 
-		/** @var $controller \Fluxoft\Rebar\Http\Controller */
+		/** @var \Fluxoft\Rebar\Http\Controller $controller */
 		$controller = new $route['controller']($request, $response, $auth);
 
 		if (!is_callable([$controller, $route['action']])) {

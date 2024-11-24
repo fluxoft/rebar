@@ -74,9 +74,23 @@ class ResponseTest extends TestCase {
 	public function testInvalidStatus() {
 		$mockResponse = new MockResponse();
 
-		$this->expectException('\Fluxoft\Rebar\Http\Exceptions\InvalidStatusException');
+		// Temporarily override the error handler to catch the warning
+		$triggeredError = null;
+		set_error_handler(function ($errno, $errstr) use (&$triggeredError) {
+			$triggeredError = $errstr;
+			return true; // Prevent PHP from displaying the error
+		});
 
 		$mockResponse->Status = 666;
+
+		restore_error_handler();
+
+		// Assert that the warning message is as expected
+		$this->assertNotNull($triggeredError);
+		$this->assertMatchesRegularExpression(
+			'/Invalid status code 666 set on Response object/',
+			$triggeredError ?? ''
+		);
 	}
 	public function testHalt() {
 		$mockResponse = new MockResponse();
@@ -94,6 +108,8 @@ class ResponseTest extends TestCase {
 	}
 	public function testHaltWithMessage() {
 		$mockResponse = new MockResponse();
+
+		$mockResponse->StatusMessage = 'Like so missing'; // set this here so that it matches when we check the sent headers
 
 		$expectedSent = [
 			'headers' => [
@@ -136,6 +152,14 @@ class ResponseTest extends TestCase {
 		$mockResponse->Redirect('/someplaceElse', true);
 		$this->assertEquals($expectedSent, $mockResponse->GetSent());
 	}
+	public function testSetHeadersThrowsException() {
+		$mockResponse = new MockResponse();
+	
+		$this->expectException(\InvalidArgumentException::class);
+		$this->expectExceptionMessage('Headers is read-only');
+	
+		$mockResponse->Headers = ['Content-type' => 'application/json'];
+	}	
 }
 
 // @codingStandardsIgnoreStart
@@ -147,15 +171,15 @@ class MockResponse extends Response {
 	}
 
 	private $sent = null;
-	public function Send() {
+	public function Send(): void {
 		$headers   = [];
-		$headers[] = $this->getHttpHeader($this->status);
-		foreach ($this->headers as $type => $content) {
+		$headers[] = $this->getHttpHeader($this->Status);
+		foreach ($this->Headers as $type => $content) {
 			$headers[] = "$type: $content";
 		}
 		$this->sent = [
 			'headers' => $headers,
-			'body' => $this->body
+			'body' => $this->Body
 		];
 	}
 	public function GetSent() {

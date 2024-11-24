@@ -15,10 +15,12 @@ use Fluxoft\Rebar\Model;
  * @property string Message
  */
 class Reply extends Model {
-	protected $properties = [
-		'Auth' => false,
-		'User' => null,
-		'Token' => null,
-		'Message' => null
-	];
+	public function __construct() {
+		parent::__construct([
+			'Auth' => false,
+			'User' => null,
+			'Token' => null,
+			'Message' => null
+		]);
+	}
 }

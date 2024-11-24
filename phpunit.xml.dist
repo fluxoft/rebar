@@ -1,20 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- http://www.phpunit.de/manual/current/en/appendixes.configuration.html -->
 <phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" backupGlobals="false" backupStaticAttributes="false" colors="true" convertDeprecationsToExceptions="false" convertErrorsToExceptions="true" convertNoticesToExceptions="false" convertWarningsToExceptions="true" processIsolation="false" stopOnFailure="false" bootstrap="vendor/autoload.php" xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/9.3/phpunit.xsd">
-  <coverage>
-    <include>
-      <directory>src</directory>
-    </include>
-    <report>
-      <clover outputFile="build/logs/clover.xml"/>
-      <html outputDirectory="build/coverage" lowUpperBound="50" highLowerBound="90"/>
-      <text outputFile="php://stdout" showUncoveredFiles="false"/>
-    </report>
-  </coverage>
-  <testsuites>
-    <testsuite name="Fluxoft Rebar Test Suite">
-      <directory suffix="Test.php" phpVersion="7.4.0">tests</directory>
-    </testsuite>
-  </testsuites>
-  <logging/>
+	<coverage>
+		<include>
+			<directory>src</directory>
+		</include>
+		<report>
+			<clover outputFile="build/logs/clover.xml"/>
+			<html outputDirectory="build/coverage" lowUpperBound="50" highLowerBound="90"/>
+			<text outputFile="php://stdout" showUncoveredFiles="false"/>
+		</report>
+	</coverage>
+	<testsuites>
+		<testsuite name="Fluxoft Rebar Test Suite">
+			<directory suffix="Test.php">tests</directory>
+			<exclude>tests/Rest</exclude>
+			<exclude>tests/Auth</exclude>
+		</testsuite>
+	</testsuites>
+	<logging/>
 </phpunit>

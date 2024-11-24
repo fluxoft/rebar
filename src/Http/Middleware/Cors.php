@@ -1,20 +1,25 @@
 <?php
 namespace Fluxoft\Rebar\Http\Middleware;
 
-use Fluxoft\Rebar\Http\Request;
-use Fluxoft\Rebar\Http\Response;
-use Fluxoft\Rebar\Http\Middleware\MiddlewareInterface;
 use Fluxoft\Rebar\Exceptions\CrossOriginException;
 use Fluxoft\Rebar\Exceptions\MethodNotAllowedException;
+use Fluxoft\Rebar\Http\Middleware\MiddlewareInterface;
+use Fluxoft\Rebar\Http\Request;
+use Fluxoft\Rebar\Http\Response;
 
 class Cors implements MiddlewareInterface {
 	protected bool $crossOriginEnabled         = false;
 	protected array $crossOriginDomainsAllowed = [];
 	protected array $allowedMethods            = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'];
 
-	public function __construct(array $allowedDomains = [], bool $enabled = false) {
+	public function __construct(
+		array $allowedDomains = [],
+		bool $enabled         = false,
+		array $allowedMethods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']
+	) {
 		$this->crossOriginDomainsAllowed = $allowedDomains;
 		$this->crossOriginEnabled        = $enabled;
+		$this->allowedMethods            = $allowedMethods;
 	}
 
 	public function Process(Request $request, Response $response, callable $next): Response {

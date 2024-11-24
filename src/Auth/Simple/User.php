@@ -14,12 +14,6 @@ use Fluxoft\Rebar\Model;
  * @property string Password
  */
 class User extends Model implements UserInterface {
-	protected $properties = [
-		'Id' => null,
-		'Username' => null,
-		'Password' => null
-	];
-
 	/**
 	 * @param int $id
 	 * @param $username
