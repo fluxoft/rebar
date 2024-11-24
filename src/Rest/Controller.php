@@ -5,7 +5,7 @@ namespace Fluxoft\Rebar\Rest;
 use Fluxoft\Rebar\Auth\AuthInterface;
 use Fluxoft\Rebar\Auth\Exceptions\InvalidPasswordException;
 use Fluxoft\Rebar\Auth\Exceptions\UserNotFoundException;
-use Fluxoft\Rebar\Controller as BaseController;
+use Fluxoft\Rebar\Http\Controller as BaseController;
 use Fluxoft\Rebar\Presenters\Json;
 
 abstract class Controller extends BaseController {

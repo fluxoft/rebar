@@ -6,8 +6,8 @@ use Doctrine\Common\Proxy\Exception\InvalidArgumentException;
 use Fluxoft\Rebar\Db\Exceptions\InvalidModelException;
 use Fluxoft\Rebar\Db\Filter;
 use Fluxoft\Rebar\Db\Mapper;
-use Fluxoft\Rebar\Db\Model;
 use Fluxoft\Rebar\Http\Request;
+use Fluxoft\Rebar\Model;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
@@ -1340,11 +1340,15 @@ class MockDataRepository extends DataRepository {
  * @property int UserId
  */
 // @codingStandardsIgnoreStart
-class TestModel extends Model {
+class TestModel  extends Model {
+	public function __construct() {
+		$this->Id     = 0;
+		$this->UserId = 0;
+	}
 	// @codingStandardsIgnoreEnd
-	protected $dbTable       = 'test';
-	protected $propertyDbMap = [
-		'Id'     => 'id',
-		'UserId' => 'user_id'
-	];
+	// protected $dbTable       = 'test';
+	// protected $propertyDbMap = [
+	// 	'Id'     => 'id',
+	// 	'UserId' => 'user_id'
+	// ];
 }

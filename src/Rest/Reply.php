@@ -13,12 +13,6 @@ use Fluxoft\Rebar\Model;
  * @property Error Error
  */
 class Reply extends Model {
-	protected $properties = [
-		'Status' => 200,
-		'Data' => [],
-		'Meta' => [],
-		'Error' => null
-	];
 	public function __construct($status = 200, $data = [], $meta = [], $error = null) {
 		parent::__construct([
 			'Status' => $status,

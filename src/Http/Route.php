@@ -1,6 +1,8 @@
 <?php
 
-namespace Fluxoft\Rebar;
+namespace Fluxoft\Rebar\Http;
+
+use Fluxoft\Rebar\Model;
 
 /**
  * Class Route
@@ -10,12 +12,6 @@ namespace Fluxoft\Rebar;
  * @property string Action
  */
 class Route extends Model {
-	protected $properties = [
-		'Path' => '/',
-		'Controller' => 'Main',
-		'Action' => 'Index'
-	];
-
 	/**
 	 * @param string $path
 	 * @param string $controller

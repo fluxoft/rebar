@@ -163,8 +163,11 @@ class ModelTest extends TestCase {
 // @codingStandardsIgnoreStart
 class ConcreteModel extends Model {
 	// @codingStandardsIgnoreEnd
-	protected $properties = ['defaultKey' => 'defaultValue', 'arrayAccessKey' => null];
-
+	protected static $defaultProperties = [
+		'defaultKey' => 'defaultValue',
+		'arrayAccessKey' => null
+	];
+	
 	protected function validateInvalidProperty($value) {
 		return "Invalid value $value";
 	}

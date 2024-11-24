@@ -19,23 +19,10 @@ abstract class Model implements \Iterator, \ArrayAccess {
 	use ArrayAccessibleProperties;
 	use StringableProperties;
 
-	/**
-	 * Holds the internal array of property names and values.
-	 * @var array $properties
-	 */
-	protected $properties = [];
-	/**
-	 * Properties that have been changed from their original values but have not yet been written to the database.
-	 * @var array $modProperties
-	 */
-	protected $modProperties = [];
+	protected static $defaultProperties = []; // Define defaults in subclasses
 
 	public function __construct(array $properties = []) {
-		if (!empty($properties)) {
-			foreach ($properties as $name => $value) {
-				$this->properties[$name] = $value;
-			}
-		}
+		$this->properties = array_merge(static::$defaultProperties, $properties);
 	}
 
 	/**
@@ -68,21 +55,33 @@ abstract class Model implements \Iterator, \ArrayAccess {
 			if (is_callable([$this, $validationMethod])) {
 				$validation = $this->$validationMethod($value);
 				if ($validation !== true) {
-					//
 					$this->validationErrors[$key] = $validation;
-
-					$valid = false;
+					$valid                        = false;
 				}
 			}
 		}
 		return $valid;
 	}
 	private array $validationErrors = [];
+	
 	/**
 	 * Returns any validation errors that were found on the last run of IsValid()
 	 * @return array
 	 */
 	public function GetValidationErrors(): array {
 		return $this->validationErrors;
+	}
+
+	/**
+	 * This is for initializing a model's properties array without setting the values in the modProperties array,
+	 * as would happen if setting each property through the object's setter methods.
+	 * @param array $initialProperties
+	 */
+	public function InitializeProperties(array $initialProperties): void {
+		foreach ($initialProperties as $key => $value) {
+			if (isset($this->properties[$key])) {
+				$this->properties[$key] = $value;
+			}
+		}
 	}
 }

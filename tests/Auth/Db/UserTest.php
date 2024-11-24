@@ -6,97 +6,68 @@ use PHPUnit\Framework\TestCase;
 
 class UserTest extends TestCase {
 	public function testUnsetUsername() {
-		$authUsernameProperty = 'Email';
-		$authPasswordProperty = 'Password';
-		$properties           = [
-			'Id' => '',
-			'Email' => '',
-			'Password' => ''
-		];
-		$propertyDbMap        = [
-			'Id' => 'id',
-			'Password' => 'password'
-		];
-		$dataRow              = [
+		$initialProperties = [
 			'Id' => 1,
-			'Email' => 'joe@fluxoft.com',
-			'Password' => 'password'
+			'Password' => 'password' // Email intentionally omitted
 		];
 
-		$this->expectException('\Fluxoft\Rebar\Db\Exceptions\ModelException');
-		$this->expectExceptionMessage(sprintf(
-			'The username property %s must be defined in the propertyDbMap.',
-			$authUsernameProperty
-		));
+		$this->expectException('\Fluxoft\Rebar\Data\Db\Exceptions\ModelException');
+		$this->expectExceptionMessage('The username property Email must be defined in the properties array.');
 
 		$user = new ConcreteUser(
-			$dataRow,
-			$properties,
-			$propertyDbMap,
-			$authUsernameProperty,
-			$authPasswordProperty
+			$initialProperties,
+			[
+				'Id' => 0,
+				// 'Email' omitted for this test
+				'Password' => ''
+			]
 		);
-		unset($user);
 	}
 
+
 	public function testUnsetPassword() {
-		$authUsernameProperty = 'Email';
-		$authPasswordProperty = 'Password';
-		$properties           = [
-			'Id' => '',
-			'Email' => '',
-			'Password' => ''
-		];
-		$propertyDbMap        = [
-			'Id' => 'id',
-			'Email' => 'email'
-		];
-		$dataRow              = [
+		$initialProperties = [
 			'Id' => 1,
-			'Email' => 'joe@fluxoft.com',
-			'Password' => 'password'
+			'Email' => 'joe@fluxoft.com' // Password intentionally omitted
 		];
 
-		$this->expectException('\Fluxoft\Rebar\Db\Exceptions\ModelException');
-		$this->expectExceptionMessage(sprintf(
-			'The password property %s must be defined in the propertyDbMap.',
-			$authPasswordProperty
-		));
+		$this->expectException('\Fluxoft\Rebar\Data\Db\Exceptions\ModelException');
+		$this->expectExceptionMessage('The password property Password must be defined in the properties array.');
 
 		$user = new ConcreteUser(
-			$dataRow,
-			$properties,
-			$propertyDbMap,
-			$authUsernameProperty,
-			$authPasswordProperty
+			$initialProperties,
+			[
+				'Id' => 0,
+				'Email' => '',
+				// 'Password' omitted for this test
+			]
 		);
-		unset($user);
 	}
 
 	public function testPropertyAccessors() {
 		$user = new ConcreteUser([
 			'Id' => 1,
-			'UserEmail' => 'joe@fluxoft.com',
-			'PassPhrase' => 'password'
+			'Email' => 'joe@fluxoft.com',
+			'Password' => 'password'
 		]);
 
 		/*
 		 * This is used by the UserMapper in case someone has set
 		 * a different property name as their username property.
 		 */
-		$this->assertEquals('UserEmail', $user->GetAuthUsernameProperty());
+		$this->assertEquals('Email', $user->GetAuthUsernameProperty());
 
 		$this->assertEquals(1, $user->Id);
-		$this->assertEquals('joe@fluxoft.com', $user->UserEmail);
+		$this->assertEquals('joe@fluxoft.com', $user->Email);
 
 		/*
 		 * Do not allow retrieving the actual password.
 		 */
-		$this->assertEquals('********', $user->PassPhrase);
+		$this->assertEquals('********', $user->Password);
 
 		// Set a password and confirm it was hashed correctly.
-		$newPassword      = 'VerySecurePassword';
-		$user->PassPhrase = $newPassword;
+		$newPassword    = 'VerySecurePassword';
+		$user->Password = $newPassword;
 
 		// test IsValid function for new password
 		$this->assertTrue($user->IsPasswordValid($newPassword));
@@ -106,27 +77,29 @@ class UserTest extends TestCase {
 // @codingStandardsIgnoreStart
 class ConcreteUser extends User {
 	// @codingStandardsIgnoreEnd
-	protected $authUsernameProperty = 'UserEmail';
-	protected $authPasswordProperty = 'PassPhrase';
+	protected $authUsernameProperty = 'Email';
+	protected $authPasswordProperty = 'Password';
 
 	public function __construct(
-		array $dataRow = [],
-		array $properties    = null,
-		array $propertyDbMap = null,
+		array $initialProperties = [],
+		array $defaultProperties    = null,
 		string $authUsernameProperty = null,
 		string $authPasswordProperty = null
 	) {
-		if (isset($properties) && isset($propertyDbMap)) {
-			$this->properties    = $properties;
-			$this->propertyDbMap = $propertyDbMap;
+		// Allow overriding default properties for testing
+		if (isset($defaultProperties)) {
+			self::$defaultProperties = $defaultProperties;
 		}
+
+		// Allow overriding username and password properties for testing
 		if (isset($authUsernameProperty)) {
 			$this->authUsernameProperty = $authUsernameProperty;
 		}
 		if (isset($authPasswordProperty)) {
 			$this->authPasswordProperty = $authPasswordProperty;
 		}
-		parent::__construct($dataRow);
+
+		parent::__construct($initialProperties);
 	}
 
 	public function PublicGenerateHash($password, $cost = 11) {
@@ -136,15 +109,9 @@ class ConcreteUser extends User {
 		return $this->properties[$this->authPasswordProperty];
 	}
 
-	protected $properties    = [
+	protected static $defaultProperties = [
 		'Id' => 0,
-		'UserEmail' => '',
-		'PassPhrase' => ''
+		'Email' => '',
+		'Password' => ''
 	];
-	protected $propertyDbMap = [
-		'Id' => 'id',
-		'UserEmail' => 'email',
-		'PassPhrase' => 'password'
-	];
-	protected $dbTable       = 'users';
 }

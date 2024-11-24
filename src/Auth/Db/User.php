@@ -3,8 +3,8 @@
 namespace Fluxoft\Rebar\Auth\Db;
 
 use Fluxoft\Rebar\Auth\UserInterface;
-use Fluxoft\Rebar\Db\Exceptions\ModelException;
-use Fluxoft\Rebar\Db\Model;
+use Fluxoft\Rebar\Data\Db\Exceptions\ModelException;
+use Fluxoft\Rebar\Model;
 
 /**
  * Class User
@@ -14,21 +14,23 @@ abstract class User extends Model implements UserInterface {
 	protected $authUsernameProperty = 'Email';
 	protected $authPasswordProperty = 'Password';
 
-	public function __construct(array $dataRow = []) {
-		if (!isset($this->propertyDbMap[$this->authUsernameProperty])) {
+	public function __construct(array $properties = []) {
+		// Call the parent constructor to ensure $properties is initialized from the defaults
+		parent::__construct($properties);
+
+		// Ensure the username and password properties are defined
+		if (!array_key_exists($this->authUsernameProperty, $this->properties)) {
 			throw new ModelException(sprintf(
-				'The username property %s must be defined in the propertyDbMap.',
+				'The username property %s must be defined in the properties array.',
 				$this->authUsernameProperty
 			));
 		}
-		if (!isset($this->propertyDbMap[$this->authPasswordProperty])) {
+		if (!array_key_exists($this->authPasswordProperty, $this->properties)) {
 			throw new ModelException(sprintf(
-				'The password property %s must be defined in the propertyDbMap.',
+				'The password property %s must be defined in the properties array.',
 				$this->authPasswordProperty
 			));
 		}
-
-		parent::__construct($dataRow);
 	}
 
 	public function GetAuthUsernameProperty() {

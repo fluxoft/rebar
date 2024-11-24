@@ -8,29 +8,15 @@
  * @author Joe Hart
  *
  */
-namespace Fluxoft\Rebar;
+namespace Fluxoft\Rebar\Http;
 
-use Fluxoft\Rebar\Auth\Exceptions\AccessDeniedException;
 use Fluxoft\Rebar\Auth\AuthInterface;
-use Fluxoft\Rebar\Exceptions\CrossOriginException;
+use Fluxoft\Rebar\Auth\Exceptions\AccessDeniedException;
 use Fluxoft\Rebar\Exceptions\MethodNotAllowedException;
-use Fluxoft\Rebar\Http\Request;
-use Fluxoft\Rebar\Http\Response;
+use Fluxoft\Rebar\Presenters;
 use Fluxoft\Rebar\Presenters\Exceptions\InvalidPresenterException;
 
 abstract class Controller {
-	/**
-	 * If CORS requests need to be handled automatically by the Controller,
-	 * set this to true to add the appropriate headers to responses based on
-	 * the Origin header provided.
-	 * @var bool
-	 */
-	protected $crossOriginEnabled = false;
-	/**
-	 * An array of domains from which cross-origin requests are allowed.
-	 * @var array
-	 */
-	protected $crossOriginDomainsAllowed = [];
 	/**
 	 * Methods that are allowed to this controller. If a controller method needs
 	 * a different set of allowed methods, this array should be reset inside the
@@ -97,45 +83,24 @@ abstract class Controller {
 	 * @param $method
 	 * @return bool
 	 * @throws AccessDeniedException
-	 * @throws CrossOriginException
 	 * @throws MethodNotAllowedException
 	 */
 	public function Authorize($method): bool {
 		$allowedMethods = array_map('strtoupper', $this->allowedMethods);
-		$requestHeaders = $this->request->Headers;
 		$requestMethod  = $this->request->Method;
 
 		// always allow OPTIONS requests
 		if (!in_array('OPTIONS', $allowedMethods)) {
 			$allowedMethods[] = 'OPTIONS';
 		}
-		// set CORS headers if configured
-		if ($this->crossOriginEnabled) {
-			if (isset($requestHeaders['Origin'])) {
-				$allowedHeaders = ($requestHeaders['Access-Control-Request-Headers'] ?? '');
-				$origin         = $requestHeaders['Origin'];
-				if (in_array($origin, $this->crossOriginDomainsAllowed)) {
-					$this->response->AddHeader('Access-Control-Allow-Origin', $origin);
-					$this->response->AddHeader('Access-Control-Allow-Credentials', 'true');
-					$this->response->AddHeader('Access-Control-Allow-Methods', implode(',', $allowedMethods));
-					$this->response->AddHeader('Access-Control-Allow-Headers', $allowedHeaders);
-				} else {
-					throw new CrossOriginException(sprintf('The origin "%s" is not permitted.', $origin));
-				}
-			}
-		}
+
 		if (!in_array($requestMethod, $allowedMethods)) {
 			throw new MethodNotAllowedException(sprintf(
-				'The %s method is not permitted here (118).',
+				'The %s method is not permitted here.',
 				$requestMethod
 			));
 		}
-		/*
-		 * Issue #30: Authorize any OPTIONS request.
-		 */
-		if (strtoupper($requestMethod) === 'OPTIONS') {
-			return true;
-		}
+
 		if (isset($this->auth) && $this->methodRequiresAuthentication($method)) {
 			$authReply = $this->auth->GetAuthenticatedUser($this->request);
 			if (!$authReply->Auth) {
@@ -176,7 +141,7 @@ abstract class Controller {
 
 	/**
 	 * Uses the set PresenterInterface implementing class to Render to the Response using the internal data of the
-	 * controller. If no presenter is set on the class, atttempt to create one from the class name in
+	 * controller. If no presenter is set on the class, attempt to create one from the class name in
 	 * $this->presenterClass. If that is not a class, create an instance of \Fluxoft\Rebar\Presenters\Debug and use
 	 * that to Render.
 	 * @throws InvalidPresenterException If no valid Presenter was set or able to be created.
@@ -213,7 +178,7 @@ abstract class Controller {
 	 * @param string $var
 	 * @param mixed $val
 	 */
-	protected function set($var, $val) {
+	protected function set(string $var, mixed $val): void {
 		$this->data[$var] = $val;
 	}
 
@@ -223,7 +188,7 @@ abstract class Controller {
 	 *
 	 * @return array $data
 	 */
-	protected function getData() {
+	protected function getData(): array {
 		return $this->data;
 	}
 }

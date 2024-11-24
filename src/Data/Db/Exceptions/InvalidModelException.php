@@ -1,5 +1,5 @@
 <?php
 
-namespace Fluxoft\Rebar\Db\Exceptions;
+namespace Fluxoft\Rebar\Data\Db\Exceptions;
 
 class InvalidModelException extends \Exception {}

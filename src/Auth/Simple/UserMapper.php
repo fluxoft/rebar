@@ -5,6 +5,7 @@ namespace Fluxoft\Rebar\Auth\Simple;
 use Fluxoft\Rebar\Auth\Exceptions\InvalidPasswordException;
 use Fluxoft\Rebar\Auth\Exceptions\UserMapperException;
 use Fluxoft\Rebar\Auth\Exceptions\UserNotFoundException;
+use Fluxoft\Rebar\Auth\UserInterface;
 use Fluxoft\Rebar\Auth\UserMapperInterface;
 
 class UserMapper implements UserMapperInterface {
@@ -47,7 +48,7 @@ class UserMapper implements UserMapperInterface {
 	 * @throws InvalidPasswordException
 	 * @throws UserNotFoundException
 	 */
-	public function GetAuthorizedUserForUsernameAndPassword($username, $password) {
+	public function GetAuthorizedUserForUsernameAndPassword(string $username, string $password): UserInterface {
 		$users = array_filter($this->users, function (User $user) use ($username) {
 			return $user->Username === $username;
 		});
@@ -72,7 +73,7 @@ class UserMapper implements UserMapperInterface {
 	 * @return mixed
 	 * @throws UserNotFoundException
 	 */
-	public function GetAuthorizedUserById($id) {
+	public function GetAuthorizedUserById(mixed $id): UserInterface {
 		$users = array_filter($this->users, function (User $user) use ($id) {
 			return $user->GetID() === $id;
 		});

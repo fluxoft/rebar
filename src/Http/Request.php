@@ -21,18 +21,18 @@ use Fluxoft\Rebar\Model;
 class Request extends Model {
 	use UnsettableProperties;
 
-	protected $properties = [
-		'Method' => 'GET',
-		'Protocol' => 'http',
-		'Host' => 'localhost',
-		'Port' => 80,
-		'URL' => 'http://localhost/',
-		'URI' => '/',
-		'Path' => '/',
-		'Headers' => [],
-		'Body' => '',
-		'RemoteIP' => '0.0.0.0'
-	];
+	// protected $properties = [
+	// 	'Method' => 'GET',
+	// 	'Protocol' => 'http',
+	// 	'Host' => 'localhost',
+	// 	'Port' => 80,
+	// 	'URL' => 'http://localhost/',
+	// 	'URI' => '/',
+	// 	'Path' => '/',
+	// 	'Headers' => [],
+	// 	'Body' => '',
+	// 	'RemoteIP' => '0.0.0.0'
+	// ];
 
 	private $environment;
 	/**
@@ -44,6 +44,18 @@ class Request extends Model {
 	 * @param Environment $environment
 	 */
 	public function __construct(Environment $environment) {
+		$this->properties  = array_merge($this->properties, [
+			'Method' => 'GET',
+			'Protocol' => 'http',
+			'Host' => 'localhost',
+			'Port' => 80,
+			'URL' => 'http://localhost/',
+			'URI' => '/',
+			'Path' => '/',
+			'Headers' => [],
+			'Body' => '',
+			'RemoteIP' => '0.0.0.0'
+		]);
 		$this->environment = $environment;
 
 		parent::__construct();

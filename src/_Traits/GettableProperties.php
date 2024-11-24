@@ -2,7 +2,16 @@
 
 namespace Fluxoft\Rebar\_Traits;
 
+/**
+ * Trait GettableProperties
+ * For classes that need to have properties that can be read
+ * (use SettableProperties or UnsettableProperties for write/delete).
+ * 
+ * @package Fluxoft\Rebar\_Traits
+ */
 trait GettableProperties {
+	use Properties;
+
 	/**
 	 * Override the magic __get() method to get the value for
 	 * the specified member of the $properties array.  Use a "get[PropertyName]"
