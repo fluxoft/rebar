@@ -224,7 +224,7 @@ class Request {
 			if ($this->Headers('X-Forwarded-Proto') !== null) {
 				$protocol = $this->Headers('X-Forwarded-Proto');
 			} else {
-				$protocol= $this->Server('REQUEST_SCHEME', 'http');
+				$protocol = $this->Server('REQUEST_SCHEME', 'http');
 			}
 			$this->properties['Protocol'] = strtolower($protocol);
 		}

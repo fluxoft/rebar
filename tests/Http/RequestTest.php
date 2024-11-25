@@ -840,7 +840,7 @@ class RequestTest extends TestCase {
 	
 		// Use Reflection to access the protected method
 		$reflection = new \ReflectionClass($request);
-		$method = $reflection->getMethod('setAuthenticatedUser');
+		$method     = $reflection->getMethod('setAuthenticatedUser');
 		$method->setAccessible(true);
 	
 		// Call the protected method
