@@ -12,9 +12,9 @@ interface AuthInterface {
 	/**
 	 * Attempt to return a Reply for the authenticated user.
 	 * @param \Fluxoft\Rebar\Http\Request $request
-	 * @return Reply
+	 * @return Reply|null
 	 */
-	public function GetAuthenticatedUser(Request $request);
+	public function GetAuthenticatedUser(Request $request): ?Reply;
 
 	/**
 	 * Attempt to log the user in using the given $username and $password
@@ -22,14 +22,14 @@ interface AuthInterface {
 	 * @param string $username
 	 * @param string $password
 	 * @param bool $remember
-	 * @return \Fluxoft\Rebar\Auth\Reply
+	 * @return Reply
 	 */
-	public function Login($username, $password, $remember);
+	public function Login($username, $password, $remember): Reply;
 
 	/**
 	 * Log the user out and return a blank Reply
 	 * @param \Fluxoft\Rebar\Http\Request $request
 	 * @return Reply
 	 */
-	public function Logout(Request $request);
+	public function Logout(Request $request): Reply;
 }

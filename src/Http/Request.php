@@ -3,6 +3,7 @@ namespace Fluxoft\Rebar\Http;
 
 use Fluxoft\Rebar\_Traits\GettableProperties;
 use Fluxoft\Rebar\_Traits\SettableProperties;
+use Fluxoft\Rebar\Auth\AuthInterface;
 use Fluxoft\Rebar\Auth\UserInterface;
 
 /**
@@ -18,6 +19,7 @@ use Fluxoft\Rebar\Auth\UserInterface;
  * @property string RemoteIP IP address of the remote client
  * @property string RawBody  Raw body of the request. Immutable once set.
  * @property string Body     Body of the request. Mutable.
+ * @property AuthInterface|null Auth              The auth module for this request, if any.
  * @property UserInterface|null AuthenticatedUser The authenticated user for this request, if any.
  * 
  * @method string Server(string $var = null, string $default = null) Retrieves one or all server parameters.
@@ -53,6 +55,7 @@ class Request {
 		$this->environment = $environment;
 
 		$this->properties = [
+			'Auth' => null,
 			'AuthenticatedUser' => null,
 			'Method' => null,
 			'Protocol' => null,
@@ -379,5 +382,8 @@ class Request {
 	}
 	protected function setAuthenticatedUser(UserInterface $user) {
 		$this->properties['AuthenticatedUser'] = $user;
+	}
+	protected function setAuth(AuthInterface $auth) {
+		$this->properties['Auth'] = $auth;
 	}
 }
