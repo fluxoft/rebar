@@ -21,7 +21,7 @@ class Cookies extends ParameterSet {
 			'path' => '/',
 			'domain' => null,
 			'secure' => false,
-			'httponly' => false
+			'httponly' => true
 		];
 
 		$this->settings = array_merge($defaults, $settings);
@@ -30,24 +30,29 @@ class Cookies extends ParameterSet {
 	}
 
 	/**
-	 * @param $key
-	 * @param $value
-	 * @param int $expires
+	 * Set a cookie value, using $expires if given, or the default expires value if not.
+	 * Use $overrides to override the default settings, if needed.
+	 * @param string $key
+	 * @param mixed  $value
+	 * @param int    $expires
+	 * @param array  $overrides Settings overrides, valid keys are: expires, path, domain, secure, httponly
 	 */
 	public function Set(
-		$key,
-		$value,
-		$expires = null
+		string $key,
+		mixed  $value,
+		array  $overrides = []
 	): void {
-		$expires = (isset($expires)) ? $expires : $this->settings['expires'];
+		// Merge overrides with current settings
+		$finalSettings = array_merge($this->settings, $overrides);
+		$expires       = $finalSettings['expires'] ?? 0;
 		if ($this->setCookie(
 			$key,
 			$value,
 			$expires,
-			$this->settings['path'],
-			$this->settings['domain'],
-			$this->settings['secure'],
-			$this->settings['httponly']
+			$finalSettings['path'],
+			$finalSettings['domain'],
+			$finalSettings['secure'],
+			$finalSettings['httponly']
 		)) {
 			parent::Set($key, $value);
 		}
@@ -56,11 +61,11 @@ class Cookies extends ParameterSet {
 	/**
 	 * @param $key
 	 */
-	public function Delete($key): void {
+	public function Delete(string $key): void {
 		if ($this->setCookie(
 			$key,
 			'',
-			0,
+			time() - 3600,
 			$this->settings['path'],
 			$this->settings['domain'],
 			$this->settings['secure'],

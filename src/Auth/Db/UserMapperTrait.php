@@ -3,7 +3,7 @@
 namespace Fluxoft\Rebar\Auth\Db;
 
 use Doctrine\DBAL\Exception;
-use Fluxoft\Rebar\Auth\Db\User;
+use Fluxoft\Rebar\Auth\Exceptions\InvalidCredentialsException;
 use Fluxoft\Rebar\Auth\Exceptions\InvalidPasswordException;
 use Fluxoft\Rebar\Auth\Exceptions\UserNotFoundException;
 use Fluxoft\Rebar\Auth\UserInterface;
@@ -34,7 +34,7 @@ trait UserMapperTrait {
 	 * @return UserInterface
 	 * @throws InvalidPasswordException|UserNotFoundException|Exception
 	 */
-	public function GetAuthorizedUserForUsernameAndPassword(string $username, string $password): User {
+	public function GetAuthorizedUserForUsernameAndPassword(string $username, string $password): UserInterface {
 		/** @var MapperInterface|UserMapperTrait $this */
 		$this->enforceMapperRequirements();
 
@@ -46,7 +46,7 @@ trait UserMapperTrait {
 			if ($user->IsPasswordValid($password)) {
 				return $user;
 			} else {
-				throw new InvalidPasswordException('Incorrect password');
+				throw new InvalidCredentialsException('Incorrect password');
 			}
 		} else {
 			throw new UserNotFoundException('User not found');
@@ -61,7 +61,7 @@ trait UserMapperTrait {
 	 * @return UserInterface
 	 * @throws Exception
 	 */
-	public function GetAuthorizedUserById(mixed $id): User {
+	public function GetAuthorizedUserById(mixed $id): UserInterface {
 		/** @var MapperInterface|UserMapperTrait $this */
 		$this->enforceMapperRequirements();
 
@@ -99,12 +99,12 @@ trait UserMapperTrait {
 				__TRAIT__
 			));
 		}
-		// Ensure the class's model is a User
-		if (!($this->model instanceof User)) {
+		// Ensure the class's model implements the UserInterface
+		if (!($this->model instanceof UserInterface)) {
 			throw new \LogicException(sprintf(
-				'The model for the class %s must be an instance of %s to use %s.',
+				'The class %s must implement %s to use %s.',
 				static::class,
-				User::class,
+				UserInterface::class,
 				__TRAIT__
 			));
 		}

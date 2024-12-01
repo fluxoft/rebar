@@ -2,7 +2,7 @@
 
 namespace Fluxoft\Rebar\Auth\Simple;
 
-use Fluxoft\Rebar\Auth\Exceptions\InvalidPasswordException;
+use Fluxoft\Rebar\Auth\Exceptions\InvalidCredentialsException;
 use Fluxoft\Rebar\Auth\Exceptions\UserMapperException;
 use Fluxoft\Rebar\Auth\Exceptions\UserNotFoundException;
 use Fluxoft\Rebar\Auth\UserInterface;
@@ -61,7 +61,7 @@ class UserMapper implements UserMapperInterface {
 			/** @var User $user */
 			$user = $users[0];
 			if (!$user->IsPasswordValid($password)) {
-				throw new InvalidPasswordException('The password is incorrect.');
+				throw new InvalidCredentialsException('The password is incorrect.');
 			}
 			return $user;
 		}

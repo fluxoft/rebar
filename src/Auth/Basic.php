@@ -2,62 +2,38 @@
 
 namespace Fluxoft\Rebar\Auth;
 
+use Fluxoft\Rebar\Auth\Exceptions\BasicAuthChallengeException;
 use Fluxoft\Rebar\Http\Request;
+use RuntimeException;
 
 /**
  * Class Basic
  * @package Fluxoft\Rebar\Auth
  */
 class Basic implements AuthInterface {
-	protected $userMapper;
-	protected $realm;
-	protected $message;
-
-	public function __construct(UserMapperInterface $userMapper, $realm, $message) {
-		$this->userMapper = $userMapper;
-		$this->realm      = $realm;
-		$this->message    = $message;
-	}
+	public function __construct(
+		protected UserMapperInterface $userMapper,
+		protected string $realm = 'Restricted Area',
+		protected string $message = 'Unauthorized'
+	) {}
 
 	/**
-	 * Attempt to return a Reply for the authenticated user.
-	 * @param \Fluxoft\Rebar\Http\Request $request
-	 * @return Reply
+	 * {@inheritdoc}
 	 */
-	public function GetAuthenticatedUser(Request $request) {
+	public function GetAuthenticatedUser(Request $request): ?Reply {
 		$basicAuthUser = $request->Server('PHP_AUTH_USER');
 
 		if (!isset($basicAuthUser)) {
-			$this->sendChallenge($this->realm, $this->message);
-			return null;
-		} else {
-			return $this->Login($basicAuthUser, $request->Server('PHP_AUTH_PW', ''));
+			throw new BasicAuthChallengeException($this->realm, $this->message);
 		}
+		return $this->Login($basicAuthUser, $request->Server('PHP_AUTH_PW', ''));
 	}
 
 	/**
-	 * @param $realm
-	 * @param $message
-	 * @codeCoverageIgnore
+	 * {@inheritdoc}
+	 * Note: The $remember parameter is not used in this implementation.
 	 */
-	protected function sendChallenge($realm, $message) {
-		header('WWW-Authenticate: Basic realm="'.$realm.'"');
-		header('HTTP/1.0 401 Unauthorized');
-		echo $message;
-		exit;
-	}
-
-
-
-	/**
-	 * Attempt to log the user in using the given $username and $password
-	 * and return a Reply object.
-	 * @param string $username
-	 * @param string $password
-	 * @param bool $remember
-	 * @return \Fluxoft\Rebar\Auth\Reply
-	 */
-	public function Login($username, $password, $remember = false) {
+	public function Login($username, $password, $remember = false): Reply {
 		// unused in this implementation
 		unset($remember);
 		
@@ -69,17 +45,12 @@ class Basic implements AuthInterface {
 	}
 
 	/**
-	 * Log the user out and return a blank Reply
-	 * @param \Fluxoft\Rebar\Http\Request $request
-	 * @return Reply
+	 * {@inheritdoc}
 	 */
-	public function Logout(Request $request) {
+	public function Logout(Request $request): Reply {
 		//unused
 		unset($request);
 
-		// You can't really log out of a basic authentication session, since the browser will
-		// just keep sending the same Authorization header over and over, so this method won't
-		// really do anything, but return a blank Reply for conformity's sake
-		return new Reply();
+		throw new RuntimeException('Logout is not supported with Basic Auth');
 	}
 }

@@ -2,9 +2,8 @@
 
 namespace Fluxoft\Rebar\Auth;
 
-use Doctrine\DBAL\Exception;
-use Fluxoft\Rebar\Auth\Db\Token;
 use Fluxoft\rebar\Auth\Db\TokenMapper;
+use Fluxoft\Rebar\Auth\Db\Token;
 use Fluxoft\Rebar\Auth\Db\User;
 use Fluxoft\Rebar\Auth\Db\UserMapper;
 use Fluxoft\Rebar\Http\Cookies;
@@ -56,7 +55,7 @@ class Web implements AuthInterface {
 	 * @param Request $request
 	 * @return Reply
 	 */
-	public function GetAuthenticatedUser(Request $request) {
+	public function GetAuthenticatedUser(Request $request): ?Reply {
 		if (!isset($this->auth)) {
 			$auth     = new Reply();
 			$userID   = $this->session->Get('AuthUserId');
@@ -130,7 +129,7 @@ class Web implements AuthInterface {
 	 * @param \Fluxoft\Rebar\Http\Request $request
 	 * @return Reply
 	 */
-	public function Logout(Request $request) {
+	public function Logout(Request $request): Reply {
 		$auth = $this->GetAuthenticatedUser( $request);
 		if ($auth->User instanceof User) {
 			$token = $this->getValidToken($request);

@@ -19,12 +19,13 @@ interface AuthInterface {
 	/**
 	 * Attempt to log the user in using the given $username and $password
 	 * and return a Reply object.
+	 * @param Request $request
 	 * @param string $username
 	 * @param string $password
 	 * @param bool $remember
 	 * @return Reply
 	 */
-	public function Login($username, $password, $remember): Reply;
+	public function Login(Request $request, string $username, string $password, bool $remember): Reply;
 
 	/**
 	 * Log the user out and return a blank Reply

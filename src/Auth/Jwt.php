@@ -10,15 +10,8 @@ use Fluxoft\Rebar\Http\Request;
  * @package Fluxoft\Rebar\Auth
  */
 class Jwt implements AuthInterface {
-	/** @var UserMapperInterface */
-	protected $userMapper;
-	/** @var string */
-	protected $secretKey;
-	/** @var \DateInterval */
-	protected $expires;
-
 	/** @var Reply */
-	private $auth = null;
+	private $authReply = null;
 
 	/**
 	 * @param UserMapperInterface $userMapper
@@ -26,52 +19,44 @@ class Jwt implements AuthInterface {
 	 * @param \DateInterval $expires Seconds to expiration
 	 */
 	public function __construct(
-		UserMapperInterface $userMapper,
-		$secretKey,
-		\DateInterval       $expires = null
-	) {
-		$this->userMapper = $userMapper;
-		$this->secretKey  = $secretKey;
-
-		if (!isset($expires)) {
-			$expires = new \DateInterval('P30D');
-		}
-		$this->expires = $expires;
-	}
+		protected UserMapperInterface $userMapper,
+		protected TokenManager        $tokenManager,
+		protected \DateInterval       $expires = new \DateInterval('P30D')
+	) {}
 
 	/**
 	 * Attempt to return a Reply for the authenticated user.
 	 * @param \Fluxoft\Rebar\Http\Request $request
 	 * @return Reply
 	 */
-	public function GetAuthenticatedUser(Request $request) {
+	public function GetAuthenticatedUser(Request $request): Reply {
 		if (!isset($this->auth)) {
-			$auth     = new Reply();
-			$authUser = null;
+			$authReply = new Reply();
+			$authUser  = null;
 			// Check that valid tokens are set
 			$validToken = $this->getValidTokenPayload($request);
 			if (!isset($validToken)) {
-				$auth->Message = 'No valid AuthToken found in Request.';
+				$authReply->Message = 'No valid AuthToken found in Request.';
 			} else {
 				if ($validToken === 'expired') {
-					$auth->Message = 'The token is expired.';
+					$authReply->Message = 'The token is expired.';
 				} else {
 					// a valid token was found - use it to pull the correct user
 					$authUser = $this->userMapper->GetAuthorizedUserById($validToken->userId);
 					if ($authUser instanceof UserInterface) {
 						$tokenString   = $this->getTokenString($authUser);
-						$auth->Auth    = true;
-						$auth->Token   = $tokenString;
-						$auth->Message = 'Found valid token and logged in';
+						$authReply->Auth    = true;
+						$authReply->Token   = $tokenString;
+						$authReply->Message = 'Found valid token and logged in';
 					} else {
-						$auth->Message = 'Tried to log in using token but user not found.';
+						$authReply->Message = 'Tried to log in using token but user not found.';
 					}
 				}
 			}
-			$auth->User = $authUser;
-			$this->auth = $auth;
+			$authReply->User = $authUser;
+			$this->authReply = $authReply;
 		}
-		return $this->auth;
+		return $this->authReply;
 	}
 
 	/**
@@ -82,18 +67,24 @@ class Jwt implements AuthInterface {
 	 * @param bool $remember
 	 * @return \Fluxoft\Rebar\Auth\Reply
 	 */
-	public function Login($username, $password, $remember = null) {
-		// unused in this implementation
-		$remember = null;
-
+	public function Login($username, $password, $remember = null): Reply {
 		$reply = new Reply();
-		$user  = $this->userMapper->GetAuthorizedUserForUsernameAndPassword($username, $password);
+
+		// Authenticate the user
+		$user = $this->userMapper->GetAuthorizedUserForUsernameAndPassword($username, $password);
 		if ($user instanceof UserInterface) {
-			$tokenString  = $this->getTokenString($user);
-			$reply->Auth  = true;
-			$reply->User  = $user;
-			$reply->Token = $tokenString;
-			$this->auth   = $reply;
+			$claims      = ['userId' => $user->GetID()];
+			$reply->Auth = true;
+			$reply->User = $user;
+
+			// Generate tokens
+			$reply->Token        = $this->tokenManager->GenerateAccessToken($claims);
+			$reply->RefreshToken = $this->tokenManager->GenerateRefreshToken($claims);
+
+			// Store refresh token for revocation
+			$this->tokenManager->StoreRefreshToken($reply->RefreshToken, $claims);
+
+			$this->authReply = $reply;
 		} else {
 			$reply->Message = 'User not found';
 		}
@@ -105,7 +96,7 @@ class Jwt implements AuthInterface {
 	 * @param \Fluxoft\Rebar\Http\Request $request
 	 * @return Reply
 	 */
-	public function Logout(Request $request) {
+	public function Logout(Request $request): Reply {
 		unset($request);
 
 		// You can't really log out of a JWT authentication session, since the same token

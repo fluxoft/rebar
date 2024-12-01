@@ -1,4 +1,5 @@
 <?php
+
 namespace Fluxoft\Rebar\Http;
 
 use Fluxoft\Rebar\_Traits\ArrayAccessibleProperties;
@@ -11,14 +12,15 @@ use Fluxoft\Rebar\Http\Exceptions\EnvironmentException;
 /**
  * Class Environment
  * @package Fluxoft\Rebar\Http
- * @property array ServerParams
- * @property array GetParams
- * @property array PostParams
- * @property array PutParams
- * @property array PatchParams
- * @property array DeleteParams
- * @property array Headers
- * @property string Input
+ * @property-read array ServerParams
+ * @property-read array GetParams
+ * @property-read array PostParams
+ * @property-read array PutParams
+ * @property-read array PatchParams
+ * @property-read array DeleteParams
+ * @property-read array Headers
+ * @property-read string Input
+ * @property array CookieSettings
  */
 class Environment implements \ArrayAccess, \Iterator {
 	use GettableProperties;
@@ -44,6 +46,13 @@ class Environment implements \ArrayAccess, \Iterator {
 	public function __clone() {
 		throw new EnvironmentException('Cloning not allowed.');
 	}
+	private array $defaultCookieSettings = [
+		'expires'  => 0, // Default to session cookies
+		'path'     => '/', // Default to root path
+		'domain'   => null, // Will be dynamically set in the constructor
+		'secure'   => null, // Will be dynamically set in the constructor
+		'httponly' => true // Default to HTTP-only cookies for security
+	];
 	private function __construct() {
 		$this->properties['ServerParams'] = [];
 		$this->properties['GetParams']    = [];
@@ -53,24 +62,26 @@ class Environment implements \ArrayAccess, \Iterator {
 		$this->properties['DeleteParams'] = [];
 		$this->properties['Headers']      = [];
 		$this->properties['Input']        = '';
+
+		$this->defaultCookieSettings['domain'] = $this->ServerParams['HTTP_HOST'] ?? null;
+		$this->defaultCookieSettings['secure'] = isset($this->ServerParams['HTTPS']) &&
+			$this->ServerParams['HTTPS'] !== 'off';
+		$this->properties['CookieSettings']    = $this->defaultCookieSettings;
 	}
 
-	/** @var array */
-	protected function getServerParams() {
+	protected function getServerParams(): array {
 		if (!isset($this->properties['ServerParams'])) {
 			$this->properties['ServerParams'] = $this->superGlobalServer();
 		}
 		return $this->properties['ServerParams'];
 	}
-	/** @var array */
-	protected function getGetParams() {
+	protected function getGetParams(): array {
 		if (!isset($this->properties['GetParams'])) {
 			$this->properties['GetParams'] = $this->superGlobalGet();
 		}
 		return $this->properties['GetParams'];
 	}
-	/** @var array */
-	protected function getPostParams() {
+	protected function getPostParams(): array {
 		if (!isset($this->properties['PostParams'])) {
 			if (isset($this->ServerParams['REQUEST_METHOD']) &&
 				strtoupper($this->ServerParams['REQUEST_METHOD']) === 'POST' &&
@@ -87,8 +98,7 @@ class Environment implements \ArrayAccess, \Iterator {
 		}
 		return $this->properties['PostParams'];
 	}
-	/** @var array */
-	protected function getPutParams() {
+	protected function getPutParams(): array {
 		if (!isset($this->properties['PutParams'])) {
 			if (isset($this->Headers['X-Http-Method-Override']) &&
 				strtoupper($this->Headers['X-Http-Method-Override']) === 'PUT'
@@ -100,8 +110,7 @@ class Environment implements \ArrayAccess, \Iterator {
 		}
 		return $this->properties['PutParams'];
 	}
-	/** @var array */
-	protected function getPatchParams() {
+	protected function getPatchParams(): array {
 		if (!isset($this->properties['PatchParams'])) {
 			if (isset($this->Headers['X-Http-Method-Override']) &&
 				strtoupper($this->Headers['X-Http-Method-Override']) === 'PATCH'
@@ -113,8 +122,7 @@ class Environment implements \ArrayAccess, \Iterator {
 		}
 		return $this->properties['PatchParams'];
 	}
-	/** @var array */
-	protected function getDeleteParams() {
+	protected function getDeleteParams(): array {
 		if (!isset($this->properties['DeleteParams'])) {
 			if (isset($this->Headers['X-Http-Method-Override']) &&
 				strtoupper($this->Headers['X-Http-Method-Override']) === 'DELETE'
@@ -126,20 +134,42 @@ class Environment implements \ArrayAccess, \Iterator {
 		}
 		return $this->properties['DeleteParams'];
 	}
-	/** @var array */
-	protected function getHeaders() {
+	protected function getHeaders(): array {
 		if (!isset($this->properties['Headers'])) {
 			$this->properties['Headers'] = $this->getAllHeaders();
 		}
 		return $this->properties['Headers'];
 	}
-	/** @var string */
-	protected function getInput() {
+	protected function getInput(): string {
 		if (!isset($this->properties['Input'])) {
 			$this->properties['Input'] = $this->getRawInput();
 		}
 		return $this->properties['Input'];
 	}
+	
+	// CookieSettings
+	protected function setCookieSettings(array $settings): void {
+		$this->properties['CookieSettings'] = $this->validateCookieSettings($settings);
+	}
+	protected function validateCookieSettings(array $settings): array {
+		$validated = [];
+		foreach ($this->defaultCookieSettings as $key => $value) {
+			if (isset($settings[$key])) {
+				$validated[$key] = $settings[$key];
+			} else {
+				$validated[$key] = $value;
+			}
+		}
+
+		// Detect unexpected keys and throw an exception
+		$unexpectedKeys = array_diff(array_keys($settings), array_keys($this->defaultCookieSettings));
+		if (count($unexpectedKeys) > 0) {
+			throw new EnvironmentException('Unexpected cookie settings: ' . implode(', ', $unexpectedKeys));
+		}
+
+		return $validated;
+	}
+
 
 	/**
 	 * @return string

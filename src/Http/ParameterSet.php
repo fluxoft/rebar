@@ -33,11 +33,11 @@ class ParameterSet {
 		}
 	}
 
-	public function Set($key, $value): void {
+	public function Set(string $key, mixed $value): void {
 		$this->params[strtolower($key)] = $value;
 	}
 
-	public function Delete($key): void {
+	public function Delete(string $key): void {
 		unset($this->params[$key]);
 	}
 }

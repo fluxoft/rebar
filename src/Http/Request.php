@@ -9,6 +9,8 @@ use Fluxoft\Rebar\Auth\UserInterface;
 /**
  * Class Request
  * @package Fluxoft\Rebar\Http
+ * @property AuthInterface|null Auth              The auth module for this request, if any.
+ * @property UserInterface|null AuthenticatedUser The authenticated user for this request, if any.
  * @property string Method   The HTTP method of the request (GET, POST, PUT, DELETE, etc.)
  * @property string Protocol Protocol used for the request (http, https, etc.)
  * @property string Host     Hostname of the request
@@ -19,8 +21,8 @@ use Fluxoft\Rebar\Auth\UserInterface;
  * @property string RemoteIP IP address of the remote client
  * @property string RawBody  Raw body of the request. Immutable once set.
  * @property string Body     Body of the request. Mutable.
- * @property AuthInterface|null Auth              The auth module for this request, if any.
- * @property UserInterface|null AuthenticatedUser The authenticated user for this request, if any.
+ * @property-read Session|null Session Session object for the request
+ * @property-read Cookies|null Cookies Cookies object for the request
  * 
  * @method string Server(string $var = null, string $default = null) Retrieves one or all server parameters.
  * @method string Headers(string $var = null, string $default = null) Retrieves one or all headers.
@@ -67,6 +69,8 @@ class Request {
 			'RawBody' => null,
 			'Body' => null,
 			'RemoteIP' => null,
+			'Session' => null,
+			'Cookies' => null
 		];
 	}
 
@@ -385,5 +389,23 @@ class Request {
 	}
 	protected function setAuth(AuthInterface $auth) {
 		$this->properties['Auth'] = $auth;
+	}
+	protected function getSession(): Session {
+		if (!isset($this->properties['Session'])) {
+			$this->properties['Session'] = new Session();
+		}
+		return $this->properties['Session'];
+	}
+	protected function setSession(): void {
+		throw new \InvalidArgumentException('Session is a read-only property.');
+	}
+	protected function getCookies(): Cookies {
+		if (!isset($this->properties['Cookies'])) {
+			$this->properties['Cookies'] = new Cookies($this->environment->CookieSettings);
+		}
+		return $this->properties['Cookies'];
+	}
+	protected function setCookies(): void {
+		throw new \InvalidArgumentException('Cookies is a read-only property.');
 	}
 }
