@@ -44,7 +44,7 @@ class Jwt implements AuthInterface {
 					// a valid token was found - use it to pull the correct user
 					$authUser = $this->userMapper->GetAuthorizedUserById($validToken->userId);
 					if ($authUser instanceof UserInterface) {
-						$tokenString   = $this->getTokenString($authUser);
+						$tokenString        = $this->getTokenString($authUser);
 						$authReply->Auth    = true;
 						$authReply->Token   = $tokenString;
 						$authReply->Message = 'Found valid token and logged in';
@@ -68,6 +68,7 @@ class Jwt implements AuthInterface {
 	 * @return \Fluxoft\Rebar\Auth\Reply
 	 */
 	public function Login($username, $password, $remember = null): Reply {
+		unset($remember); // unused
 		$reply = new Reply();
 
 		// Authenticate the user

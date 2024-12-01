@@ -43,7 +43,7 @@ class RefreshTokenMapperTest extends TestCase {
 
 		// Initialize other dependencies
 		$this->refreshTokenModelObserver = new RefreshToken();
-		$this->mapperFactory = $this->getMockBuilder(ConcreteMapperFactoryForRefreshTokenMapperTest::class)
+		$this->mapperFactory             = $this->getMockBuilder(ConcreteMapperFactoryForRefreshTokenMapperTest::class)
 			->disableOriginalConstructor()
 			->getMock();
 	}
