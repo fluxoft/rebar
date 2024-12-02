@@ -23,12 +23,9 @@ trait SettableProperties {
 		$fnName = "set$key";
 		if (is_callable([$this, $fnName])) {
 			$this->$fnName($value);
-			// Set the properties array with the given value so that the
-			// changed value is available, but not the modProperties array,
-			// as the custom setter function defined for this model should
-			// take care of actual modifications.
-			if (array_key_exists($key, $this->properties)) {
-				$this->properties[$key] = $value;
+			// Only update modProperties if the value has actually changed
+			if (!array_key_exists($key, $this->modProperties) || $this->modProperties[$key] !== $this->properties[$key]) {
+				$this->modProperties[$key] = $this->properties[$key];
 			}
 		} elseif (array_key_exists($key, $this->properties)) {
 			// set both the properties and modProperties keys
