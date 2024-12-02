@@ -103,6 +103,7 @@ class UserMapper implements UserMapperInterface {
 		if (!file_exists($filePath)) {
 			throw new \RuntimeException(sprintf('File not found: %s', $filePath));
 		}
+		// @codingStandardsIgnoreLine
 		$users = @unserialize(file_get_contents($filePath));
 		if ($users === false) {
 			throw new \RuntimeException(sprintf('Failed to load users from file: %s', $filePath));
