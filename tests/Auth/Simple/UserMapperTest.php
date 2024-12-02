@@ -10,6 +10,7 @@ class UserMapperTest extends TestCase {
 	 * @dataProvider userMapperProvider
 	 */
 	public function testUserMapper(array $usersToSet) {
+		// Create the User objects
 		$users = [];
 		foreach ($usersToSet as $user) {
 			$users[] = new User($user['id'], $user['username'], $user['password']);
@@ -17,15 +18,28 @@ class UserMapperTest extends TestCase {
 		$userMapper = new UserMapper($users);
 
 		foreach ($usersToSet as $userArray) {
-			$authUser   = $userMapper->GetAuthorizedUserForUsernameAndPassword(
-				$user['username'],
-				$user['password']
+			// Retrieve the User by username and password from the UserMapper
+			$authUser = $userMapper->GetAuthorizedUserForUsernameAndPassword(
+				$userArray['username'],
+				$userArray['password']
 			);
-			$expectUser = new User($user['id'], $user['username'], $user['password']);
-			$this->assertEquals($expectUser, $authUser);
 
-			$authUser = $userMapper->GetAuthorizedUserById($expectUser->Id);
-			$this->assertEquals($expectUser, $authUser);
+			// Find the corresponding original User object
+			$expectedUser = array_values(array_filter($users, function (User $user) use ($userArray) {
+				return $user->Username === $userArray['username'];
+			}))[0]; // There should only be one match
+
+			$this->assertEquals($expectedUser, $authUser);
+
+			// Retrieve the User by ID from the UserMapper
+			$authUser = $userMapper->GetAuthorizedUserById($userArray['id']);
+
+			// Find the corresponding original User object by ID
+			$expectedUser = array_values(array_filter($users, function (User $user) use ($userArray) {
+				return $user->GetId() === $userArray['id'];
+			}))[0]; // There should only be one match
+
+			$this->assertEquals($expectedUser, $authUser);
 		}
 	}
 	public function userMapperProvider() {
@@ -36,6 +50,11 @@ class UserMapperTest extends TestCase {
 						'id' => 1,
 						'username' => 'foo',
 						'password' => 'bar'
+					],
+					[
+						'id' => 2,
+						'username' => 'baz',
+						'password' => 'qux'
 					]
 				]
 			]
@@ -76,8 +95,8 @@ class UserMapperTest extends TestCase {
 
 		$userMapper = new UserMapper([$user]);
 
-		$this->expectException('\Fluxoft\Rebar\Auth\Exceptions\InvalidPasswordException');
-		$this->expectExceptionMessage('The password is incorrect.');
+		$this->expectException('\Fluxoft\Rebar\Auth\Exceptions\InvalidCredentialsException');
+		$this->expectExceptionMessage('Invalid username or password.');
 
 		$userMapper->GetAuthorizedUserForUsernameAndPassword('foo', 'wrong');
 	}
