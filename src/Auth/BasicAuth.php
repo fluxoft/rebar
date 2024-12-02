@@ -10,7 +10,7 @@ use RuntimeException;
  * Class Basic
  * @package Fluxoft\Rebar\Auth
  */
-class Basic implements AuthInterface {
+class BasicAuth implements AuthInterface {
 	public function __construct(
 		protected UserMapperInterface $userMapper,
 		protected string $realm = 'Restricted Area',
@@ -26,16 +26,16 @@ class Basic implements AuthInterface {
 		if (!isset($basicAuthUser)) {
 			throw new BasicAuthChallengeException($this->realm, $this->message);
 		}
-		return $this->Login($basicAuthUser, $request->Server('PHP_AUTH_PW', ''));
+		return $this->Login($request, $basicAuthUser, $request->Server('PHP_AUTH_PW', ''));
 	}
 
 	/**
 	 * {@inheritdoc}
 	 * Note: The $remember parameter is not used in this implementation.
 	 */
-	public function Login($username, $password, $remember = false): Reply {
+	public function Login(Request $request, string $username, string $password, bool $remember = false): Reply {
 		// unused in this implementation
-		unset($remember);
+		unset($request, $remember);
 		
 		$reply       = new Reply();
 		$user        = $this->userMapper->GetAuthorizedUserForUsernameAndPassword($username, $password);

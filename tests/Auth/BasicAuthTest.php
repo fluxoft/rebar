@@ -6,7 +6,7 @@ use Fluxoft\Rebar\Http\Request;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
-class BasicTest extends TestCase {
+class BasicAuthTest extends TestCase {
 	/** @var UserMapperInterface|MockObject  */
 	private $userMapperObserver;
 	/** @var UserInterface|MockObject */
@@ -81,7 +81,7 @@ class BasicTest extends TestCase {
 		$username = 'foo';
 		$password = 'bar';
 
-		$basic = new Basic(
+		$basic = new BasicAuth(
 			$this->userMapperObserver,
 			'realm',
 			'message'
@@ -102,7 +102,7 @@ class BasicTest extends TestCase {
 	}
 
 	public function testLogout() {
-		$basic = new Basic(
+		$basic = new BasicAuth(
 			$this->userMapperObserver,
 			'realm',
 			'message'
