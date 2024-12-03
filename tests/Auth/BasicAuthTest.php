@@ -2,6 +2,8 @@
 
 namespace Fluxoft\Rebar\Auth;
 
+use Fluxoft\Rebar\Auth\Exceptions\BasicAuthChallengeException;
+use Fluxoft\Rebar\Http\ParameterSet;
 use Fluxoft\Rebar\Http\Request;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -13,21 +15,37 @@ class BasicAuthTest extends TestCase {
 	private $userObserver;
 	/** @var Request|MockObject */
 	private $requestObserver;
+	/** @var ParameterSet|MockObject */
+	private $serverParamSet;
 
-	protected function setup():void {
+	protected function setup(): void {
 		$this->userMapperObserver = $this->getMockBuilder('\Fluxoft\Rebar\Auth\UserMapperInterface')
 			->getMock();
 		$this->userObserver       = $this->getMockBuilder('\Fluxoft\Rebar\Auth\UserInterface')
 			->getMock();
-		$this->requestObserver    = $this->getMockBuilder('\Fluxoft\Rebar\Http\Request')
+		$this->serverParamSet     = $this->getMockBuilder('\Fluxoft\Rebar\Http\ParameterSet')
 			->disableOriginalConstructor()
 			->getMock();
+
+		$this->requestObserver = $this->getMockBuilder('\Fluxoft\Rebar\Http\Request')
+			->disableOriginalConstructor()
+			->getMock();
+		$this->requestObserver
+			->method('__get')
+			->willReturnCallback(function ($key) {
+				if ($key === 'Server') {
+					return $this->serverParamSet;
+				}
+				return null;
+			});
 	}
 
-	protected function teardown():void {
+
+	protected function teardown(): void {
 		unset($this->requestObserver);
 		unset($this->userObserver);
 		unset($this->userMapperObserver);
+		unset($this->serverParamSet);
 	}
 
 	/**
@@ -35,45 +53,57 @@ class BasicAuthTest extends TestCase {
 	 * @dataProvider authUserProvider
 	 */
 	public function testAuthUser($phpAuthUser) {
-		$basicMock = $this->getMockBuilder('\Fluxoft\Rebar\Auth\Basic')
-			->setConstructorArgs([
+		// Mock the ParameterSet::Get method with willReturnCallback
+		$this->serverParamSet
+			->method('Get')
+			->willReturnCallback(function ($key, $default = null) use ($phpAuthUser) {
+				if ($key === 'PHP_AUTH_USER') {
+					return $phpAuthUser ?? $default;
+				}
+				if ($key === 'PHP_AUTH_PW') {
+					return 'test-password';
+				}
+				return $default;
+			});
+	
+		// Handle the two cases: when $phpAuthUser is null and when it's provided
+		if (!isset($phpAuthUser)) {
+			$this->expectException(BasicAuthChallengeException::class);
+			$this->expectExceptionMessage('Missing or invalid credentials.');
+	
+			$basicAuth = new BasicAuth(
 				$this->userMapperObserver,
 				'realm',
-				'message'
-			])
-			->onlyMethods(['sendChallenge', 'Login'])
-			->getMock();
-
-		$this->requestObserver
-			->expects($this->any())
-			->method('Server')
-			->will($this->returnValueMap([
-				['PHP_AUTH_USER', null, $phpAuthUser],
-				['PHP_AUTH_PW', null, '']
-			]));
-
-		if (!isset($phpAuthUser)) {
-			$basicMock
-				->expects($this->once())
-				->method('sendChallenge');
+				'Missing or invalid credentials.'
+			);
+			$basicAuth->GetAuthenticatedUser($this->requestObserver);
 		} else {
-			$basicMock
+			/** @var BasicAuth|MockObject $basicAuthMock */
+			$basicAuthMock = $this->getMockBuilder(BasicAuth::class)
+				->setConstructorArgs([
+					$this->userMapperObserver,
+					'realm',
+					'This should work.'
+				])
+				->onlyMethods(['Login'])
+				->getMock();
+	
+			// Expect the Login method to be called with correct parameters
+			$basicAuthMock
 				->expects($this->once())
 				->method('Login')
-				->with($phpAuthUser, '');
+				->with($this->requestObserver, $phpAuthUser, 'test-password');
+	
+			// Trigger GetAuthenticatedUser to test behavior
+			$basicAuthMock->GetAuthenticatedUser($this->requestObserver);
 		}
-
-		$reply = $basicMock->GetAuthenticatedUser($this->requestObserver);
-		unset($reply);
 	}
-	public function authUserProvider ():array {
+	public function authUserProvider(): array {
 		return [
-			[
-				'user' => null
-			],
-			[
-				'user' => 'username'
-			]
+			// Case where PHP_AUTH_USER is not set
+			['user' => null],
+			// Case where PHP_AUTH_USER is set
+			['user' => 'username']
 		];
 	}
 
@@ -81,7 +111,7 @@ class BasicAuthTest extends TestCase {
 		$username = 'foo';
 		$password = 'bar';
 
-		$basic = new BasicAuth(
+		$basicAuth = new BasicAuth(
 			$this->userMapperObserver,
 			'realm',
 			'message'
@@ -90,26 +120,27 @@ class BasicAuthTest extends TestCase {
 			->expects($this->once())
 			->method('GetAuthorizedUserForUsernameAndPassword')
 			->with($username, $password)
-			->will($this->returnValue($this->userObserver));
+			->willReturn($this->userObserver);
 
 		$expectReply       = new Reply();
 		$expectReply->Auth = true;
 		$expectReply->User = $this->userObserver;
 
-		$reply = $basic->Login($username, $password);
+		$reply = $basicAuth->Login($this->requestObserver, $username, $password);
 
 		$this->assertEquals($expectReply, $reply);
 	}
 
 	public function testLogout() {
-		$basic = new BasicAuth(
+		$basicAuth = new BasicAuth(
 			$this->userMapperObserver,
 			'realm',
 			'message'
 		);
 
-		$expectedReply = new Reply();
-		$reply         = $basic->Logout($this->requestObserver);
-		$this->assertEquals($expectedReply, $reply);
+		$this->expectException(\RuntimeException::class);
+		$this->expectExceptionMessage('Logout is not supported with Basic Auth');
+
+		$basicAuth->Logout($this->requestObserver);
 	}
 }
