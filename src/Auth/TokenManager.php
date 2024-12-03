@@ -11,8 +11,10 @@ class TokenManager {
 		private RefreshTokenMapperInterface $refreshTokenMapper,
 		private ClaimsProviderInterface     $claimsProvider,
 		private string                      $secretKey,
-		private \DateInterval               $accessExpires,
-		private \DateInterval               $refreshExpires,
+		// Default access token expiration is 15 minutes
+		private \DateInterval               $accessExpires = new \DateInterval('PT15M'),
+		// Default refresh token expiration is 30 days
+		private \DateInterval               $refreshExpires = new \DateInterval('P30D'),
 		// Default to a grace period of 15 minutes for refresh tokens to still be valid after expiration
 		private \DateInterval               $gracePeriod = new \DateInterval('PT15M')
 	) {}
