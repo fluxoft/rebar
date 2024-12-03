@@ -137,6 +137,6 @@ class ApiAuth extends BaseAuth {
 		bool          $remember
 	): void {
 		// Stateless authentication does not persist tokens.
-		unset($request, $user, $accessToken, $refreshToken, $remember);
+		unset($request, $user, $accessToken, $refreshToken, $remember); // @codeCoverageIgnore
 	}
 }
