@@ -16,7 +16,7 @@ class ApiAuth extends BaseAuth {
 		$authReply = new Reply();
 
 		// Retrieve the Authorization header
-		$authorizationHeader = $request->Headers['Authorization'] ?? null;
+		$authorizationHeader = $request->Headers->Get('Authorization');
 		if (!isset($authorizationHeader) || stripos($authorizationHeader, 'Bearer ') !== 0) {
 			$authReply->Auth    = false;
 			$authReply->Message = 'Missing or invalid Authorization header.';
@@ -65,11 +65,11 @@ class ApiAuth extends BaseAuth {
 		$authReply = new Reply();
 
 		// Check for a global logout flag
-		$globalLogout = (bool) $request->Get('globalLogout', false);
+		$globalLogout = (bool) $request->Get->Get('globalLogout', false);
 
 		if ($globalLogout) {
 			// Retrieve the Authorization header
-			$authorizationHeader = $request->Headers('Authorization');
+			$authorizationHeader = $request->Headers->Get('Authorization');
 			if (!isset($authorizationHeader) || stripos($authorizationHeader, 'Bearer ') !== 0) {
 				$authReply->Auth    = false;
 				$authReply->Message = 'Missing or invalid Authorization header.';
