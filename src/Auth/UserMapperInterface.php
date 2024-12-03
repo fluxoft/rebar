@@ -20,7 +20,7 @@ interface UserMapperInterface {
 	 * Return the user for the given ID. Should be overridden if restrictions should be made on
 	 * on how a user should be allowed access.
 	 * @param mixed $id
-	 * @return UserInterface
+	 * @return UserInterface|null
 	 */
-	public function GetAuthorizedUserById(mixed $id): UserInterface;
+	public function GetAuthorizedUserById(mixed $id): ?UserInterface;
 }
