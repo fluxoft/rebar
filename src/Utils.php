@@ -9,7 +9,7 @@ class Utils {
 	 */
 	public static function GetUUID() {
 		if (function_exists('com_create_guid')) {
-			return com_create_guid();
+			return com_create_guid(); // @codeCoverageIgnore
 		}
 		$charid = strtoupper(md5(uniqid(rand(), true)));
 		$hyphen = chr(45); // "-"
