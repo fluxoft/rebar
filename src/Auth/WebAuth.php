@@ -129,7 +129,7 @@ class WebAuth extends BaseAuth {
 		$request->Cookies->Delete('AccessToken');
 		$request->Cookies->Delete('RefreshToken');
 	
-		$authReply->Auth = false;
+		$authReply->Auth    = false;
 		$authReply->Message = $globalLogout
 			? 'User logged out from all devices.'
 			: 'User logged out from this session.';
