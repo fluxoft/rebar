@@ -58,7 +58,7 @@ class BaseUser extends Model implements UserInterface {
 	 * @param string $password Plaintext password
 	 * @return void
 	 */
-	protected function SetPassword(string $password): void {
+	protected function setPassword(string $password): void {
 		$this->properties[$this->authPasswordProperty] = password_hash($password, PASSWORD_DEFAULT);
 	}
 }
