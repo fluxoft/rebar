@@ -111,7 +111,8 @@ class TokenManager {
 		if (count($tokenParts) !== 3) {
 			throw new InvalidTokenException('Invalid refresh token format');
 		}
-		return $tokenParts;
+		// cast seriesId to int
+		return [$tokenParts[0], (int) $tokenParts[1], $tokenParts[2]];
 	}
 
 	public function DecodeAccessToken(string $accessToken) : array {

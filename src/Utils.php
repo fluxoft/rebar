@@ -8,7 +8,7 @@ class Utils {
 	 * @return string
 	 */
 	public static function GetUUID() {
-		if (function_exists(com_create_guid())) {
+		if (function_exists('com_create_guid')) {
 			return com_create_guid();
 		}
 		$charid = strtoupper(md5(uniqid(rand(), true)));

@@ -16,15 +16,13 @@ use Fluxoft\Rebar\Model;
  * @property string RevokedAt
  */
 class RefreshToken extends Model {
-	public function __construct() {
-		parent::__construct([
-			'Id' => 0,
-			'UserId' => 0,
-			'SeriesId' => 0,
-			'Token' => null,
-			'ExpiresAt' => null,
-			'CreatedAt' => null,
-			'RevokedAt' => null
-		]);
-	}
+	protected static array $defaultProperties = [
+		'Id'        => 0,
+		'UserId'    => 0,
+		'SeriesId'  => 0,
+		'Token'     => null,
+		'ExpiresAt' => null,
+		'CreatedAt' => null,
+		'RevokedAt' => null
+	];
 }
