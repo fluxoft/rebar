@@ -68,15 +68,21 @@ class BasicAuthTest extends TestCase {
 	
 		// Handle the two cases: when $phpAuthUser is null and when it's provided
 		if (!isset($phpAuthUser)) {
-			$this->expectException(BasicAuthChallengeException::class);
-			$this->expectExceptionMessage('Missing or invalid credentials.');
-	
-			$basicAuth = new BasicAuth(
-				$this->userMapperObserver,
-				'realm',
-				'Missing or invalid credentials.'
-			);
-			$basicAuth->GetAuthenticatedUser($this->requestObserver);
+			// Use PHPUnit's try-catch to inspect the exception
+			try {
+				$basicAuth = new BasicAuth(
+					$this->userMapperObserver,
+					'AuthRealm',
+					'Missing or invalid credentials.'
+				);
+				$basicAuth->GetAuthenticatedUser($this->requestObserver);
+				$this->fail('Expected BasicAuthChallengeException was not thrown.');
+			} catch (BasicAuthChallengeException $e) {
+				// Assert the exception message
+				$this->assertEquals('Missing or invalid credentials.', $e->getMessage());
+				// Assert the realm is set correctly
+				$this->assertEquals('AuthRealm', $e->getRealm());
+			}
 		} else {
 			/** @var BasicAuth|MockObject $basicAuthMock */
 			$basicAuthMock = $this->getMockBuilder(BasicAuth::class)
