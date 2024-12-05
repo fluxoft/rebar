@@ -16,19 +16,19 @@ class BaseUserTest extends TestCase {
 	}
 
 	public function testIsPasswordValidReturnsTrueForMatchingPassword() {
-		$user = new BaseUser();
+		$user           = new BaseUser();
 		$user->Password = 'correct_password'; // Invoke SetPassword
 		$this->assertTrue($user->IsPasswordValid('correct_password'));
 	}
 
 	public function testIsPasswordValidReturnsFalseForNonMatchingPassword() {
-		$user = new BaseUser();
+		$user           = new BaseUser();
 		$user->Password = 'correct_password'; // Invoke SetPassword
 		$this->assertFalse($user->IsPasswordValid('wrong_password'));
 	}
 
 	public function testSetPasswordHashesPasswordCorrectly() {
-		$user = new BaseUser();
+		$user           = new BaseUser();
 		$user->Password = 'password123'; // Invoke SetPassword
 
 		// Verify that the password is hashed and not stored in plaintext
@@ -37,7 +37,7 @@ class BaseUserTest extends TestCase {
 	}
 
 	public function testGetPasswordReturnsMaskedPassword() {
-		$user = new BaseUser();
+		$user           = new BaseUser();
 		$user->Password = 'password123'; // Invoke SetPassword
 		$this->assertEquals('********', $user->Password); // Invoke getPassword
 	}
