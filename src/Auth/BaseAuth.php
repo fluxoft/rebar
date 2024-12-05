@@ -37,10 +37,6 @@ abstract class BaseAuth implements AuthInterface {
 	public function Login(Request $request, string $username, string $password, bool $remember = false): Reply {
 		$user = $this->userMapper->GetAuthorizedUserForUsernameAndPassword($username, $password);
 
-		if (!$user instanceof UserInterface) {
-			throw new InvalidCredentialsException('Invalid username or password.');
-		}
-
 		$accessToken  = $this->tokenManager->GenerateAccessToken($user);
 		$refreshToken = $this->tokenManager->GenerateRefreshToken($user);
 
