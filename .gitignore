@@ -2,6 +2,7 @@ vendor/
 .idea/
 .vscode/
 /build/
+/.scratchpad/
 
 .phpunit.result.cache
 composer.lock

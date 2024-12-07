@@ -8,6 +8,7 @@ use Fluxoft\Rebar\Data\Db\Filter;
 use Fluxoft\Rebar\Data\Db\Join;
 use Fluxoft\Rebar\Data\Db\MapperFactory;
 use Fluxoft\Rebar\Data\Db\Property;
+use Fluxoft\Rebar\Data\Db\Sort;
 use Fluxoft\Rebar\Model;
 use PDO;
 
@@ -153,8 +154,8 @@ abstract class GenericSql implements MapperInterface {
 	}
 
 	/**
-	 * @param array $filters
-	 * @param array $sort
+	 * @param Filter[] $filters
+	 * @param Sort[] $sort
 	 * @param int $page
 	 * @param int $pageSize
 	 * @return Model[]
@@ -352,8 +353,7 @@ abstract class GenericSql implements MapperInterface {
 
 	/**
 	 * @param Filter[] $filters Array of Filter objects
-	 * @param array $sort Array of property names to sort by in the order they should be applied,
-	 *					e.g. ['Name', 'ID DESC']
+	 * @param Sort[] $sort Array of Sort objects
 	 * @param int $page
 	 * @param int $pageSize
 	 * @return array{sql: string, params: array}
@@ -465,21 +465,22 @@ abstract class GenericSql implements MapperInterface {
 	/**
 	 * Apply sorting to a SQL statement.
 	 * @param string $sql
-	 * @param array $sort
+	 * @param Sort[] $sorts
 	 * @return string
 	 */
-	protected function applySorting(string $sql, array $sort): string {
-		if (empty($sort)) {
+	protected function applySorting(string $sql, array $sorts): string {
+		if (empty($sorts)) {
 			return $sql;
 		}
 
 		$orderBy = [];
-		foreach ($sort as $item) {
-			$itemBits = explode(' ', $item);
-			$field    = $itemBits[0];
-			$order    = (isset($itemBits[1]) && strtolower($itemBits[1]) === 'desc') ? 'DESC' : 'ASC';
-			if (array_key_exists($field, $this->model->GetProperties())) {
-				$orderBy[] = $this->quoteIdentifier($field) . " $order";
+		foreach ($sorts as $sort) {
+			if ($sort instanceof Sort) {
+				$field = $sort->Property;
+				$order = $sort->Direction;
+				if (array_key_exists($field, $this->model->GetProperties())) {
+					$orderBy[] = $this->quoteIdentifier($field) . " $order";
+				}
 			}
 		}
 
@@ -489,6 +490,7 @@ abstract class GenericSql implements MapperInterface {
 
 		return $sql;
 	}
+
 
 	/**
 	 * Used to apply pagination to a SQL statement.

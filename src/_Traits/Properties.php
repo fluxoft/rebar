@@ -20,4 +20,14 @@ trait Properties {
 	 * @var array $modProperties
 	 */
 	protected array $modProperties = [];
+
+	/**
+	 * Check if the class has the specified property.
+	 *
+	 * @param string $key
+	 * @return bool
+	 */
+	public function HasProperty(string $key): bool {
+		return array_key_exists($key, $this->properties);
+	}
 }

@@ -5,17 +5,16 @@ namespace Fluxoft\Rebar\Data\Db;
 use Fluxoft\Rebar\_Traits\ArrayAccessibleProperties;
 use Fluxoft\Rebar\_Traits\GettableProperties;
 use Fluxoft\Rebar\_Traits\IterableProperties;
-use Fluxoft\Rebar\_Traits\SettableProperties;
 use Fluxoft\Rebar\Data\Db\Exceptions\InvalidFilterException;
+use Fluxoft\Rebar\Data\FilterInterface;
 
 /**
  * @property string Property
  * @property string Operator
  * @property mixed  Value
  */
-class Filter implements \ArrayAccess, \Iterator {
+class Filter implements FilterInterface, \ArrayAccess, \Iterator {
 	use GettableProperties;
-	use SettableProperties;
 	use ArrayAccessibleProperties;
 	use IterableProperties;
 
@@ -24,14 +23,22 @@ class Filter implements \ArrayAccess, \Iterator {
 		string $operator,
 		mixed  $value
 	) {
-		$this->properties = [
-			'Property' => $property,
-			'Operator' => $operator,
-			'Value'    => $value
-		];
-		$this->Property   = $property;
-		$this->Operator   = $operator;
-		$this->Value      = $value;
+		$this->properties['Property'] = $property;
+		$this->setOperator($operator);
+		$this->setValue($value); // relies on Operator to set the value, so set it first
+	}
+
+	public static function Create(string $property, string $operator, mixed $value): FilterInterface {
+		return new self($property, $operator, $value);
+	}
+	public function GetProperty(): string {
+		return $this->properties['Property'];
+	}
+	public function GetOperator(): string {
+		return $this->properties['Operator'];
+	}
+	public function GetValue(): mixed {
+		return $this->properties['Value'];
 	}
 
 	/**
@@ -40,7 +47,7 @@ class Filter implements \ArrayAccess, \Iterator {
 	 * @throws InvalidFilterException
 	 */
 	protected function setOperator(string $operator): void {
-		$this->properties['operator'] = match (strtoupper($operator)) {
+		$this->properties['Operator'] = match (strtoupper($operator)) {
 			'=', '<', '>', '<=', '>=', '<>', '!=', 'IN', 'LIKE', 'BETWEEN', 'IS', 'IS NOT' => strtoupper($operator),
 			default => throw new InvalidFilterException(
 				'Invalid operator given. Must be one of the following: =, <, >, <=, >=, <>, !=, IN, LIKE, BETWEEN, IS, IS NOT'
@@ -54,7 +61,8 @@ class Filter implements \ArrayAccess, \Iterator {
 	 * @throws InvalidFilterException
 	 */
 	protected function setValue(mixed $value): void {
-		if (in_array($this->Operator, ['IS', 'IS NOT'], true)) {
+		$thisOperator = $this->properties['Operator'];
+		if (in_array($thisOperator, ['IS', 'IS NOT'], true)) {
 			// For IS and IS NOT, value must be NULL
 			if (!is_null($value)) {
 				throw new InvalidFilterException(
@@ -64,8 +72,7 @@ class Filter implements \ArrayAccess, \Iterator {
 			$this->properties['Value'] = $value;
 			return;
 		}
-
-		if ($this->Operator === 'IN') {
+		if ($thisOperator === 'IN') {
 			// for IN operator, value must be an array
 			if (is_array($value)) {
 				$this->properties['Value'] = $value;
@@ -74,7 +81,16 @@ class Filter implements \ArrayAccess, \Iterator {
 			}
 			return;
 		}
-		if ($this->Operator === 'BETWEEN') {
+		if ($thisOperator === 'NOT IN') {
+			// for NOT IN operator, value must be an array
+			if (is_array($value)) {
+				$this->properties['Value'] = $value;
+			} else {
+				throw new InvalidFilterException('Filter operator set to NOT IN. Value must be an array of values.');
+			}
+			return;
+		}
+		if ($thisOperator === 'BETWEEN') {
 			// for BETWEEN, value must be an array with 2 values (low/high)
 			if (is_array($value) && count($value) === 2) {
 				$this->properties['Value'] = $value;
