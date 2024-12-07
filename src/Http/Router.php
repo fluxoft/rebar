@@ -53,7 +53,7 @@ class Router {
 			'MethodArgs'          => $methodArgs,
 			'CleanupArgs'         => $cleanupArgs
 		];
-		$this->maxDepth = $maxDepth;
+		$this->maxDepth   = $maxDepth;
 	}
 
 	/**
@@ -220,7 +220,7 @@ class Router {
 	}
 
 	private function getControllerClass(string $controller): string {
-		$controllerClass = (strlen($this->controllerNamespace) > 0)
+		$controllerClass  = (strlen($this->controllerNamespace) > 0)
 			? '\\' . $this->controllerNamespace
 			: '';
 		$controllerClass .= '\\' . $controller;
@@ -283,8 +283,7 @@ class Router {
 		}
 	
 		$potentialAction = ucwords(array_shift($pathParts));
-		if (
-			strtolower($potentialAction) === 'default' ||
+		if (strtolower($potentialAction) === 'default' ||
 			!method_exists($routeParts['controller'], $potentialAction)
 		) {
 			// No explicit action, treat as Default with params
