@@ -94,7 +94,11 @@ abstract class AbstractService implements ServiceInterface {
 		'between' => 'BETWEEN'
 	];
 
-	private function buildFilters(array $rawFilters): array {
+	/**
+	 * @param array $rawFilters
+	 * @return FilterInterface[]
+	 */
+	protected function buildFilters(array $rawFilters): array {
 		$filters = [];
 		foreach ($rawFilters as $property => $criteria) {
 			if (is_array($criteria)) {
@@ -125,7 +129,11 @@ abstract class AbstractService implements ServiceInterface {
 		return $filters;
 	}
 	
-	private function buildSort(array $rawSort): array {
+	/**
+	 * @param array $rawSort
+	 * @return SortInterface[]
+	 */
+	protected function buildSort(array $rawSort): array {
 		$sort = [];
 		foreach ($rawSort as $sortField) {
 			if (str_starts_with($sortField, '-')) {

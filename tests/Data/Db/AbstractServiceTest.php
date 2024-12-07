@@ -46,15 +46,25 @@ class AbstractServiceTest extends TestCase {
 	}
 
 	public function testFetchAll() {
-		$filters = [$this->createMock(FilterInterface::class)];
-		$sort    = [$this->createMock(SortInterface::class)];
+		$filters = ['name' => 'John Doe', 'age[gte]' => 30]; // Example filters
+		$sort    = ['-createdAt', 'name']; // Example sorting fields
 		$models  = [$this->createMock(Model::class), $this->createMock(Model::class)];
-
+	
 		$this->mapperMock->expects($this->once())
-			->method('GetSet')
-			->with($filters, $sort, 2, 10)
-			->willReturn($models);
-
+		->method('GetSet')
+		->with(
+			$this->callback(function ($actualFilters) use ($filters) {
+				// Verify that the filters were correctly processed
+				return is_array($actualFilters) && count($actualFilters) === count($filters);
+			}),
+			$this->callback(function ($actualSort) use ($sort) {
+				// Verify that sort was correctly processed
+				return is_array($actualSort) && count($actualSort) === count($sort);
+			}),
+			2, 10
+		)
+		->willReturn($models);
+	
 		$result = $this->service->FetchAll($filters, $sort, 2, 10);
 		$this->assertSame($models, $result);
 	}
@@ -135,11 +145,56 @@ class AbstractServiceTest extends TestCase {
 
 		$this->service->Delete($id);
 	}
+
+	public function testBuildFiltersWithComplexCriteria() {
+		$rawFilters = [
+			'name' => 'John Doe',
+			'age' => ['gte' => 30],
+			'price' => ['between' => '10|50'],
+			'status' => ['in' => 'active|pending'],
+			'isAdmin' => ['isnull' => null]
+		];
+	
+		$expectedFilters = [
+			new Filter('name', '=', 'John Doe'),
+			new Filter('age', '>=', 30),
+			new Filter('price', 'BETWEEN', ['10', '50']),
+			new Filter('status', 'IN', ['active', 'pending']),
+			new Filter('isAdmin', 'IS', null)
+		];
+	
+		$result = $this->service->ExposeBuildFilters($rawFilters);
+	
+		$this->assertEquals($expectedFilters, $result);
+	}
+
+	public function testBuildFiltersWithInvalidOperator() {
+		$rawFilters = ['name' => ['invalid' => 'John Doe']];
+	
+		$this->expectException(\InvalidArgumentException::class);
+		$this->expectExceptionMessage("Invalid operator 'invalid' for property 'name'.");
+	
+		$this->service->ExposeBuildFilters($rawFilters);
+	}
+
+	public function testBuildFilteresWithInvalidBetweenValue() {
+		$rawFilters = ['price' => ['between' => '10']];
+	
+		$this->expectException(\InvalidArgumentException::class);
+		$this->expectExceptionMessage('BETWEEN operator requires two values separated by a pipe.');
+	
+		$this->service->ExposeBuildFilters($rawFilters);
+	}
 }
 
 /**
  * A concrete implementation of AbstractService for testing purposes.
  */
 // @codingStandardsIgnoreStart
-class ConcreteService extends AbstractService {}
+class ConcreteService extends AbstractService {
+	public function ExposeBuildFilters(array $rawFilters): array {
+		$filters = $this->buildFilters($rawFilters);
+		return $filters;
+	}
+}
 // @codingStandardsIgnoreEnd
