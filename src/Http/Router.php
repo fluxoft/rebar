@@ -2,13 +2,8 @@
 namespace Fluxoft\Rebar\Http;
 
 use Fluxoft\Rebar\_Traits\GettableProperties;
-use Fluxoft\Rebar\_Traits\IterableProperties;
 use Fluxoft\Rebar\_Traits\SettableProperties;
-use Fluxoft\Rebar\Auth\AuthInterface;
-use Fluxoft\Rebar\Auth\Exceptions\AccessDeniedException;
 use Fluxoft\Rebar\Exceptions\AuthenticationException;
-use Fluxoft\Rebar\Exceptions\CrossOriginException;
-use Fluxoft\Rebar\Exceptions\MethodNotAllowedException;
 use Fluxoft\Rebar\Exceptions\RouterException;
 
 /**
@@ -36,6 +31,8 @@ class Router {
 	/** @var MiddlewareInterface[] */
 	protected $middlewareStack = []; // Existing middlewareStack property
 
+	protected int $maxDepth = 6;
+
 	/**
 	 * @param string $controllerNamespace The namespace where this app's controllers are found.
 	 * @param array  $setupArgs An array of properties to be passed to each Controller's Setup method.
@@ -47,7 +44,8 @@ class Router {
 		string $controllerNamespace,
 		array $setupArgs = [],
 		array $methodArgs = [],
-		array$cleanupArgs = []
+		array$cleanupArgs = [],
+		int $maxDepth = 6
 	) {
 		$this->properties = [
 			'ControllerNamespace' => $controllerNamespace,
@@ -55,6 +53,7 @@ class Router {
 			'MethodArgs'          => $methodArgs,
 			'CleanupArgs'         => $cleanupArgs
 		];
+		$this->maxDepth = $maxDepth;
 	}
 
 	/**
@@ -178,18 +177,29 @@ class Router {
 
 	protected function getRoute($path) {
 		$routeParts = [];
+	
+		// First try to resolve using explicit Route definitions
+		$routeParts = $this->resolveRouteDefinition($path);
+	
+		// If no match, fall back to intuitive routing rules
+		if (empty($routeParts)) {
+			$routeParts = $this->resolveIntuitiveRoute($path);
+		}
+	
+		return $routeParts;
+	}
+	
+	private function resolveRouteDefinition(string $path): array {
+		$routeParts = [];
 		if (isset($this->routes)) {
-			/** @var Route $route */
 			foreach ($this->routes as $route) {
 				if (!($route instanceof Route)) {
 					throw new RouterException('Routes must be instance of the Route class.');
 				}
-
+	
 				$pattern = '/^'.str_replace('/', '\/', $route->Path).'(\/[A-Za-z0-9\-.]+)*\/*$/';
 				if (preg_match($pattern, $path)) {
-					$controllerClass  = (strlen($this->controllerNamespace) > 0) ? '\\' . $this->controllerNamespace : '';
-					$controllerClass .= '\\'.$route->Controller;
-
+					$controllerClass = $this->getControllerClass($route->Controller);
 					if (!class_exists($controllerClass)) {
 						throw new RouterException(sprintf(
 							'The controller %s specified for the path %s does not exist.',
@@ -202,57 +212,87 @@ class Router {
 					$routeParts['action']     = $route->Action;
 					$paramsPath               = substr($path, strlen($route->Path) + 1);
 					$routeParts['url']        = array_filter(explode('/', $paramsPath));
-				}
-			}
-		}
-		if (empty($routeParts)) {
-			if (strlen($path) > 1) { // disregard leading slash
-				$pathParts = array_filter(explode('/', $path), function ($var) {
-					return ($var !== null && $var !== false && $var !== '');
-				});
-				if (count($pathParts) == 1) {
-					$pathParts[] = 'index';
-				}
-			} else {
-				$pathParts = array('main','index');
-			}
-
-			/*
-			 * Try to find a valid controller class using $pathParts by checking for an existing class
-			 * for each of the path parts in order. For instance, a $path that yields a $pathParts array
-			 * containing ['bundle', 'controller', 'action', 'param1', 'param2'] would first try to find
-			 * \ControllerNamespace\Bundle, then \ControllerNamespace\Bundle\Controller until a valid
-			 * class is found. If a valid class is not found, throw the exception here.
-			 */
-			$controllerClass = (strlen($this->controllerNamespace) > 0) ? '\\' . $this->controllerNamespace : '';
-			while (!empty($pathParts)) {
-				/*
-				 * If the $pathPart is 'index' that means we are at the end of a chain, so try changing
-				 * that to 'main' so that we can find main/index controllers in a bundle directory.
-				 */
-				$pathPart = array_shift($pathParts);
-				if ($pathPart === 'index') {
-					$pathPart = 'main';
-				}
-				$controllerClass .= '\\'.ucwords($pathPart);
-				if (class_exists($controllerClass)) {
-					$routeParts['controller'] = $controllerClass;
 					break;
 				}
 			}
-			if (!isset($routeParts['controller'])) {
-				throw new RouterException('No controller could be found to handle this request.');
-			}
-
-			// Add the next value in $pathParts as the action, and the rest as the URL params to use.
-			if (empty($pathParts)) {
-				$routeParts['action'] = 'Index';
-			} else {
-				$routeParts['action'] = ucwords(array_shift($pathParts));
-			}
-			$routeParts['url'] = $pathParts;
 		}
-
 		return $routeParts;
+	}
+
+	private function getControllerClass(string $controller): string {
+		$controllerClass = (strlen($this->controllerNamespace) > 0)
+			? '\\' . $this->controllerNamespace
+			: '';
+		$controllerClass .= '\\' . $controller;
+	
+		return $controllerClass;
+	}
+
+	private function resolveIntuitiveRoute(string $path): array {
+		$routeParts = [];
+		$pathParts  = $this->splitPath($path);
+	
+		$routeParts['controller'] = $this->findController($pathParts);
+		if (!isset($routeParts['controller'])) {
+			throw new RouterException('No controller could be found to handle this request.');
+		}
+	
+		$routeParts['action'] = $this->getActionFromPathParts($pathParts, $routeParts);
+		$routeParts['url']    = $pathParts;
+	
+		return $routeParts;
+	}
+	
+	private function splitPath(string $path): array {
+		$pathParts = strlen($path) > 1
+			? array_filter(explode('/', $path), fn($var) => $var !== null && $var !== false && $var !== '')
+			: ['main', 'default'];
+	
+		if (count($pathParts) > $this->maxDepth) {
+			throw new RouterException(sprintf(
+				'Exceeded maximum controller nesting depth of %d.',
+				$this->maxDepth
+			));
+		}
+	
+		if (count($pathParts) === 1) {
+			$pathParts[] = 'default';
+		}
+	
+		return $pathParts;
+	}
+	
+	private function findController(array &$pathParts): ?string {
+		$controllerClass = (strlen($this->controllerNamespace) > 0) ? '\\' . $this->controllerNamespace : '';
+		while (!empty($pathParts)) {
+			$pathPart = array_shift($pathParts);
+			if ($pathPart === 'default') {
+				$pathPart = 'main';
+			}
+			$controllerClass .= '\\'.ucwords($pathPart);
+			if (class_exists($controllerClass)) {
+				return $controllerClass;
+			}
+		}
+		return null;
+	}
+	
+	private function getActionFromPathParts(array &$pathParts, array $routeParts): string {
+		if (empty($pathParts)) {
+			return 'Default';
+		}
+	
+		$potentialAction = ucwords(array_shift($pathParts));
+		if (
+			strtolower($potentialAction) === 'default' ||
+			!method_exists($routeParts['controller'], $potentialAction)
+		) {
+			// No explicit action, treat as Default with params
+			array_unshift($pathParts, $potentialAction); // Add back as parameter
+			return 'Default';
+		}
+	
+		// Explicit action exists
+		return $potentialAction;
 	}
 }
