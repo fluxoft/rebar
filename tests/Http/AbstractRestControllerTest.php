@@ -213,6 +213,42 @@ class AbstractRestControllerTest extends TestCase {
 		$this->assertArrayHasKey('error', $this->controller->GetData());
 		$this->assertEquals('Invalid ID.', $this->controller->GetData()['error']);
 	}
+
+	public function testUnexpectedException(): void {
+		$this->serviceMock->expects($this->once())
+			->method('Fetch')
+			->willThrowException(new \Exception('Unexpected error occurred.'));
+	
+		$this->requestMock->method('__get')
+			->willReturnMap([
+				['Method', 'GET'],
+			]);
+	
+		$this->controller->Default(999);
+	
+		$this->assertEquals(500, $this->responseMock->Status);
+		$this->assertArrayHasKey('error', $this->controller->GetData());
+		$this->assertEquals('An unexpected error occurred.', $this->controller->GetData()['error']);
+	}
+
+	public function testSetupThrowsLogicExceptionForInvalidServiceClass(): void {
+		// Create a mock controller to override getServiceClass
+		$controllerMock = $this->getMockBuilder(ConcreteRestController::class)
+			->onlyMethods(['getServiceClass'])
+			->setConstructorArgs([$this->requestMock, $this->responseMock, $this->serviceMock])
+			->getMock();
+	
+		// Mock getServiceClass to return an invalid class
+		$controllerMock->method('getServiceClass')
+			->willReturn('NonExistent\\InvalidServiceClass');
+	
+		$containerMock = $this->createMock(Container::class);
+	
+		$this->expectException(\LogicException::class);
+		$this->expectExceptionMessage('Service class NonExistent\InvalidServiceClass does not exist.');
+	
+		$controllerMock->Setup($containerMock);
+	}
 }
 
 /**

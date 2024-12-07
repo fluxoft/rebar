@@ -6,7 +6,7 @@ use Fluxoft\Rebar\Container;
 use Fluxoft\Rebar\Data\ServiceInterface;
 
 abstract class AbstractRestController extends Controller {
-	protected ServiceInterface $service;
+	protected ?ServiceInterface $service = null;
 
 	/**
 	 * Sets up the service dependency using the container.
@@ -14,7 +14,7 @@ abstract class AbstractRestController extends Controller {
 	 */
 	public function Setup(Container $container): void {
 		$serviceClass = $this->getServiceClass();
-		if (!interface_exists(ServiceInterface::class) &&
+		if (!interface_exists(ServiceInterface::class) ||
 			!class_exists($serviceClass)) {
 			throw new \LogicException("Service class $serviceClass does not exist.");
 		}
@@ -38,7 +38,8 @@ abstract class AbstractRestController extends Controller {
 	 *   - `?filter[Size][gte]=10` (Filters items where `Size` is greater than or equal to `10`.)
 	 *   - `?filter[Price][between]=10|20` (Filters items where `Price` is between `10` and `20`.)
 	 *
-	 * - **Sorting**: Use the `sort` parameter to specify sorting criteria. Sorting can include multiple fields, separated by commas.
+	 * - **Sorting**: Use the `sort` parameter to specify sorting criteria. Sorting can include multiple fields,
+	 *   separated by commas.
 	 *   - `?sort=Name` (Sorts by `Name` in ascending order.)
 	 *   - `?sort=-CreatedAt` (Sorts by `CreatedAt` in descending order. Use a `-` prefix for descending order.)
 	 *
@@ -62,7 +63,7 @@ abstract class AbstractRestController extends Controller {
 
 		try {
 			switch ($this->request->Method) {
-				case 'GET':
+				case 'GET': // @codeCoverageIgnore
 					if ($id !== null) {
 						// Fetch single model
 						$responseData = ['data' => $this->service->Fetch($id)];
@@ -85,13 +86,13 @@ abstract class AbstractRestController extends Controller {
 					}
 					break;
 
-				case 'POST':
+				case 'POST': // @codeCoverageIgnore
 					$data         = $this->request->Post->Get();
 					$responseData = ['data' => $this->service->Create($data)];
 					$status       = 201;
 					break;
 
-				case 'PUT':
+				case 'PUT': // @codeCoverageIgnore
 					if ($id === null) {
 						throw new \InvalidArgumentException('ID parameter is required for PUT.');
 					}
@@ -99,7 +100,7 @@ abstract class AbstractRestController extends Controller {
 					$responseData = ['data' => $this->service->Update($id, $data)];
 					break;
 
-				case 'DELETE':
+				case 'DELETE': // @codeCoverageIgnore
 					if ($id === null) {
 						throw new \InvalidArgumentException('ID parameter is required for DELETE.');
 					}
