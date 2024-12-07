@@ -15,7 +15,6 @@
 		<testsuite name="Fluxoft Rebar Test Suite">
 			<directory suffix="Test.php">tests</directory>
 			<exclude>tests/Rest</exclude>
-			<exclude>tests/Auth</exclude>
 		</testsuite>
 	</testsuites>
 	<logging/>

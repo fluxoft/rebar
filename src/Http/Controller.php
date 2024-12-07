@@ -11,19 +11,11 @@
 namespace Fluxoft\Rebar\Http;
 
 use Fluxoft\Rebar\Auth\AuthInterface;
-use Fluxoft\Rebar\Auth\Exceptions\AccessDeniedException;
-use Fluxoft\Rebar\Exceptions\MethodNotAllowedException;
-use Fluxoft\Rebar\Presenters;
 use Fluxoft\Rebar\Presenters\Exceptions\InvalidPresenterException;
+use Fluxoft\Rebar\Presenters\PresenterInterface;
+use Fluxoft\Rebar\Presenters;
 
 abstract class Controller {
-	/**
-	 * Methods that are allowed to this controller. If a controller method needs
-	 * a different set of allowed methods, this array should be reset inside the
-	 * method.
-	 * @var array
-	 */
-	protected $allowedMethods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'];
 	/**
 	 * The presenter property determines which presenter class
 	 * will be used to render the display.
@@ -45,24 +37,6 @@ abstract class Controller {
 	 * @var array
 	 */
 	protected $data = [];
-
-	/**
-	 * @var array The array of methods for which authentication is required.
-	 */
-	protected $requireAuthentication = [];
-
-	/**
-	 * @var array The array of methods for which authentication can be skipped.
-	 */
-	protected $skipAuthentication = ['*'];
-
-	/** @var Request */
-	protected $request;
-	/** @var Response */
-	protected $response;
-	/** @var AuthInterface */
-	protected $auth;
-
 	/**
 	 * Controller constructor.
 	 * @param Request $request
@@ -70,74 +44,9 @@ abstract class Controller {
 	 * @param AuthInterface|null $auth
 	 */
 	public function __construct(
-		Request $request,
-		Response $response,
-		AuthInterface $auth = null
-	) {
-		$this->request  = $request;
-		$this->response = $response;
-		$this->auth     = $auth;
-	}
-
-	/**
-	 * @param $method
-	 * @return bool
-	 * @throws AccessDeniedException
-	 * @throws MethodNotAllowedException
-	 */
-	public function Authorize($method): bool {
-		$allowedMethods = array_map('strtoupper', $this->allowedMethods);
-		$requestMethod  = $this->request->Method;
-
-		// always allow OPTIONS requests
-		if (!in_array('OPTIONS', $allowedMethods)) {
-			$allowedMethods[] = 'OPTIONS';
-		}
-
-		if (!in_array($requestMethod, $allowedMethods)) {
-			throw new MethodNotAllowedException(sprintf(
-				'The %s method is not permitted here.',
-				$requestMethod
-			));
-		}
-
-		if (isset($this->auth) && $this->methodRequiresAuthentication($method)) {
-			$authReply = $this->auth->GetAuthenticatedUser($this->request);
-			if (!$authReply->Auth) {
-				// method is limited and user is not authenticated
-				throw new AccessDeniedException(
-					sprintf('Access denied for %s', $method)
-				);
-			}
-		}
-		return true;
-	}
-
-	/**
-	 * If a method has been marked as skipped or all methods are skipped with an element
-	 * of "*", do not require authentication.
-	 * If method not skipped, and requireAuthentication is empty, or the method is set
-	 * as required, or all methods require authentication ("*" element in array), require
-	 * authentication.
-	 * @param $method
-	 * @return bool
-	 */
-	protected function methodRequiresAuthentication($method) {
-		$requiresAuth = false;
-		if (in_array($method, $this->skipAuthentication) ||
-			in_array('*', $this->skipAuthentication)
-		) {
-			$requiresAuth = false;
-		} else {
-			if (empty($this->requireAuthentication) ||
-				in_array($method, $this->requireAuthentication) ||
-				in_array('*', $this->requireAuthentication)
-			) {
-				$requiresAuth = true;
-			}
-		}
-		return $requiresAuth;
-	}
+		protected Request $request,
+		protected Response $response
+	) {}
 
 	/**
 	 * Uses the set PresenterInterface implementing class to Render to the Response using the internal data of the
@@ -147,25 +56,21 @@ abstract class Controller {
 	 * @throws InvalidPresenterException If no valid Presenter was set or able to be created.
 	 */
 	public function Display() {
-		if (!isset($this->presenter)) {
-			if (isset($this->presenterClass)) {
-				if (class_exists($this->presenterClass)) {
-					$this->presenter = new $this->presenterClass();
-				} else {
-					$class = '\\Fluxoft\\Rebar\\Presenters\\'.$this->presenterClass;
-					if (class_exists($class)) {
-						$this->presenter = new $class();
-					}
-				}
-			} else {
-				$this->presenter = new Presenters\Debug();
-			}
-		}
-		if ($this->presenter instanceof Presenters\PresenterInterface) {
-			$this->presenter->Render($this->response, $this->getData());
-		} else {
+		$this->presenter ??= $this->initializePresenter();
+		if (!(($this->presenter instanceof PresenterInterface))) {
 			throw new InvalidPresenterException('Presenter must implement PresenterInterface.');
 		}
+		$this->presenter->Render($this->response, $this->getData());
+	}
+	protected function initializePresenter(): PresenterInterface {
+		if (isset($this->presenterClass) && class_exists($this->presenterClass)) {
+			$presenter = new $this->presenterClass();
+			if (!($presenter instanceof PresenterInterface)) {
+				throw new InvalidPresenterException('Presenter must implement PresenterInterface.');
+			}
+			return $presenter;
+		}
+		return new Presenters\Debug();
 	}
 
 	/**

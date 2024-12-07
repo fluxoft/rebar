@@ -39,11 +39,11 @@ class Filter implements \ArrayAccess, \Iterator {
 	 * @return void
 	 * @throws InvalidFilterException
 	 */
-	protected function setOperator(string $operator):void {
+	protected function setOperator(string $operator): void {
 		$this->properties['operator'] = match (strtoupper($operator)) {
-			'=', '<', '>', '<=', '>=', '<>', '!=', 'IN', 'LIKE', 'BETWEEN' => strtoupper($operator),
+			'=', '<', '>', '<=', '>=', '<>', '!=', 'IN', 'LIKE', 'BETWEEN', 'IS', 'IS NOT' => strtoupper($operator),
 			default => throw new InvalidFilterException(
-				'Invalid operator given. Must be one of the following: =, <, >, <=, >=, <>, !=, IN, LIKE, BETWEEN'
+				'Invalid operator given. Must be one of the following: =, <, >, <=, >=, <>, !=, IN, LIKE, BETWEEN, IS, IS NOT'
 			),
 		};
 	}
@@ -54,6 +54,17 @@ class Filter implements \ArrayAccess, \Iterator {
 	 * @throws InvalidFilterException
 	 */
 	protected function setValue(mixed $value): void {
+		if (in_array($this->Operator, ['IS', 'IS NOT'], true)) {
+			// For IS and IS NOT, value must be NULL
+			if (!is_null($value)) {
+				throw new InvalidFilterException(
+					sprintf("Filter operator '%s' requires the value to be NULL.", $this->Operator)
+				);
+			}
+			$this->properties['Value'] = $value;
+			return;
+		}
+
 		if ($this->Operator === 'IN') {
 			// for IN operator, value must be an array
 			if (is_array($value)) {

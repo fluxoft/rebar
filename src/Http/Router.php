@@ -58,27 +58,6 @@ class Router {
 	}
 
 	/**
-	 * Process each middleware in the stack.
-	 *
-	 * @param Request $request
-	 * @param Response $response
-	 * @return Request
-	 */
-	protected function processMiddleware(Request $request, Response $response) {
-		$middlewareStack = $this->middlewareStack;
-
-		$next = function() use ($request, $response, &$middlewareStack, &$next) {
-			$middleware = array_shift($middlewareStack);
-			if ($middleware) {
-				return $middleware->Process($request, $response, $next);
-			}
-			return $request;			
-		};
-
-		return $next();
-	}
-
-	/**
 	 * @param Route[] $routes
 	 */
 	public function AddRoutes(array $routes) {
@@ -86,18 +65,8 @@ class Router {
 			$this->AddRoute($route);
 		}
 	}
-
-	/**
-	 * @param Route $route
-	 */
 	public function AddRoute(Route $route) {
 		$this->routes[] = $route;
-	}
-
-	public function SetAuthForPath(AuthInterface $auth, $path = '/') {
-		$this->authTypes[$path] = $auth;
-		// reverse key sort this array so that more specific paths are first
-		krsort($this->authTypes);
 	}
 
 	/**
@@ -123,25 +92,10 @@ class Router {
 		// Call processMiddleware and overwrite the $request with the processed Request object
 		$request = $this->processMiddleware($request, $response);
 
-		$path = $request->Path;
-		$auth = null;
-		foreach ($this->authTypes as $route => $authInterface) {
-			if (strpos($path, $route) === 0) {
-				$auth = $authInterface;
-				if (!$auth instanceof AuthInterface) {
-					throw new RouterException(sprintf(
-						"The authentication type specified for %s must implement AuthInterface",
-						$request->Path
-					));
-				}
-				break;
-			}
-		}
-
-		$route = $this->getRoute($path);
+		$route = $this->getRoute($request->Path);
 
 		/** @var \Fluxoft\Rebar\Http\Controller $controller */
-		$controller = new $route['controller']($request, $response, $auth);
+		$controller = new $route['controller']($request, $response);
 
 		if (!is_callable([$controller, $route['action']])) {
 			throw new RouterException(sprintf(
@@ -151,43 +105,46 @@ class Router {
 			));
 		}
 
+		// Call the Setup method on the controller, if it exists
 		if (method_exists($controller, 'Setup')) {
 			$this->callControllerMethodWithParams($controller, 'Setup', $this->SetupArgs);
-		}
-
-		try {
-			$controller->Authorize($route['action']);
-		} catch (AccessDeniedException $e) {
-			$response->Halt(403, $e->getMessage());
-		} catch (MethodNotAllowedException $e) {
-			$response->Halt(405, $e->getMessage());
-		} catch (CrossOriginException $e) {
-			$response->Halt(403, $e->getMessage());
-		}
-
-		// If this is an options request, and no exceptions were thrown for Authorize,
-		// immediately return a 200 OK and do not even run the controller method.
-		if (strtoupper($request->Method) === 'OPTIONS') {
-			$response->Halt(200, 'OK');
 		}
 
 		/*
 		 * Add any configured MethodArgs to the array that will be used to call the controller
 		 * method, and then any URL params that were returned.
 		 */
-		$actionParams = [];
-		foreach ($this->MethodArgs as $arg) {
-			$actionParams[] = $arg;
-		}
-		foreach ($route['url'] as $urlParam) {
-			$actionParams[] = $urlParam;
-		}
+		$actionParams = [...$this->MethodArgs, ...$route['url']];
 		$this->callControllerMethodWithParams($controller, $route['action'], $actionParams);
+
+		// Display the controller output
 		$controller->Display();
 
+		// Call the Cleanup method on the controller, if it exists
 		if (method_exists($controller, 'Cleanup')) {
 			$this->callControllerMethodWithParams($controller, 'Cleanup', $this->CleanupArgs);
 		}
+	}
+
+	/**
+	 * Process each middleware in the stack.
+	 *
+	 * @param Request $request
+	 * @param Response $response
+	 * @return Request
+	 */
+	protected function processMiddleware(Request $request, Response $response) {
+		$middlewareStack = $this->middlewareStack;
+
+		$next = function() use ($request, $response, &$middlewareStack, &$next) {
+			$middleware = array_shift($middlewareStack);
+			if ($middleware) {
+				return $middleware->Process($request, $response, $next);
+			}
+			return $request;			
+		};
+
+		return $next();
 	}
 
 	protected function callControllerMethodWithParams(Controller $controller, $method, array $params): void {

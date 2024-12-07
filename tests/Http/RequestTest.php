@@ -2,6 +2,7 @@
 
 namespace Fluxoft\Rebar\Http;
 
+use InvalidArgumentException;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
@@ -83,47 +84,6 @@ class RequestTest extends TestCase {
 				['DeleteParams', $deleteParams],
 				['Input', $input]
 			]);
-
-		/*$this->environmentMock
-			->expects($this->at(0))
-			->method('__get')
-			->with($this->equalTo('Headers'))
-			->will($this->returnValue($headers));
-		$this->environmentMock
-			->expects($this->at(1))
-			->method('__get')
-			->with($this->equalTo('ServerParams'))
-			->will($this->returnValue($serverParams));
-		$this->environmentMock
-			->expects($this->at(2))
-			->method('__get')
-			->with($this->equalTo('GetParams'))
-			->will($this->returnValue($getParams));
-		$this->environmentMock
-			->expects($this->at(3))
-			->method('__get')
-			->with($this->equalTo('PostParams'))
-			->will($this->returnValue($postParams));
-		$this->environmentMock
-			->expects($this->at(4))
-			->method('__get')
-			->with($this->equalTo('PutParams'))
-			->will($this->returnValue($putParams));
-		$this->environmentMock
-			->expects($this->at(5))
-			->method('__get')
-			->with($this->equalTo('PatchParams'))
-			->will($this->returnValue($patchParams));
-		$this->environmentMock
-			->expects($this->at(6))
-			->method('__get')
-			->with($this->equalTo('DeleteParams'))
-			->will($this->returnValue($deleteParams));
-		$this->environmentMock
-			->expects($this->at(7))
-			->method('__get')
-			->with($this->equalTo('Input'))
-			->will($this->returnValue($input));*/
 
 		$this->assertEquals(
 			array_change_key_case($headers),
@@ -823,10 +783,70 @@ class RequestTest extends TestCase {
 		];
 	}
 
-	public function testUnsettableProperties() {
+	/**
+	 * @dataProvider unsettablePropertiesProvider
+	 */
+	public function testUnsettableProperties(string $property, $value) {
 		$request = new Request($this->environmentMock);
 
-		$this->expectException('\InvalidArgumentException');
-		$request->Method = '1.1.1.1';
+		$this->expectException(InvalidArgumentException::class);
+		$request->$property = $value;
 	}
+	public function unsettablePropertiesProvider(): array {
+		return [
+			['Method', 'disallowed_input'],
+			['Protocol', 'disallowed_input'],
+			['Host', 'disallowed_input'],
+			['Port', 'disallowed_input'],
+			['URL', 'disallowed_input'],
+			['URI', 'disallowed_input'],
+			['Path', 'disallowed_input'],
+			['RemoteIP', 'disallowed_input'],
+			['RawBody', 'disallowed_input']
+		];
+	}
+
+	public function testGetBodyInitializesRawBody() {
+		$this->environmentMock->method('__get')
+			->willReturnMap([
+				['Input', 'mockedInput']
+			]);
+	
+		$request = new Request($this->environmentMock);
+	
+		$this->assertEquals('mockedInput', $request->Body);
+		$this->assertEquals('mockedInput', $request->RawBody);
+	}
+	public function testSetBodyDoesNotModifyRawBody() {
+		$this->environmentMock->method('__get')
+			->willReturnMap([
+				['Input', 'initialInput']
+			]);
+	
+		$request = new Request($this->environmentMock);
+	
+		$request->Body = 'updatedBody';
+	
+		$this->assertEquals('updatedBody', $request->Body);
+		$this->assertEquals('initialInput', $request->RawBody);
+	}
+
+	public function testSetAuthenticatedUser() {
+		// Create a mock of UserInterface
+		$userMock = $this->createMock(\Fluxoft\Rebar\Auth\UserInterface::class);
+	
+		// Create an instance of the Request
+		$request = new Request($this->environmentMock);
+	
+		// Use Reflection to access the protected method
+		$reflection = new \ReflectionClass($request);
+		$method     = $reflection->getMethod('setAuthenticatedUser');
+		$method->setAccessible(true);
+	
+		// Call the protected method
+		$method->invoke($request, $userMock);
+	
+		// Assert that the property was set correctly
+		$this->assertSame($userMock, $request->AuthenticatedUser);
+	}	
 }

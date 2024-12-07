@@ -9,18 +9,22 @@ use Fluxoft\Rebar\Model;
  * Returned by Auth classes implementations of AuthInterface::Login and
  * AuthInterface::GetAuthenticatedUser
  * @package Fluxoft\rebar\Auth
- * @property bool Auth
+ * @property bool Auth True if the user is authenticated
  * @property mixed User
- * @property string Token
+ * @property string AccessToken
+ * @property string RefreshToken
  * @property string Message
+ * @property array  Claims User claims fro the access token
  */
 class Reply extends Model {
 	public function __construct() {
 		parent::__construct([
 			'Auth' => false,
 			'User' => null,
-			'Token' => null,
-			'Message' => null
+			'AccessToken' => null,
+			'RefreshToken' => null,
+			'Message' => null,
+			'Claims' => []
 		]);
 	}
 }

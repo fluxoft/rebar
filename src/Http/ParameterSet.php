@@ -13,7 +13,14 @@ class ParameterSet {
 		$this->params = array_change_key_case($params);
 	}
 
-	public function Get($key = null, $default = null) {
+	/**
+	 * If a key is not provided, returns all parameters.
+	 * If a key is provided, returns the value of that key if it exists, or the default if it does not.
+	 * If no default is provided, returns null if the key does not exist.
+	 * @param string|null $key
+	 * @param mixed|null $default
+	 */
+	public function Get(?string $key = null, mixed $default = null): mixed {
 		if (isset($key)) {
 			$key = strtolower($key);
 			if (isset($this->params[$key])) {
@@ -26,11 +33,11 @@ class ParameterSet {
 		}
 	}
 
-	public function Set($key, $value): void {
+	public function Set(string $key, mixed $value): void {
 		$this->params[strtolower($key)] = $value;
 	}
 
-	public function Delete($key): void {
+	public function Delete(string $key): void {
 		unset($this->params[$key]);
 	}
 }

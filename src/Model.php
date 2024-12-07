@@ -19,7 +19,7 @@ abstract class Model implements \Iterator, \ArrayAccess {
 	use ArrayAccessibleProperties;
 	use StringableProperties;
 
-	protected static $defaultProperties = []; // Define defaults in subclasses
+	protected static array $defaultProperties = []; // Define defaults in subclasses
 
 	public function __construct(array $properties = []) {
 		$this->properties = array_merge(static::$defaultProperties, $properties);
