@@ -12,18 +12,37 @@ use Psr\Container\ContainerInterface;
 class Container implements \ArrayAccess, ContainerInterface {
 	protected $values  = [];
 	protected $objects = [];
+
+	/**
+	 * Load definitions from an array and register them in the container.
+	 *
+	 * @param array $definitions
+	 */
+	public function LoadDefinitions(array $definitions): void {
+		// First pass: register definitions and scalars
+		foreach ($definitions as $key => $value) {
+			if ($value instanceof ContainerDefinition) {
+				$this[$key] = function () use ($value) {
+					return new $value->Class(...array_map(fn($dep) => $this[$dep], $value->Dependencies));
+				};
+			} elseif (is_scalar($value) || is_null($value)) {
+				$this[$key] = $value; // Allow direct scalar or null values
+			} elseif (!is_string($value)) {
+				throw new \InvalidArgumentException(
+					"Invalid definition for key '$key'. Expected a ContainerDefinition, alias string, or scalar."
+				);
+			}
+			// Skip alias resolution for now
+		}
 	
-	public function __isset($key) {
-		return $this->offsetExists($key);
-	}
-	public function __get($key) {
-		return $this->offsetGet($key);
-	}
-	public function __set($key, $value) {
-		$this->offsetSet($key, $value);
-	}
-	public function __unset($key) {
-		$this->offsetUnset($key);
+		// Second pass: resolve aliases
+		foreach ($definitions as $key => $value) {
+			if (is_string($value) && isset($this[$value])) {
+				$this[$key] = fn() => $this[$value]; // Alias resolution
+			} elseif (is_string($value) && !$this->offsetExists($value)) {
+				continue; // This must be a scalar value, do not change it.
+			}
+		}
 	}
 
 	// PSR-11 implementation
@@ -33,7 +52,7 @@ class Container implements \ArrayAccess, ContainerInterface {
 	public function get($id): mixed {
 		return $this->offsetGet($id);
 	}
-	
+
 	// ArrayAccess
 	public function offsetExists($offset): bool {
 		return isset($this->values[$offset]);
@@ -60,5 +79,19 @@ class Container implements \ArrayAccess, ContainerInterface {
 	}
 	public function offsetUnset($offset): void {
 		unset($this->values[$offset]);
+	}
+
+	// Enable object-style property access
+	public function __isset($key) {
+		return $this->offsetExists($key);
+	}
+	public function __get($key) {
+		return $this->offsetGet($key);
+	}
+	public function __set($key, $value) {
+		$this->offsetSet($key, $value);
+	}
+	public function __unset($key) {
+		$this->offsetUnset($key);
 	}
 }
