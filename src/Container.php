@@ -2,11 +2,14 @@
 
 namespace Fluxoft\Rebar;
 
+use Fluxoft\Rebar\Exceptions\NotFoundException;
+use Psr\Container\ContainerInterface;
+
 /**
  * Class Container
  * @package Fluxoft\Rebar
  */
-class Container implements \ArrayAccess {
+class Container implements \ArrayAccess, ContainerInterface {
 	protected $values  = [];
 	protected $objects = [];
 	
@@ -22,15 +25,22 @@ class Container implements \ArrayAccess {
 	public function __unset($key) {
 		$this->offsetUnset($key);
 	}
+
+	// PSR-11 implementation
+	public function has($id): bool {
+		return $this->offsetExists($id);
+	}
+	public function get($id): mixed {
+		return $this->offsetGet($id);
+	}
 	
 	// ArrayAccess
 	public function offsetExists($offset): bool {
 		return isset($this->values[$offset]);
 	}
-
 	public function offsetGet($offset): mixed {
-		if (!isset($this->values[$offset])) {
-			throw new \InvalidArgumentException(sprintf('Value "%s" is not defined.', $offset));
+		if (!$this->offsetExists($offset)) {
+			throw new NotFoundException(sprintf('Value "%s" is not defined.', $offset));
 		}
 		if (is_callable($this->values[$offset])) {
 			if ($this->objects[$offset]) {

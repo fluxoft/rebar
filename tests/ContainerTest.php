@@ -5,12 +5,34 @@ namespace Fluxoft\Rebar;
 use PHPUnit\Framework\TestCase;
 
 class ContainerTest extends TestCase {
-	protected function setup():void {
+	protected function setup():void {}
 
+	protected function teardown():void {}
+
+	public function testPsr11() {
+		$container = new Container();
+
+		$container['simpleValue']    = 'simpleValue';
+		$container['simpleCallable'] = function () {
+			return 'simpleCallable';
+		};
+
+		$this->assertTrue($container->has('simpleValue'));
+		$this->assertTrue($container->has('simpleCallable'));
+
+		$this->assertEquals('simpleValue', $container->get('simpleValue'));
+		$this->assertEquals('simpleCallable', $container->get('simpleCallable'));
 	}
 
-	protected function teardown():void {
+	public function testPsr11NotFound() {
+		$container = new Container();
 
+		$this->assertFalse($container->has('notFound'));
+
+		$this->expectException('Fluxoft\Rebar\Exceptions\NotFoundException');
+		$this->expectExceptionMessage('Value "notFound" is not defined.');
+
+		$container->get('notFound');
 	}
 
 	public function testAccessSimpleProperties() {
