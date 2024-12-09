@@ -66,6 +66,7 @@ class ConfigTest extends TestCase {
 	public function testInvalidSourcesThrowException(): void {
 		$this->expectException(\InvalidArgumentException::class);
 		$this->expectExceptionMessage(
+			// @codingStandardsIgnoreLine
 			"Invalid configuration sources provided: invalidSource1, invalidSource2. Allowed sources are: array, ini, json, dotenv, env."
 		);
 	
