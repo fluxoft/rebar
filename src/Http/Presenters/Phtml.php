@@ -2,6 +2,7 @@
 
 namespace Fluxoft\Rebar\Http\Presenters;
 
+use Fluxoft\Rebar\Exceptions\PropertyNotFoundException;
 use Fluxoft\Rebar\Http\Response;
 
 /**
@@ -19,36 +20,42 @@ use Fluxoft\Rebar\Http\Response;
  * @property string Template
  */
 class Phtml implements PresenterInterface {
-	protected $templatePath;
-	protected $template;
-	protected $layout;
-
 	public function __construct(
-		$templatePath,
-		$template = '/default.phtml',
-		$layout = ''
-	) {
-		$this->templatePath = $templatePath;
-		$this->template     = $template;
-		$this->layout       = $layout;
-	}
+		private readonly string $templatePath,
+		private string $template = '/default.phtml',
+		private string $layout = ''
+	) {}	
 
-	public function Render(Response $response, array $data) {
+	/**
+	 * Render the given data using the specified template or layout.
+	 *
+	 * @param Response $response The HTTP response to be updated.
+	 * @param array $data The data to be rendered in the template.
+	 */
+	public function Render(Response $response, array $data): void {
 		// make the data set available to the template as $rebarTemplateData
 		// to hopefully avoid naming collisions
 		$rebarTemplateData = $data;
 
-		if (strlen($this->layout) > 0) {
+		if (!empty($this->layout)) {
 			// this can be used in a layout template to include the template
 			// in the appropriate place on the page
 			$rebarPageTemplate = $this->template;
 			$include           = $this->templatePath.$this->layout;
+
+			// Pass both variables for the layout template to use
+			$output = $this->includeTemplate($include, compact('rebarTemplateData', 'rebarPageTemplate'));
 		} else {
 			$include = $this->templatePath.$this->template;
+
+			// Pass only $rebarTemplateData for the template to use
+			$output = $this->includeTemplate($include, compact('rebarTemplateData'));
 		}
 		if ($this->fileExists($include)) {
-			$this->includeTemplate($include);
-			$response = null;
+			$response->AddHeader('Content-Type', 'text/html');
+			$response->Body   = $output;
+			$response->Status = 200;
+			$response->Send();
 		} else {
 			$response->AddHeader('Content-Type', 'text/plain');
 			$response->Status = 404;
@@ -69,41 +76,45 @@ class Phtml implements PresenterInterface {
 	/**
 	 * @codeCoverageIgnore
 	 */
-	protected function includeTemplate($include) {
-		include ($include);
-		exit;
+	protected function includeTemplate(string $include, array $variables): ?string {
+		if (!$this->fileExists($include)) {
+			return null; // Return null if the file doesn't exist
+		}
+	
+		// Extract variables into the scope of the template
+		extract($variables);
+	
+		ob_start();
+		include $include;
+		return ob_get_clean();
 	}
 
 	public function __set($var, $val) {
 		switch ($var) {
-			case 'Template':
+			case 'Template': // @codeCoverageIgnore
 				$this->template = $val;
 				break;
-			case 'Layout':
+			case 'Layout': // @codeCoverageIgnore
 				$this->layout = $val;
 				break;
 			default:
-				throw new \InvalidArgumentException(sprintf(
+				throw new PropertyNotFoundException(sprintf(
 					'The property %s does not exist.',
 					$var
 				));
-				break;
 		}
 	}
 	public function __get($var) {
 		switch ($var) {
-			case 'Template':
+			case 'Template': // @codeCoverageIgnore
 				return $this->template;
-				break;
-			case 'Layout':
+			case 'Layout': // @codeCoverageIgnore
 				return $this->layout;
-				break;
 			default:
-				throw new \InvalidArgumentException(sprintf(
+				throw new PropertyNotFoundException(sprintf(
 					'The property %s does not exist.',
 					$var
 				));
-				break;
 		}
 	}
 }
