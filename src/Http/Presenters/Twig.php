@@ -1,5 +1,5 @@
 <?php
-namespace Fluxoft\Rebar\Presenters;
+namespace Fluxoft\Rebar\Http\Presenters;
 
 use \Fluxoft\Rebar\Http\Response;
 use Twig\Environment;

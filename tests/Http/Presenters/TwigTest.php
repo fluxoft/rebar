@@ -1,31 +1,30 @@
 <?php
 
-namespace Fluxoft\Rebar\Presenters;
+namespace Fluxoft\Rebar\Http\Presenters;
 
 use Fluxoft\Rebar\Http\Response;
-use Pug\Pug;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use Twig\Environment;
 
-class PugTest extends TestCase {
+class TwigTest extends TestCase {
 	/** @var Response|MockObject */
-	private Response|MockObject $responseObserver;
-	/** @var MockObject|\Pug\Pug */
-	private Pug|MockObject $pugObserver;
+	private $responseObserver;
+	/** @var MockObject|Environment */
+	private $twigObserver;
 
 	protected function setup():void {
 		$this->responseObserver = $this->getMockBuilder('\Fluxoft\Rebar\Http\Response')
 			->disableOriginalConstructor()
 			->getMock();
-		$this->pugObserver      = $this->getMockBuilder('\Pug\Pug')
-			->onlyMethods(['renderFile'])
+		$this->twigObserver     = $this->getMockBuilder('\Twig\Environment')
 			->disableOriginalConstructor()
 			->getMock();
 	}
 
 	protected function teardown():void {
 		unset($this->responseObserver);
-		unset($this->pugObserver);
+		unset($this->twigObserver);
 	}
 
 	/**
@@ -34,41 +33,59 @@ class PugTest extends TestCase {
 	 * @param $data
 	 * @dataProvider renderProvider
 	 */
-	public function testRender($template, $data) {
-		$presenter = new \Fluxoft\Rebar\Presenters\Pug($this->pugObserver);
+	public function testRender($template, $layout, $data) {
+		$presenter = new Twig(
+			$this->twigObserver
+		);
 
 		$presenter->Template = $template;
+		$presenter->Layout   = $layout;
 		$this->assertEquals($template, $presenter->Template);
+		$this->assertEquals($layout, $presenter->Layout);
 
-		$this->pugObserver
+		if (strlen($layout)) {
+			$data['pageTemplate'] = $template;
+			$renderTemplate       = $layout;
+		} else {
+			$renderTemplate = $template;
+		}
+		$this->twigObserver
 			->expects($this->once())
-			->method('renderFile')
+			->method('render')
 			->with(
-				$template,
-				['data' => $data]
+				$renderTemplate,
+				$data
 			);
 
 		$presenter->Render($this->responseObserver, $data);
 	}
 	public function renderProvider() {
 		return [
-			'testRender' => [
-				'template' => 'template.pug',
+			'noLayout' => [
+				'template' => 'template.html',
+				'layout' => '',
+				'data' => []
+			],
+			'withLayout' => [
+				'template' => 'template.html',
+				'layout' => 'layout.html',
 				'data' => []
 			]
 		];
 	}
 	public function testSetNonExistentProperty() {
-		$presenter = new \Fluxoft\Rebar\Presenters\Pug($this->pugObserver);
+		$presenter = new Twig(
+			$this->twigObserver
+		);
 
 		$this->expectException('InvalidArgumentException');
 
 		$presenter->NonExistent = 'will fail';
-
-		unset($presenter);
 	}
 	public function testGetNonExistentProperty() {
-		$presenter = new \Fluxoft\Rebar\Presenters\Pug($this->pugObserver);
+		$presenter = new Twig(
+			$this->twigObserver
+		);
 
 		$this->expectException('InvalidArgumentException');
 
