@@ -2,6 +2,7 @@
 
 namespace Fluxoft\Rebar\Http\Presenters;
 
+use Fluxoft\Rebar\Exceptions\PropertyNotFoundException;
 use Fluxoft\Rebar\Http\Response;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -61,7 +62,8 @@ class PugTest extends TestCase {
 	public function testSetNonExistentProperty() {
 		$presenter = new \Fluxoft\Rebar\Http\Presenters\Pug($this->pugObserver);
 
-		$this->expectException('InvalidArgumentException');
+		$this->expectException(PropertyNotFoundException::class);
+		$this->expectExceptionMessage('The property NonExistent does not exist.');
 
 		$presenter->NonExistent = 'will fail';
 
@@ -70,7 +72,8 @@ class PugTest extends TestCase {
 	public function testGetNonExistentProperty() {
 		$presenter = new \Fluxoft\Rebar\Http\Presenters\Pug($this->pugObserver);
 
-		$this->expectException('InvalidArgumentException');
+		$this->expectException(PropertyNotFoundException::class);
+		$this->expectExceptionMessage('The property NonExistent does not exist.');
 
 		$nonExistent = $presenter->NonExistent;
 		unset($nonExistent);
