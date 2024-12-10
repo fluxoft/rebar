@@ -4,7 +4,7 @@ namespace Fluxoft\Rebar\Http\Presenters;
 use Fluxoft\Rebar\Http\Response;
 
 class Debug implements PresenterInterface {
-	public function Render(Response $response, array $data) {
+	public function Render(Response $response, array $data): void {
 		$body  = "*** The page's data set: ***\n\n";
 		$body .= $this->renderData($data);
 		$body .= "\n****************************\n";

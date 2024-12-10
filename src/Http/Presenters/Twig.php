@@ -1,7 +1,8 @@
 <?php
 namespace Fluxoft\Rebar\Http\Presenters;
 
-use \Fluxoft\Rebar\Http\Response;
+use Fluxoft\Rebar\Exceptions\PropertyNotFoundException;
+use Fluxoft\Rebar\Http\Response;
 use Twig\Environment;
 
 /**
@@ -11,30 +12,14 @@ use Twig\Environment;
  * @property string Template
  */
 class Twig implements PresenterInterface {
-	/** @var Environment */
-	protected $twig;
-	protected $templatePath;
-	protected $template;
-	protected $layout;
-
 	public function __construct(
-		Environment $twig,
-		$template = '/default.html.twig',
-		$layout = ''
-	) {
-		/*$loader = new \Twig\Loader\FilesystemLoader($templatePath);
-		$twig   = new \Twig\Environment($loader, array(
-			'cache' => $cachePath,
-			'debug' => $debug
-		));*/
+		protected Environment $twig,
+		protected string $template = '/default.html.twig',
+		protected string $layout = ''
+	) {}
 
-		$this->twig     = $twig;
-		$this->template = $template;
-		$this->layout   = $layout;
-	}
-
-	public function Render(Response $response, array $data) {
-		if (strlen($this->layout)) {
+	public function Render(Response $response, array $data): void {
+		if (!empty($this->layout)) {
 			$data['pageTemplate'] = $this->template;
 			$template             = $this->layout;
 		} else {
@@ -47,34 +32,30 @@ class Twig implements PresenterInterface {
 	}
 	public function __set($var, $val) {
 		switch ($var) {
-			case 'Template':
+			case 'Template': // @codeCoverageIgnore
 				$this->template = $val;
 				break;
-			case 'Layout':
+			case 'Layout': // @codeCoverageIgnore
 				$this->layout = $val;
 				break;
 			default:
-				throw new \InvalidArgumentException(sprintf(
+				throw new PropertyNotFoundException(sprintf(
 					'The property %s does not exist.',
 					$var
 				));
-				break;
 		}
 	}
 	public function __get($var) {
 		switch ($var) {
-			case 'Template':
+			case 'Template': // @codeCoverageIgnore
 				return $this->template;
-				break;
-			case 'Layout':
+			case 'Layout': // @codeCoverageIgnore
 				return $this->layout;
-				break;
 			default:
-				throw new \InvalidArgumentException(sprintf(
+				throw new PropertyNotFoundException(sprintf(
 					'The property %s does not exist.',
 					$var
 				));
-				break;
 		}
 	}
 }

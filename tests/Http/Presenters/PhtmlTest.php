@@ -61,7 +61,7 @@ class PhtmlTest extends TestCase {
 		$presenter = new PhtmlMock('templatePath/');
 
 		$this->expectException(PropertyNotFoundException::class);
-		$this->expectExceptionMessage('Property NonExistent not found.');
+		$this->expectExceptionMessage('The property NonExistent does not exist.');
 
 		$presenter->NonExistent = 'will fail';
 	}
@@ -69,7 +69,7 @@ class PhtmlTest extends TestCase {
 		$presenter = new PhtmlMock('templatePath/');
 
 		$this->expectException(PropertyNotFoundException::class);
-		$this->expectExceptionMessage('Property NonExistent not found.');
+		$this->expectExceptionMessage('The property NonExistent does not exist.');
 
 		$nonExistent = $presenter->NonExistent;
 		unset($nonExistent);
