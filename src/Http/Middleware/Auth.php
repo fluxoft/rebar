@@ -15,10 +15,11 @@ class Auth implements MiddlewareInterface {
 	 */
 	public function __construct(array $authConfig) {
 		// reverse key sort this array so that more specific paths are first
-		$this->authConfig = krsort($authConfig);
+		krsort($authConfig);
+		$this->authConfig = $authConfig;
 	}
 
-	public function SetAuthForPath(string $path = '/', AuthInterface $auth): void {
+	public function SetAuthForPath(AuthInterface $auth, string $path = '/'): void {
 		$this->authConfig[$path] = $auth;
 		// reverse key sort this array so that more specific paths are first
 		krsort($this->authConfig);
