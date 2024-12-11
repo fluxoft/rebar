@@ -93,6 +93,7 @@ class CorsTest extends \PHPUnit\Framework\TestCase {
 			]));
 	
 		$response = $this->cors->Process($this->request, $this->response, function($req, $res) {
+			$req = null; // unused
 			return $res;
 		});
 	
@@ -116,7 +117,9 @@ class CorsTest extends \PHPUnit\Framework\TestCase {
 				['Headers', ['Origin' => 'http://allowed-origin.com']]
 			]));
 	
+		/** @var MockResponse $response */
 		$response = $this->cors->Process($this->request, $this->response, function ($req, $res) {
+			$req = null; // unused
 			return $res;
 		});
 	
