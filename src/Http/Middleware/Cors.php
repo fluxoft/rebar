@@ -27,12 +27,6 @@ class Cors implements MiddlewareInterface {
 		$requestHeaders = $request->Headers;
 		$requestMethod  = $request->Method;
 
-		// Handle OPTIONS requests
-		if (strtoupper($requestMethod) === 'OPTIONS') {
-			$response->Halt(200, 'OK');
-			return $response; // Return response immediately for OPTIONS requests
-		}
-
 		// always allow OPTIONS requests
 		if (!in_array('OPTIONS', $allowedMethods)) {
 			$allowedMethods[] = 'OPTIONS';
@@ -52,6 +46,12 @@ class Cors implements MiddlewareInterface {
 					throw new CrossOriginException(sprintf('The origin "%s" is not permitted.', $origin));
 				}
 			}
+		}
+
+		// Handle OPTIONS requests
+		if (strtoupper($requestMethod) === 'OPTIONS') {
+			$response->Halt(200, 'OK');
+			return $response; // Return response immediately for OPTIONS requests
 		}
 
 		if (!in_array($requestMethod, $allowedMethods)) {
