@@ -11,7 +11,7 @@ class JsonTest extends TestCase {
 	private $responseObserver;
 
 	protected function setup():void {
-		$this->responseObserver = $this->getMockBuilder('Fluxoft\Rebar\Http\Response')
+		$this->responseObserver = $this->getMockBuilder(Response::class)
 			->disableOriginalConstructor()
 			->getMock();
 	}
@@ -21,22 +21,25 @@ class JsonTest extends TestCase {
 	}
 
 	/**
-	 * @param $data
-	 * @param $callback
+	 * @param array $data
+	 * @param string|null $callback If set and a non-empty string, the JSON will be wrapped in a callback in the output,
+	 *                              otherwise it will be plain JSON. This is to support JSONP, for those of you who like
+	 *                              to kick it old school. JSONP uses the text/javascript content type, as opposed to the
+	 *                              more modern application/json content type.
+	 * @param string $expectedJson
 	 * @dataProvider renderProvider
 	 */
-	public function testRender($data, $callback = false) {
-		$presenter = new JsonMock($callback);
-
-		$expectedJson = $presenter->PublicJsonEncode($data);
-		if ($callback) {
+	public function testRender(array $data, ?string $callback, string $expectedJson): void {
+		$presenter = new Json($callback);
+	
+		if ($callback !== null) {
 			$expectedType = 'text/javascript;charset=utf-8';
-			$expectedBody = $callback.'('.$expectedJson.');';
+			$expectedBody = $callback . '(' . $expectedJson . ');';
 		} else {
 			$expectedType = 'application/json;charset=utf-8';
 			$expectedBody = $expectedJson;
 		}
-
+	
 		$this->responseObserver
 			->expects($this->once())
 			->method('AddHeader')
@@ -45,108 +48,123 @@ class JsonTest extends TestCase {
 			->expects($this->once())
 			->method('__set')
 			->with(
-				$this->EqualTo('Body'),
-				$this->EqualTo($expectedBody)
+				$this->equalTo('Body'),
+				$this->equalTo($expectedBody)
 			);
-
+	
 		$presenter->Render($this->responseObserver, $data);
 	}
-	public function renderProvider() {
+
+	public function renderProvider(): array {
 		$simpleObject              = new \stdClass();
 		$simpleObject->propertyOne = "valueOne";
 		$simpleObject->propertyTwo = "valueTwo";
-
-		$simpleArray = [
+	
+		$simpleAssocArray   = [
 			'foo' => 'bar'
 		];
+		$simpleIndexedArray = [
+			'one', 'two', 'three'
+		];
+	
 		return [
 			'empty' => [
 				'data' => [],
-				'callback' => false
+				'callback' => null,
+				'expectedJson' => '{}'
 			],
 			'simple' => [
-				'data' => ['one', 'two', 'three'],
-				'callback' => false
+				'data' => $simpleIndexedArray,
+				'callback' => null,
+				'expectedJson' => '["one","two","three"]'
 			],
 			'mixed' => [
 				'data' => [
 					'foo' => 'bar',
 					'object' => $simpleObject,
-					'array' => $simpleArray,
+					'assocArray' => $simpleAssocArray,
+					'indexedArray' => $simpleIndexedArray,
 					'booleanTrue' => true,
 					'booleanFalse' => false,
 					'nullValue' => null
 				],
-				'callback' => false
+				'callback' => null,
+				// phpcs:ignore Generic.Files.LineLength
+				'expectedJson' => '{"foo":"bar","object":{"propertyOne":"valueOne","propertyTwo":"valueTwo"},"assocArray":{"foo":"bar"},"indexedArray":["one","two","three"],"booleanTrue":true,"booleanFalse":false,"nullValue":null}'
 			],
-			'emptyCallback' => [
-				'data' => [],
-				'callback' => 'empty'
-			],
-			'simpleCallback' => [
-				'data' => ['one', 'two', 'three'],
-				'callback' => 'simple'
+			'nestedObjects' => [
+				'data' => [
+					'parent' => [
+						'child' => [
+							'key' => 'value',
+							'anotherKey' => 123
+						]
+					]
+				],
+				'callback' => null,
+				'expectedJson' => '{"parent":{"child":{"key":"value","anotherKey":123}}}'
 			],
 			'mixedCallback' => [
 				'data' => [
 					'foo' => 'bar',
 					'object' => $simpleObject,
-					'array' => $simpleArray,
+					'assocArray' => $simpleAssocArray,
+					'indexedArray' => $simpleIndexedArray,
 					'booleanTrue' => true,
 					'booleanFalse' => false,
 					'nullValue' => null
 				],
-				'callback' => 'mixed'
+				'callback' => 'mixed',
+				// phpcs:ignore Generic.Files.LineLength
+				'expectedJson' => '{"foo":"bar","object":{"propertyOne":"valueOne","propertyTwo":"valueTwo"},"assocArray":{"foo":"bar"},"indexedArray":["one","two","three"],"booleanTrue":true,"booleanFalse":false,"nullValue":null}'
+			],
+			'emptyArrayVsObject' => [
+				'data' => [
+					'emptyArray' => [],
+					'emptyObject' => (object) []
+				],
+				'callback' => null,
+				'expectedJson' => '{"emptyArray":[],"emptyObject":{}}'
+			],
+			'largeStructure' => [
+				'data' => array_fill(0, 3, ['key' => 'value']),
+				'callback' => null,
+				'expectedJson' => '[{"key":"value"},{"key":"value"},{"key":"value"}]'
 			]
 		];
 	}
-	public function testSetCallback() {
-		$presenter = new JsonMock();
 
-		$simpleObject              = new \stdClass();
-		$simpleObject->propertyOne = "valueOne";
-		$simpleObject->propertyTwo = "valueTwo";
-
-		$simpleArray = [
-			'foo' => 'bar'
-		];
+	public function testSetCallback(): void {
+		$presenter = new Json();
 
 		$data = [
 			'foo' => 'bar',
-			'object' => $simpleObject,
-			'array' => $simpleArray,
+			'object' => ['propertyOne' => 'valueOne', 'propertyTwo' => 'valueTwo'],
+			'array' => ['foo' => 'bar'],
 			'booleanTrue' => true,
 			'booleanFalse' => false,
 			'nullValue' => null
 		];
 		$presenter->SetCallback('mixed');
 
-		$expectedJson = $presenter->PublicJsonEncode($data);
+		// phpcs:ignore Generic.Files.LineLength
+		$expectedJson = '{"foo":"bar","object":{"propertyOne":"valueOne","propertyTwo":"valueTwo"},"array":{"foo":"bar"},"booleanTrue":true,"booleanFalse":false,"nullValue":null}';
 		$expectedType = 'text/javascript;charset=utf-8';
-		$expectedBody = 'mixed('.$expectedJson.');';
-
+		$expectedBody = 'mixed(' . $expectedJson . ');';
 
 		$this->responseObserver
 			->expects($this->once())
 			->method('AddHeader')
 			->with('Content-type', $expectedType);
+
 		$this->responseObserver
 			->expects($this->once())
 			->method('__set')
 			->with(
-				$this->EqualTo('Body'),
-				$this->EqualTo($expectedBody)
+				$this->equalTo('Body'),
+				$this->equalTo($expectedBody)
 			);
 
 		$presenter->Render($this->responseObserver, $data);
-	}
-}
-
-// @codingStandardsIgnoreStart
-class JsonMock extends Json {
-	// @codingStandardsIgnoreEnd
-
-	public function PublicJsonEncode(array $data) {
-		return parent::jsonEncode($data);
 	}
 }

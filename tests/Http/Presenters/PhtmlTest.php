@@ -102,6 +102,7 @@ class PhtmlMock extends Phtml {
 	// This needs to be a no-op so execution isn't interrupted
 	private $included;
 	protected function includeTemplate(string $include, array $variables): ?string {
+		unset($variables); // unused
 		$this->included = $include;
 		return null;
 	}
