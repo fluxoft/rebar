@@ -167,4 +167,30 @@ class JsonTest extends TestCase {
 
 		$presenter->Render($this->responseObserver, $data);
 	}
+
+	public function testJsonEncodingException(): void {
+		$data = ['invalid' => "\xB1\x31"]; // Invalid UTF-8 sequence to force JsonException
+	
+		/** @var MockObject|Response $response */
+		$response = $this->createMock(Response::class);
+	
+		$response->expects($this->once())
+			->method('AddHeader')
+			->with('Content-type', 'application/json;charset=utf-8');
+	
+		$response->expects($this->exactly(2))
+			->method('__set')
+			->willReturnMap([
+				['Status', 500],
+				['Body', '{"error":"JSON encoding failed"}']
+			]);
+	
+		$response->expects($this->once())
+			->method('Send');
+	
+		$presenter = new Json();
+		$presenter->Render($response, $data);
+	
+		// No exception expected here since it is handled inside the method.
+	}
 }
