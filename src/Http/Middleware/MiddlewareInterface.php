@@ -2,9 +2,9 @@
 
 namespace Fluxoft\Rebar\Http\Middleware;
 
-use Fluxoft\Rebar\Http\Request; // Import the correct Request class
-use Fluxoft\Rebar\Http\Response; // Import the correct Response class
+use Fluxoft\Rebar\Http\Request;
+use Fluxoft\Rebar\Http\Response;
 
 interface MiddlewareInterface {
- public function Process(Request $request, Response $response, callable $next): Response;
+	public function Process(Request $request, Response $response, callable $next): Response;
 }
