@@ -125,20 +125,11 @@ abstract class GenericSql implements MapperInterface {
 	 * @throws MapperException
 	 */
 	public function GetOneById(int $id): ?Model {
-		$select = $this->getSelect(
-			[new Filter($this->propertyDbMap[$this->idProperty]->Column, '=', $id)]
-		);
-
-		$stmt = $this->reader->prepare($select['sql']);
-		$stmt->execute($select['params']);
-		$row = $stmt->fetch(PDO::FETCH_ASSOC);
-		if ($row) {
-			return $this->getModel($row);
-		} else {
-			return null;
-		}
+		$rows = $this->performSelect([
+			new Filter($this->propertyDbMap[$this->idProperty]->Column, '=', $id)
+		]);
+		return !empty($rows) ? $this->getModel($rows[0]) : null;
 	}
-
 	/**
 	 * @param array $filters
 	 * @return Model|null
@@ -152,7 +143,6 @@ abstract class GenericSql implements MapperInterface {
 			return null;
 		}
 	}
-
 	/**
 	 * @param Filter[] $filters
 	 * @param Sort[] $sort
@@ -161,53 +151,11 @@ abstract class GenericSql implements MapperInterface {
 	 * @return Model[]
 	 * @throws MapperException
 	 */
-	public function GetSet(
-		array $filters = [],
-		array $sort = [],
-		int   $page = 1,
-		int   $pageSize = 0
-	): array {
-		$select = $this->getSelect($filters, $sort, $page, $pageSize);
-		$stmt   = $this->reader->prepare($select['sql']);
-		$stmt->execute($select['params']);
-		$rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+	public function GetSet(array $filters = [], array $sort = [], int $page = 1, int $pageSize = 0): array {
+		$rows = $this->performSelect($filters, $sort, $page, $pageSize);
 		return $this->getModelSet($rows);
 	}
-
-	/**
-	 * @param array $filters
-	 * @return int
-	 */
-	public function Count(array $filters = []): int {
-		$count = $this->countSelect($filters);
-		$stmt  = $this->reader->prepare($count['sql']);
-		$stmt->execute($count['params']);
-		$row = $stmt->fetch(PDO::FETCH_ASSOC);
-		return (int) $row['count'];
-	}
-
-	/**
-	 * @param Model $model
-	 */
-	public function Delete(Model &$model): void {
-  // Updated parameter type
-		$sql  = 'DELETE FROM '.$this->quoteIdentifier($this->dbTable).' WHERE '.
-			$this->quoteIdentifier($this->propertyDbMap[$this->idProperty]->Column).' = :id';
-		$stmt = $this->writer->prepare($sql);
-		$stmt->execute([$this->propertyDbMap[$this->idProperty]->Column => $model->{$this->idProperty}]);
-		$model = null;
-	}
-
-	/**
-	 * @param int $id
-	 * @throws MapperException
-	 */
-	public function DeleteById(int $id): void {
-		$model = $this->GetOneById($id);
-		if ($model) {
-			$this->Delete($model);
-		}
-	}
+	
 
 	/**
 	 * Save the model to the database.
@@ -223,23 +171,50 @@ abstract class GenericSql implements MapperInterface {
 
 		if ($model->{$this->idProperty} === null || $model->{$this->idProperty} === 0) {
 			// ID is null or 0, indicating a new record
-			$this->create($model);
+			$this->performCreate($model);
 		} else {
 			// Existing record, perform update
-			$this->update($model);
+			$this->performUpdate($model);
 		}
 	}
 
-
 	/**
 	 * @param array $filters
+	 * @return int
+	 */
+	public function Count(array $filters = []): int {
+		return $this->performCount($filters);
+	}
+
+	/**
+	 * @param Model $model
+	 */
+	public function Delete(Model &$model): void {
+		$this->performDelete([
+			$this->idProperty => $model->{$this->idProperty}
+		]);
+		$model = null; // Nullify the reference to indicate the model is deleted
+	}	
+	/**
+	 * @param int $id
 	 * @throws MapperException
 	 */
+	public function DeleteById(int $id): void {
+		$this->performDelete([$this->idProperty => $id]);
+	}
 	public function DeleteOneWhere(array $filters): void {
-		$model = $this->GetOne($filters);
-		if ($model) {
-			$this->Delete($model);
+		$conditions = [];
+		foreach ($filters as $property => $value) {
+			if (!isset($this->propertyDbMap[$property])) {
+				throw new MapperException(sprintf(
+					"Invalid property '%s' in filters.",
+					$property
+				));
+			}
+			$conditions[$this->propertyDbMap[$property]->Column] = $value;
 		}
+	
+		$this->performDelete($conditions);
 	}
 
 	/**
@@ -271,85 +246,108 @@ abstract class GenericSql implements MapperInterface {
 	}
 
 	/**
+	 * Perform a SELECT query on the database.
+	 * @param array $filters
+	 * @param array $sort
+	 * @param int $page
+	 * @param int $pageSize
+	 * @return array
+	 */
+	protected function performSelect(array $filters = [], array $sort = [], int $page = 1, int $pageSize = 0): array {
+		// Generate SQL and params using the helper
+		$selectQuery = $this->getSelectQuery($filters, $sort, $page, $pageSize);
+	
+		// Execute the query and return results
+		return $this->executeQuery($this->reader, $selectQuery['sql'], $selectQuery['params'], true);
+	}
+	/**
 	 * Create a new record in the database.
-	 *
 	 * @param Model $model
 	 * @throws Exception
 	 */
-	protected function create(Model $model): void {
+	protected function performCreate(Model $model): void {
 		// Merge properties and modified properties for insertion
 		$merged = array_replace_recursive(
 			$model->GetProperties(),
 			$model->GetModifiedProperties()
 		);
-
-		$cols   = [];
-		$values = [];
-		foreach ($merged as $property => $value) {
-			if ($property !== $this->idProperty &&
-				!is_null($value) &&
-				isset($this->propertyDbMap[$property]) &&
-				$this->propertyDbMap[$property]->IsWriteable
-			) {
-				$cols[]                                          = $this->propertyDbMap[$property]->Column;
-				$values[$this->propertyDbMap[$property]->Column] =
-					$this->formatValueForInsert($this->propertyDbMap[$property]->Type, $value);
-			}
-		}
-
-		// Build SQL
-		$sql = "INSERT INTO " . $this->quoteIdentifier($this->dbTable) . " (" .
-			implode(', ', array_map(fn($col) => $this->quoteIdentifier($col), $cols)) .
-			") VALUES (" .
-			implode(', ', array_map(fn($col) => ":$col", $cols)) .
-			")";
-
-		// Execute query
-		$stmt = $this->writer->prepare($sql);
-		$stmt->execute($values);
-
+	
+		// Generate SQL and params using the helper
+		$insertQuery = $this->getInsertQuery($merged);
+	
+		// Execute the query
+		$this->executeQuery($this->writer, $insertQuery['sql'], $insertQuery['params'], false);
+	
 		// Set the model's ID
 		$model[$this->idProperty] = $this->writer->lastInsertId();
 	}
 
 	/**
+	 * Count the number of records in the database that match the filters.
+	 * @param array $filters
+	 * @return int
+	 */
+	protected function performCount(array $filters = []): int {
+		$countQuery = $this->getCountQuery($filters);
+	
+		// Prepare and execute the query
+		$set = $this->executeQuery($this->reader, $countQuery['sql'], $countQuery['params'], true);
+		if (empty($set) || !isset($set[0]['count'])) {
+			throw new MapperException('Count query did not return a count.');
+		}
+		return (int) $set[0]['count'];
+	}
+
+	/**
 	 * Update an existing record in the database.
-	 *
 	 * @param Model $model
 	 * @throws Exception
 	 */
-	protected function update(Model $model): void {
+	protected function performUpdate(Model $model): void {
 		// Get modified properties
 		$modified = $model->GetModifiedProperties();
-		$values   = [];
+	
+		// Prepare the conditions (e.g., WHERE clause)
+		$conditions = [
+			$this->idProperty => $model->{$this->idProperty}
+		];
+	
+		// Generate SQL and params using the helper
+		$updateQuery = $this->getUpdateQuery($modified, $conditions);
+	
+		// Execute the query
+		$this->executeQuery($this->writer, $updateQuery['sql'], $updateQuery['params'], false);
+	}
+	/**
+	 * Delete a record from the database.
+	 * @param array $conditions
+	 * @throws Exception
+	 */
+	protected function performDelete(array $conditions): void {
+		// Generate SQL and params using the helper
+		$deleteQuery = $this->getDeleteQuery($conditions);
 
-		$cols = [];
-		foreach ($modified as $property => $value) {
-			if (isset($this->propertyDbMap[$property]) &&
-				$this->propertyDbMap[$property]->IsWriteable
-			) {
-				$cols[]            = $this->quoteIdentifier($this->propertyDbMap[$property]->Column) . " = :$property";
-				$values[$property] =
-					$this->formatValueForInsert($this->propertyDbMap[$property]->Type, $value);
-			}
-		}
-
-		if (!empty($cols)) {
-			// Add ID to the query for WHERE clause
-			$idColumn          = $this->propertyDbMap[$this->idProperty]->Column;
-			$values[$idColumn] = $model->{$this->idProperty};
-
-			// Build SQL
-			$sql = "UPDATE " . $this->quoteIdentifier($this->dbTable) . " SET " .
-				implode(', ', $cols) .
-				" WHERE " . $this->quoteIdentifier($idColumn) . " = :$idColumn";
-
-			// Execute query
-			$stmt = $this->writer->prepare($sql);
-			$stmt->execute($values);
-		}
+		// Execute the query
+		$this->executeQuery($this->writer, $deleteQuery['sql'], $deleteQuery['params'], false);
 	}
 
+	/**
+	 * Execute a query on the database.
+	 * @param PDO $dbConnection The database connection to use (use $this->reader or $this->writer)
+	 * @param string $sql
+	 * @param array $params
+	 * @param bool $fetch Whether to fetch the results or not
+	 * @return array|null
+	 */
+	protected function executeQuery(PDO $dbConnection, string $sql, array $params, bool $fetch): ?array {
+		try {
+			$stmt = $dbConnection->prepare($sql);
+			$stmt->execute($params);
+			return $fetch ? $stmt->fetchAll(PDO::FETCH_ASSOC) : null;
+		} catch (\PDOException $e) {
+			throw new MapperException('Error executing query: '.$e->getMessage(), $e->getCode(), $e);
+		}
+	}
 
 	/**
 	 * @param Filter[] $filters Array of Filter objects
@@ -359,7 +357,7 @@ abstract class GenericSql implements MapperInterface {
 	 * @return array{sql: string, params: array}
 	 * @throws MapperException
 	 */
-	protected function getSelect(
+	protected function getSelectQuery(
 		array $filters = [],
 		array $sort = [],
 		int $page = 1,
@@ -407,6 +405,95 @@ abstract class GenericSql implements MapperInterface {
 			'sql' => $sql,
 			'params' => $params
 		];
+	}
+	protected function getCountQuery(array $filters = []): array {
+		// Start building the COUNT SQL
+		$sql = 'SELECT COUNT(*) AS count FROM ' . $this->quoteIdentifier($this->dbTable);
+	
+		// Include JOIN clauses if they exist
+		if (!empty($this->joins)) {
+			$sql .= ' ' . $this->buildJoins();
+		}
+	
+		// Apply filters
+		$filter = $this->getFilter($filters);
+		if (!empty($filter['sql'])) {
+			$sql .= $filter['sql'];
+		}
+	
+		return [
+			'sql' => $sql,
+			'params' => $filter['params']
+		];
+	}
+	protected function getInsertQuery(array $data): array {
+		$columns = [];
+		$values  = [];
+		foreach ($data as $property => $value) {
+			if (isset($this->propertyDbMap[$property]) &&
+				$this->propertyDbMap[$property]->IsWriteable
+			) {
+				$columns[] = $this->quoteIdentifier($this->propertyDbMap[$property]->Column);
+				
+				$values[":{$this->propertyDbMap[$property]->Column}"] =
+					$this->formatValueForInsert($this->propertyDbMap[$property]->Type, $value);
+			}
+		}
+	
+		$sql = "INSERT INTO " . $this->quoteIdentifier($this->dbTable) . " (" .
+			implode(', ', $columns) . ") VALUES (" .
+			implode(', ', array_keys($values)) . ")";
+	
+		return ['sql' => $sql, 'params' => $values];
+	}
+
+	protected function getUpdateQuery(array $data, array $conditions): array {
+		$set    = [];
+		$where  = [];
+		$params = [];
+		foreach ($data as $property => $value) {
+			if (isset($this->propertyDbMap[$property]) &&
+				$this->propertyDbMap[$property]->IsWriteable
+			) {
+				$set[] = $this->quoteIdentifier($this->propertyDbMap[$property]->Column) .
+					" = :{$this->propertyDbMap[$property]->Column}";
+
+				$params[":{$this->propertyDbMap[$property]->Column}"] =
+					$this->formatValueForInsert($this->propertyDbMap[$property]->Type, $value);
+			}
+		}
+		foreach ($conditions as $property => $value) {
+			if (isset($this->propertyDbMap[$property])) {
+				$where[] = $this->quoteIdentifier($this->propertyDbMap[$property]->Column) .
+					" = :condition_{$this->propertyDbMap[$property]->Column}";
+
+				$params[":condition_{$this->propertyDbMap[$property]->Column}"] = $value;
+			}
+		}
+	
+		$sql = "UPDATE " . $this->quoteIdentifier($this->dbTable) .
+			" SET " . implode(', ', $set) .
+			" WHERE " . implode(' AND ', $where);
+	
+		return ['sql' => $sql, 'params' => $params];
+	}
+
+	protected function getDeleteQuery(array $conditions): array {
+		$where  = [];
+		$params = [];
+		foreach ($conditions as $property => $value) {
+			if (isset($this->propertyDbMap[$property])) {
+				$where[] = $this->quoteIdentifier($this->propertyDbMap[$property]->Column) .
+					" = :{$this->propertyDbMap[$property]->Column}";
+
+				$params[":{$this->propertyDbMap[$property]->Column}"] = $value;
+			}
+		}
+	
+		$sql = "DELETE FROM " . $this->quoteIdentifier($this->dbTable) .
+			" WHERE " . implode(' AND ', $where);
+	
+		return ['sql' => $sql, 'params' => $params];
 	}
 
 	/**
@@ -490,7 +577,6 @@ abstract class GenericSql implements MapperInterface {
 
 		return $sql;
 	}
-
 
 	/**
 	 * Used to apply pagination to a SQL statement.
