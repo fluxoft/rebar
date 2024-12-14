@@ -11,15 +11,15 @@ use Fluxoft\Rebar\Auth\UserInterface;
  * @package Fluxoft\Rebar\Http
  * @property AuthInterface|null Auth              The auth module for this request, if any.
  * @property UserInterface|null AuthenticatedUser The authenticated user for this request, if any.
- * @property string Method   The HTTP method of the request (GET, POST, PUT, DELETE, etc.)
- * @property string Protocol Protocol used for the request (http, https, etc.)
- * @property string Host     Hostname of the request
- * @property int    Port     Port of the request
- * @property string URL      Full URL of the request
- * @property string URI      URI of the request
- * @property string Path     Path of the request
- * @property string RemoteIP IP address of the remote client
- * @property string RawBody  Raw body of the request. Immutable once set.
+ * @property-read string Method   The HTTP method of the request (GET, POST, PUT, DELETE, etc.)
+ * @property-read string Protocol Protocol used for the request (http, https, etc.)
+ * @property-read string Host     Hostname of the request
+ * @property-read int    Port     Port of the request
+ * @property-read string URL      Full URL of the request
+ * @property-read string URI      URI of the request
+ * @property-read string Path     Path of the request
+ * @property-read string RemoteIP IP address of the remote client
+ * @property-read string RawBody  Raw body of the request. Immutable once set.
  * @property string Body     Body of the request. Mutable.
  * @property-read Session|null Session Session object for the request
  * @property-read Cookies|null Cookies Cookies object for the request

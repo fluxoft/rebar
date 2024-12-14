@@ -16,13 +16,13 @@ use Fluxoft\Rebar\Http\Response;
 class CookieToBearerMiddleware implements MiddlewareInterface {
 	public function Process(Request $request, Response $response, callable $next): Response {
 		// Check for the Authorization header
-		$authHeader = $request->Headers->Get('Authorization');
+		$authHeader = $request->Headers('Authorization');
 		if (!isset($authHeader) || stripos($authHeader, 'Bearer ') !== 0) {
 			// Look for an AccessToken cookie
 			$accessToken = $request->Cookies->Get('AccessToken');
 			if (isset($accessToken)) {
 				// Add the Bearer token to the Authorization header
-				$request->Headers->Set('Authorization', 'Bearer ' . $accessToken);
+				$response->AddHeader('Authorization', 'Bearer ' . $accessToken);
 			}
 		}
 

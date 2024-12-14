@@ -11,9 +11,9 @@
 namespace Fluxoft\Rebar\Http;
 
 use Fluxoft\Rebar\Auth\AuthInterface;
-use Fluxoft\Rebar\Presenters\Exceptions\InvalidPresenterException;
-use Fluxoft\Rebar\Presenters\PresenterInterface;
-use Fluxoft\Rebar\Presenters;
+use Fluxoft\Rebar\Http\Presenters\Debug;
+use Fluxoft\Rebar\Http\Presenters\Exceptions\InvalidPresenterException;
+use Fluxoft\Rebar\Http\Presenters\PresenterInterface;
 
 abstract class Controller {
 	/**
@@ -70,7 +70,7 @@ abstract class Controller {
 			}
 			return $presenter;
 		}
-		return new Presenters\Debug();
+		return new Debug();
 	}
 
 	/**

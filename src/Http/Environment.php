@@ -12,15 +12,21 @@ use Fluxoft\Rebar\Http\Exceptions\EnvironmentException;
 /**
  * Class Environment
  * @package Fluxoft\Rebar\Http
- * @property-read array ServerParams
- * @property-read array GetParams
- * @property-read array PostParams
- * @property-read array PutParams
- * @property-read array PatchParams
- * @property-read array DeleteParams
- * @property-read array Headers
- * @property-read string Input
- * @property array CookieSettings
+ * @property-read array ServerParams This is the $_SERVER superglobal
+ * @property-read array GetParams This is the $_GET superglobal
+ * @property-read array PostParams This is the $_POST superglobal
+ * @property-read array PutParams This is the $_POST superglobal, but only if the request method is PUT
+ * @property-read array PatchParams This is the $_POST superglobal, but only if the request method is PATCH
+ * @property-read array DeleteParams This is the $_POST superglobal, but only if the request method is DELETE
+ * @property-read array Headers This is an array of all headers sent in the request
+ * @property-read string Input This is the raw input from the request
+ * @property array CookieSettings This is an array of settings for cookies, valid keys are:
+ *  - expires: The expiration time of the cookie. Default is 0 (session cookie)
+ *  - path: The path on the server in which the cookie will be available on. Default is '/'
+ *  - domain: The (sub)domain that the cookie is available to. Default is the host of the server
+ *  - secure: Indicates that the cookie should only be transmitted over a secure HTTPS connection
+ *  - httponly: When TRUE the cookie will be made accessible only through the HTTP protocol
+ * @method void SetCookieSettings(array $settings) Set the cookie settings. Valid keys are same as CookieSettings
  */
 class Environment implements \ArrayAccess, \Iterator {
 	use GettableProperties;
@@ -34,19 +40,16 @@ class Environment implements \ArrayAccess, \Iterator {
 	 */
 	protected static $environment = null;
 
-	public static function GetInstance() {
+	public static function GetInstance(): Environment {
 		if (is_null(static::$environment)) {
 			static::$environment = new static();
 		}
 		return static::$environment;
 	}
-	public static function ResetInstance(): void {
-		static::$environment = null;
-	}	
-	public function __clone() {
+	public function __clone(): void {
 		throw new EnvironmentException('Cloning not allowed.');
 	}
-	private array $defaultCookieSettings = [
+	protected array $defaultCookieSettings = [
 		'expires'  => 0, // Default to session cookies
 		'path'     => '/', // Default to root path
 		'domain'   => null, // Will be dynamically set in the constructor
@@ -54,15 +57,6 @@ class Environment implements \ArrayAccess, \Iterator {
 		'httponly' => true // Default to HTTP-only cookies for security
 	];
 	private function __construct() {
-		$this->properties['ServerParams'] = [];
-		$this->properties['GetParams']    = [];
-		$this->properties['PostParams']   = [];
-		$this->properties['PutParams']    = [];
-		$this->properties['PatchParams']  = [];
-		$this->properties['DeleteParams'] = [];
-		$this->properties['Headers']      = [];
-		$this->properties['Input']        = '';
-
 		$this->defaultCookieSettings['domain'] = $this->ServerParams['HTTP_HOST'] ?? null;
 		$this->defaultCookieSettings['secure'] = isset($this->ServerParams['HTTPS']) &&
 			$this->ServerParams['HTTPS'] !== 'off';
@@ -148,7 +142,7 @@ class Environment implements \ArrayAccess, \Iterator {
 	}
 	
 	// CookieSettings
-	protected function setCookieSettings(array $settings): void {
+	public function SetCookieSettings(array $settings): void {
 		$this->properties['CookieSettings'] = $this->validateCookieSettings($settings);
 	}
 	protected function validateCookieSettings(array $settings): array {

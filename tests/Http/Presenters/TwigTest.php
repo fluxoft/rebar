@@ -1,7 +1,8 @@
 <?php
 
-namespace Fluxoft\Rebar\Presenters;
+namespace Fluxoft\Rebar\Http\Presenters;
 
+use Fluxoft\Rebar\Exceptions\PropertyNotFoundException;
 use Fluxoft\Rebar\Http\Response;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -78,7 +79,7 @@ class TwigTest extends TestCase {
 			$this->twigObserver
 		);
 
-		$this->expectException('InvalidArgumentException');
+		$this->expectException(PropertyNotFoundException::class);
 
 		$presenter->NonExistent = 'will fail';
 	}
@@ -87,7 +88,7 @@ class TwigTest extends TestCase {
 			$this->twigObserver
 		);
 
-		$this->expectException('InvalidArgumentException');
+		$this->expectException(PropertyNotFoundException::class);
 
 		$nonExistent = $presenter->NonExistent;
 		unset($nonExistent);

@@ -2,6 +2,7 @@
 
 namespace Fluxoft\Rebar\Http;
 
+use Fluxoft\Rebar\Auth\AuthInterface;
 use InvalidArgumentException;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -779,6 +780,32 @@ class RequestTest extends TestCase {
 				'expectedPath' => '/foo/bar',
 				'expectedRemoteIP' => '24.1.1.1',
 				'expectedBody' => 'simpleGet'
+			],
+			'customHeaderCookiesAndSession' => [
+				'headers' => ['X-Custom-Header' => 'value'],
+				'serverParams' => ['REQUEST_METHOD' => 'GET', 'REMOTE_ADDR' => '1.2.3.4'],
+				'getParams' => [],
+				'postParams' => [],
+				'putParams' => [],
+				'patchParams' => [],
+				'deleteParams' => [],
+				'input' => '',
+				'expectedGetParams' => [],
+				'expectedPostParams' => [],
+				'expectedPutParams' => [],
+				'expectedPatchParams' => [],
+				'expectedDeleteParams' => [],
+				'expectedMethod' => 'GET',
+				'expectedProtocol' => 'http',
+				'expectedHost' => 'localhost',
+				'expectedPort' => '80',
+				'expectedURL' => 'http://localhost',
+				'expectedURI' => '',
+				'expectedPath' => '/',
+				'expectedRemoteIP' => '1.2.3.4',
+				'expectedBody' => '',
+				'expectedSession' => Session::class, // Verifies the Session instantiation
+				'expectedCookies' => Cookies::class // Verifies the Cookies instantiation
 			]
 		];
 	}
@@ -802,7 +829,9 @@ class RequestTest extends TestCase {
 			['URI', 'disallowed_input'],
 			['Path', 'disallowed_input'],
 			['RemoteIP', 'disallowed_input'],
-			['RawBody', 'disallowed_input']
+			['RawBody', 'disallowed_input'],
+			['Session', 'disallowed_input'],
+			['Cookies', 'disallowed_input']
 		];
 	}
 
@@ -848,5 +877,46 @@ class RequestTest extends TestCase {
 	
 		// Assert that the property was set correctly
 		$this->assertSame($userMock, $request->AuthenticatedUser);
-	}	
+	}
+
+	public function testSetAuthInterface() {
+		// Create a mock of AuthInterface
+		$authMock = $this->createMock(AuthInterface::class);
+	
+		// Create an instance of the Request
+		$request = new Request($this->environmentMock);
+	
+		// Use Reflection to access the protected method
+		$reflection = new \ReflectionClass($request);
+		$method     = $reflection->getMethod('setAuth');
+		$method->setAccessible(true);
+	
+		// Call the protected method
+		$method->invoke($request, $authMock);
+	
+		// Assert that the property was set correctly
+		$this->assertSame($authMock, $request->Auth);
+	}
+
+	/** @runInSeparateProcess */
+	public function testSessionProperty() {
+		$request = new Request($this->environmentMock);
+	
+		$session = $request->Session;
+	
+		$this->assertInstanceOf(Session::class, $session);
+	}
+
+	public function testCookiesProperty() {
+		$this->environmentMock->method('__get')
+			->willReturnMap([
+				['CookieSettings', []]
+			]);
+
+		$request = new Request($this->environmentMock);
+	
+		$cookies = $request->Cookies;
+	
+		$this->assertInstanceOf(Cookies::class, $cookies);
+	}
 }

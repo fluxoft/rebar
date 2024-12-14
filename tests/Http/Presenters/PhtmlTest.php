@@ -1,7 +1,8 @@
 <?php
 
-namespace Fluxoft\Rebar\Presenters;
+namespace Fluxoft\Rebar\Http\Presenters;
 
+use Fluxoft\Rebar\Exceptions\PropertyNotFoundException;
 use Fluxoft\Rebar\Http\Response;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -59,14 +60,16 @@ class PhtmlTest extends TestCase {
 	public function testSetNonExistentProperty() {
 		$presenter = new PhtmlMock('templatePath/');
 
-		$this->expectException('InvalidArgumentException');
+		$this->expectException(PropertyNotFoundException::class);
+		$this->expectExceptionMessage('The property NonExistent does not exist.');
 
 		$presenter->NonExistent = 'will fail';
 	}
 	public function testGetNonExistentProperty() {
 		$presenter = new PhtmlMock('templatePath/');
 
-		$this->expectException('InvalidArgumentException');
+		$this->expectException(PropertyNotFoundException::class);
+		$this->expectExceptionMessage('The property NonExistent does not exist.');
 
 		$nonExistent = $presenter->NonExistent;
 		unset($nonExistent);
@@ -98,8 +101,10 @@ class PhtmlMock extends Phtml {
 
 	// This needs to be a no-op so execution isn't interrupted
 	private $included;
-	protected function includeTemplate($include) {
+	protected function includeTemplate(string $include, array $variables): ?string {
+		unset($variables); // unused
 		$this->included = $include;
+		return null;
 	}
 	public function GetIncluded() {
 		return $this->included;

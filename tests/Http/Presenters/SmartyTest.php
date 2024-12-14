@@ -1,7 +1,8 @@
 <?php
 
-namespace Fluxoft\Rebar\Presenters;
+namespace Fluxoft\Rebar\Http\Presenters;
 
+use Fluxoft\Rebar\Exceptions\PropertyNotFoundException;
 use Fluxoft\Rebar\Http\Response;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -48,17 +49,10 @@ class SmartyTest extends TestCase {
 			$this->smartyObserver
 				->expects($this->any())
 				->method('assign')
-				->withConsecutive(
-					[$data],
-					['templateFile', $templatePath.$template]
-				);
-			/*$this->smartyObserver
-				->expects($this->at(1))
-				->method('assign')
-				->with(
-					'templateFile',
-					$templatePath.$template
-				);*/
+				->willReturnMap([
+					[$data, null],
+					[['templateFile', $templatePath . $template], null]
+				]);
 			$renderTemplate = $templatePath.$layout;
 		} else {
 			$this->smartyObserver
@@ -96,7 +90,8 @@ class SmartyTest extends TestCase {
 			'/'
 		);
 
-		$this->expectException('InvalidArgumentException');
+		$this->expectException(PropertyNotFoundException::class);
+		$this->expectExceptionMessage('The property NonExistent does not exist.');
 
 		$presenter->NonExistent = 'will fail';
 	}
@@ -106,7 +101,8 @@ class SmartyTest extends TestCase {
 			'/'
 		);
 
-		$this->expectException('InvalidArgumentException');
+		$this->expectException(PropertyNotFoundException::class);
+		$this->expectExceptionMessage('The property NonExistent does not exist.');
 
 		$nonExistent = $presenter->NonExistent;
 		unset($nonExistent);

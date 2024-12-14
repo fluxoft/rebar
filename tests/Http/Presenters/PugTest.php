@@ -1,11 +1,12 @@
 <?php
 
-namespace Fluxoft\Rebar\Presenters;
+namespace Fluxoft\Rebar\Http\Presenters;
 
+use Fluxoft\Rebar\Exceptions\PropertyNotFoundException;
 use Fluxoft\Rebar\Http\Response;
-use Pug\Pug;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use Pug\Pug;
 
 class PugTest extends TestCase {
 	/** @var Response|MockObject */
@@ -35,7 +36,7 @@ class PugTest extends TestCase {
 	 * @dataProvider renderProvider
 	 */
 	public function testRender($template, $data) {
-		$presenter = new \Fluxoft\Rebar\Presenters\Pug($this->pugObserver);
+		$presenter = new \Fluxoft\Rebar\Http\Presenters\Pug($this->pugObserver);
 
 		$presenter->Template = $template;
 		$this->assertEquals($template, $presenter->Template);
@@ -59,18 +60,20 @@ class PugTest extends TestCase {
 		];
 	}
 	public function testSetNonExistentProperty() {
-		$presenter = new \Fluxoft\Rebar\Presenters\Pug($this->pugObserver);
+		$presenter = new \Fluxoft\Rebar\Http\Presenters\Pug($this->pugObserver);
 
-		$this->expectException('InvalidArgumentException');
+		$this->expectException(PropertyNotFoundException::class);
+		$this->expectExceptionMessage('The property NonExistent does not exist.');
 
 		$presenter->NonExistent = 'will fail';
 
 		unset($presenter);
 	}
 	public function testGetNonExistentProperty() {
-		$presenter = new \Fluxoft\Rebar\Presenters\Pug($this->pugObserver);
+		$presenter = new \Fluxoft\Rebar\Http\Presenters\Pug($this->pugObserver);
 
-		$this->expectException('InvalidArgumentException');
+		$this->expectException(PropertyNotFoundException::class);
+		$this->expectExceptionMessage('The property NonExistent does not exist.');
 
 		$nonExistent = $presenter->NonExistent;
 		unset($nonExistent);

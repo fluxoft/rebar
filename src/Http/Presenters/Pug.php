@@ -1,7 +1,8 @@
 <?php
 
-namespace Fluxoft\Rebar\Presenters;
+namespace Fluxoft\Rebar\Http\Presenters;
 
+use Fluxoft\Rebar\Exceptions\PropertyNotFoundException;
 use Fluxoft\Rebar\Http\Response;
 
 /**
@@ -10,16 +11,12 @@ use Fluxoft\Rebar\Http\Response;
  * @property string Template
  */
 class Pug implements PresenterInterface {
-	/** @var string */
 	protected string $template;
 
-	protected \Pug\Pug $pug;
-	protected string $templatePath;
-
-	public function __construct(\Pug\Pug $pug, $templatePath = '') {
-		$this->pug          = $pug;
-		$this->templatePath = $templatePath;
-	}
+	public function __construct(
+		protected \Pug\Pug $pug,
+		protected string $templatePath = ''
+	) {}
 
 	/**
 	 * @throws \Exception
@@ -34,7 +31,7 @@ class Pug implements PresenterInterface {
 	public function __set($var, $val) {
 		$this->template = match ($var) {
 			'Template' => $val,
-			default => throw new \InvalidArgumentException(sprintf(
+			default => throw new PropertyNotFoundException(sprintf(
 				'The property %s does not exist.',
 				$var
 			)),
@@ -43,7 +40,7 @@ class Pug implements PresenterInterface {
 	public function __get($var) {
 		return match ($var) {
 			'Template' => $this->template,
-			default => throw new \InvalidArgumentException(sprintf(
+			default => throw new PropertyNotFoundException(sprintf(
 				'The property %s does not exist.',
 				$var
 			)),
