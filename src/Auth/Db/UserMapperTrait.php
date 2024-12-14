@@ -2,7 +2,7 @@
 
 namespace Fluxoft\Rebar\Auth\Db;
 
-use Doctrine\DBAL\Exception;
+use Fluxoft\Rebar\Auth\BaseUser as User;
 use Fluxoft\Rebar\Auth\Exceptions\InvalidCredentialsException;
 use Fluxoft\Rebar\Auth\Exceptions\InvalidPasswordException;
 use Fluxoft\Rebar\Auth\Exceptions\UserNotFoundException;
@@ -32,7 +32,7 @@ trait UserMapperTrait {
 	 * @param string $username
 	 * @param string $password
 	 * @return UserInterface
-	 * @throws InvalidPasswordException|UserNotFoundException|Exception
+	 * @throws InvalidPasswordException|UserNotFoundException
 	 */
 	public function GetAuthorizedUserForUsernameAndPassword(string $username, string $password): UserInterface {
 		/** @var MapperInterface|UserMapperTrait $this */
@@ -59,7 +59,7 @@ trait UserMapperTrait {
 	 *
 	 * @param mixed $id
 	 * @return UserInterface
-	 * @throws Exception
+	 * @throws UserNotFoundException
 	 */
 	public function GetAuthorizedUserById(mixed $id): UserInterface {
 		/** @var MapperInterface|UserMapperTrait $this */
