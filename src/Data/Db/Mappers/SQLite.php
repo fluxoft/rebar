@@ -11,7 +11,7 @@ use PDO;
  *
  * @package Fluxoft\Rebar\Data\Db\Mappers
  */
-class SQLite extends GenericSql {
+abstract class SQLite extends GenericSql {
 	/**
 	 * Format an identifier for use in SQL specific to SQLite.
 	 * SQLite uses double quotes (") to quote identifiers.
@@ -19,7 +19,7 @@ class SQLite extends GenericSql {
 	 * @param string $identifier
 	 * @return string
 	 */
- protected function quoteIdentifier(string $identifier): string {
-	 return "\"$identifier\"";
- }
+	protected function quoteIdentifier(string $identifier): string {
+		return "\"$identifier\"";
+	}
 }

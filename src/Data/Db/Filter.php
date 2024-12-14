@@ -13,7 +13,7 @@ use Fluxoft\Rebar\Data\FilterInterface;
  * @property string Operator
  * @property mixed  Value
  */
-class Filter implements FilterInterface, \ArrayAccess, \Iterator {
+final class Filter implements FilterInterface, \ArrayAccess, \Iterator {
 	use GettableProperties;
 	use ArrayAccessibleProperties;
 	use IterableProperties;

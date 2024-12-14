@@ -11,7 +11,7 @@ use PDO;
  *
  * @package Fluxoft\Rebar\Data\Db\Mappers
  */
-class MariaDb extends GenericSql {
+abstract class MariaDb extends GenericSql {
 	
 	/**
 	 * Format an identifier for use in SQL specific to MariaDB.
@@ -20,7 +20,7 @@ class MariaDb extends GenericSql {
 	 * @param string $identifier
 	 * @return string
 	 */
- protected function quoteIdentifier(string $identifier): string {
-	 return "`$identifier`";
- }
+	protected function quoteIdentifier(string $identifier): string {
+		return "`$identifier`";
+	}
 }

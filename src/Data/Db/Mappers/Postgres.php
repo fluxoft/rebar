@@ -11,7 +11,7 @@ use PDO;
  *
  * @package Fluxoft\Rebar\Data\Db\Mappers
  */
-class Postgres extends GenericSql {
+abstract class Postgres extends GenericSql {
 	/**
 	 * Format an identifier for use in SQL specific to PostgreSQL.
 	 * PostgreSQL uses double quotes (") to quote identifiers.

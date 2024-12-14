@@ -7,7 +7,7 @@ use Fluxoft\Rebar\_Traits\GettableProperties;
 use Fluxoft\Rebar\_Traits\IterableProperties;
 use Fluxoft\Rebar\Data\SortInterface;
 
-class Sort implements SortInterface, \ArrayAccess, \Iterator {
+final class Sort implements SortInterface, \ArrayAccess, \Iterator {
 	use GettableProperties;
 	use ArrayAccessibleProperties;
 	use IterableProperties;

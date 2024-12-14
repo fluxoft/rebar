@@ -10,7 +10,7 @@ namespace Fluxoft\Rebar\Data\Db;
  * @property string Table The table to join.
  * @property string On The ON clause for the join condition.
  */
-class Join {
+final class Join {
 	use \Fluxoft\Rebar\_Traits\GettableProperties;
 	use \Fluxoft\Rebar\_Traits\SettableProperties;
 

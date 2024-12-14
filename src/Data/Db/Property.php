@@ -12,7 +12,7 @@ namespace Fluxoft\Rebar\Data\Db;
  * @property-read bool IsWriteable
  * @property-read bool IsAggregate
  */
-class Property {
+final class Property {
 	use \Fluxoft\Rebar\_Traits\GettableProperties;
 	use \Fluxoft\Rebar\_Traits\SettableProperties;
 
