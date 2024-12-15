@@ -26,6 +26,7 @@ final class Join {
 	 * @param string $type The type of join (e.g., "LEFT", "INNER").
 	 * @param string $table The name of the table to join.
 	 * @param string $on The ON clause for the join condition.
+	 * @param string|null $alias The alias for the joined table.
 	 */
 	public function __construct(string $type, string $table, string $on, ?string $alias = null) {
 		$this->Type  = $type;

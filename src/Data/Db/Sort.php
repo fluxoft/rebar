@@ -19,7 +19,7 @@ final class Sort implements SortInterface, \ArrayAccess, \Iterator {
 	use IterableProperties;
 
 	public function __construct(string $property, string $direction) {
-		$this->properties['Property']  = $property;
+		$this->properties['Property'] = $property;
 		$this->setDirection($direction);
 	}
 

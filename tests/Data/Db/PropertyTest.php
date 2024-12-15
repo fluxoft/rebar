@@ -68,7 +68,9 @@ class PropertyTest extends TestCase {
 	 */
 	public function testInvalidTypeThrowsException() {
 		$this->expectException(\InvalidArgumentException::class);
-		$this->expectExceptionMessage('Type must be one of: string, integer, float, boolean, datetime, date, time, text, binary.');
+		$this->expectExceptionMessage(
+			'Type must be one of: string, integer, float, boolean, datetime, date, time, text, binary.'
+		);
 
 		new Property('column', 'invalidtype');
 	}
