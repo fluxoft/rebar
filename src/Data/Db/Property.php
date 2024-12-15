@@ -11,11 +11,13 @@ namespace Fluxoft\Rebar\Data\Db;
  * @property string Type
  * @property-read bool IsWriteable
  * @property-read bool IsAggregate
+ * @property-read bool IsSubquery
  */
 final class Property {
 	use \Fluxoft\Rebar\_Traits\GettableProperties;
 	use \Fluxoft\Rebar\_Traits\SettableProperties;
 
+	protected ?bool $isSubquery  = null;
 	protected ?bool $isAggregate = null;
 	protected ?bool $isWriteable = null;
 
@@ -29,7 +31,7 @@ final class Property {
 		'time',
 		'text', // Optional types, depending on use cases
 		'binary'
-	];    
+	];
 
 	/**
 	 * Constructor to initialize a Property.
@@ -63,6 +65,12 @@ final class Property {
 			return $this->isWriteable;
 		}
 
+		// Subquery properties are not writeable
+		if ($this->IsSubquery) {
+			$this->isWriteable = false;
+			return $this->isWriteable;
+		}
+
 		// Foreign table columns are not writeable (e.g., "table.column")
 		if (strpos($this->Column, '.') !== false) {
 			$this->isWriteable = false;
@@ -72,6 +80,17 @@ final class Property {
 		// Default to writeable
 		$this->isWriteable = true;
 		return $this->isWriteable;
+	}
+
+	protected function getIsSubquery(): bool {
+		if (isset($this->isSubquery)) {
+			return $this->isSubquery;
+		}
+
+		// Check if hte column contains a subquery-like pattern, e.g. "(SELECT .* FROM .*)"
+		$this->isSubquery = (bool) preg_match('/\s*\(\s*SELECT\s+.+\s+FROM\s+.+\s*\)\s*/i', $this->Column);
+
+		return $this->isSubquery;
 	}
 
 	/**
@@ -106,5 +125,5 @@ final class Property {
 				is_string($type) ? $type : gettype($type)
 			));
 		}
-	}    
+	}
 }

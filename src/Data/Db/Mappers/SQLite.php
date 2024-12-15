@@ -19,7 +19,7 @@ abstract class SQLite extends GenericSql {
 	 * @param string $identifier
 	 * @return string
 	 */
-	protected function quoteIdentifier(string $identifier): string {
+	protected function quoteElement(string $identifier): string {
 		return "\"$identifier\"";
 	}
 }

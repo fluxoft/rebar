@@ -19,10 +19,10 @@ abstract class Oracle extends GenericSql {
 	 * @param string $identifier
 	 * @return string
 	 */
-	protected function quoteIdentifier(string $identifier): string {
+	protected function quoteElement(string $identifier): string {
 		return "\"$identifier\"";
 	}
-	
+
 	/**
 	 * Format values for insert specific to Oracle.
 	 * @param string $type
@@ -32,11 +32,11 @@ abstract class Oracle extends GenericSql {
 	protected function formatValueForInsert(string $type, mixed $value): mixed {
 		if (is_string($value)) {
 			// Parse strings into DateTime objects
-			$dateTime = \DateTime::createFromFormat('Y-m-d H:i:s', $value) ?: 
-			\DateTime::createFromFormat('Y-m-d', $value) ?: 
-			\DateTime::createFromFormat('H:i:s', $value) ?: 
+			$dateTime = \DateTime::createFromFormat('Y-m-d H:i:s', $value) ?:
+			\DateTime::createFromFormat('Y-m-d', $value) ?:
+			\DateTime::createFromFormat('H:i:s', $value) ?:
 			\DateTime::createFromFormat('h:i A', $value);
-			
+
 			if ($dateTime) {
 				// Format to the correct string based on type
 				switch ($type) {
