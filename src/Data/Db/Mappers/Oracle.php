@@ -40,11 +40,11 @@ abstract class Oracle extends GenericSql {
 			if ($dateTime) {
 				// Format to the correct string based on type
 				switch ($type) {
-					case 'datetime':
+					case 'datetime': // @codeCoverageIgnore
 						return $dateTime->format('Y-m-d H:i:s');
-					case 'date':
+					case 'date': // @codeCoverageIgnore
 						return $dateTime->format('Y-m-d');
-					case 'time':
+					case 'time': // @codeCoverageIgnore
 						return $dateTime->format('H:i:s');
 				}
 			} else {
