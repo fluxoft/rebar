@@ -3,6 +3,7 @@
 namespace Fluxoft\Rebar\Auth;
 
 use Firebase\JWT\JWT;
+use Firebase\JWT\Key;
 use Fluxoft\Rebar\Auth\Exceptions\InvalidTokenException;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -37,7 +38,7 @@ class TokenManagerTest extends TestCase {
 		$this->assertIsString($accessToken, 'Expected access token to be a string.');
 
 		// Decode the JWT to verify its payload
-		$payload = (array) JWT::decode($accessToken, 'secretKey', ['HS256']);
+		$payload = (array) JWT::decode($accessToken, new Key('secretKey', 'HS256'));
 		$this->assertEquals(123, $payload['userId'], 'Expected userId claim to match.');
 	}
 
@@ -193,6 +194,7 @@ class TokenManagerTest extends TestCase {
 			$this->refreshTokenMapperMock,
 			$this->claimsProviderMock,
 			'secretKey',
+			'HS256',
 			new \DateInterval('PT15M'), // Access token expiration
 			new \DateInterval('P30D')  // Refresh token expiration
 		);
@@ -206,7 +208,7 @@ class TokenManagerTest extends TestCase {
 			'iat' => time(),
 			'exp' => time() + 3600
 		];
-		$accessToken = JWT::encode($payload, 'secretKey');
+		$accessToken = JWT::encode($payload, 'secretKey', 'HS256');
 
 		$decoded = $this->tokenManager->DecodeAccessToken($accessToken);
 
