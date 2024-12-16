@@ -11,7 +11,7 @@ use PDO;
  *
  * @package Fluxoft\Rebar\Data\Db\Mappers
  */
-class Postgres extends GenericSql {
+abstract class Postgres extends GenericSql {
 	/**
 	 * Format an identifier for use in SQL specific to PostgreSQL.
 	 * PostgreSQL uses double quotes (") to quote identifiers.
@@ -19,7 +19,7 @@ class Postgres extends GenericSql {
 	 * @param string $identifier
 	 * @return string
 	 */
-	protected function quoteIdentifier(string $identifier): string {
+	protected function quoteElement(string $identifier): string {
 		return "\"$identifier\"";
 	}
 
@@ -32,9 +32,9 @@ class Postgres extends GenericSql {
 	protected function formatValueForInsert(string $type, mixed $value): mixed {
 		if (is_string($value)) {
 			// Attempt to parse strings into DateTime objects and reformat
-			$dateTime = \DateTime::createFromFormat('Y-m-d H:i:s', $value) ?: 
-						\DateTime::createFromFormat('Y-m-d', $value) ?: 
-						\DateTime::createFromFormat('H:i:s', $value) ?: 
+			$dateTime = \DateTime::createFromFormat('Y-m-d H:i:s', $value) ?:
+						\DateTime::createFromFormat('Y-m-d', $value) ?:
+						\DateTime::createFromFormat('H:i:s', $value) ?:
 						\DateTime::createFromFormat('h:i A', $value);
 
 			if ($dateTime) {

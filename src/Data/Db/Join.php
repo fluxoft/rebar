@@ -2,6 +2,9 @@
 
 namespace Fluxoft\Rebar\Data\Db;
 
+use Fluxoft\Rebar\_Traits\GettableProperties;
+use Fluxoft\Rebar\_Traits\SettableProperties;
+
 /**
  * Class Join
  * This class represents a SQL JOIN clause, defining its type, table, and condition.
@@ -9,17 +12,11 @@ namespace Fluxoft\Rebar\Data\Db;
  * @property string Type The type of join (e.g., INNER, LEFT).
  * @property string Table The table to join.
  * @property string On The ON clause for the join condition.
+ * @property string|null Alias The alias for the joined table.
  */
-class Join {
-	use \Fluxoft\Rebar\_Traits\GettableProperties;
-	use \Fluxoft\Rebar\_Traits\SettableProperties;
-
-	private $properties = [
-		'Type' => '',
-		'Table' => '',
-		'On' => '',
-		'Alias' => null
-	];
+final class Join {
+	use GettableProperties;
+	use SettableProperties;
 
 	private const VALID_TYPES = ['INNER', 'LEFT', 'RIGHT', 'FULL', 'CROSS'];
 
@@ -29,6 +26,7 @@ class Join {
 	 * @param string $type The type of join (e.g., "LEFT", "INNER").
 	 * @param string $table The name of the table to join.
 	 * @param string $on The ON clause for the join condition.
+	 * @param string|null $alias The alias for the joined table.
 	 */
 	public function __construct(string $type, string $table, string $on, ?string $alias = null) {
 		$this->Type  = $type;
@@ -74,10 +72,7 @@ class Join {
 		return $this->properties['On'];
 	}
 
-	protected function setAlias(mixed $alias): void {
-		if ($alias !== null && !is_string($alias)) {
-			throw new \InvalidArgumentException('Alias must be a string or null.');
-		}
+	protected function setAlias(?string $alias): void {
 		$this->properties['Alias'] = $alias;
 	}
 	protected function getAlias(): ?string {

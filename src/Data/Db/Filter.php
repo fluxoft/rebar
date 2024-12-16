@@ -13,7 +13,7 @@ use Fluxoft\Rebar\Data\FilterInterface;
  * @property string Operator
  * @property mixed  Value
  */
-class Filter implements FilterInterface, \ArrayAccess, \Iterator {
+final class Filter implements FilterInterface, \ArrayAccess, \Iterator {
 	use GettableProperties;
 	use ArrayAccessibleProperties;
 	use IterableProperties;
@@ -48,7 +48,7 @@ class Filter implements FilterInterface, \ArrayAccess, \Iterator {
 	 */
 	protected function setOperator(string $operator): void {
 		$this->properties['Operator'] = match (strtoupper($operator)) {
-			'=', '<', '>', '<=', '>=', '<>', '!=', 'IN', 'LIKE', 'BETWEEN', 'IS', 'IS NOT' => strtoupper($operator),
+			'=', '<', '>', '<=', '>=', '<>', '!=', 'IN', 'NOT IN', 'LIKE', 'BETWEEN', 'IS', 'IS NOT' => strtoupper($operator),
 			default => throw new InvalidFilterException(
 				'Invalid operator given. Must be one of the following: =, <, >, <=, >=, <>, !=, IN, LIKE, BETWEEN, IS, IS NOT'
 			),

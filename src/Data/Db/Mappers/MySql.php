@@ -11,7 +11,7 @@ use PDO;
  *
  * @package Fluxoft\Rebar\Data\Db\Mappers
  */
-class MySql extends GenericSql {
+abstract class MySql extends GenericSql {
 	/**
 	 * Format an identifier for use in SQL specific to MySQL.
 	 * MySQL uses backticks (`) to quote identifiers.
@@ -19,7 +19,7 @@ class MySql extends GenericSql {
 	 * @param string $identifier
 	 * @return string
 	 */
- protected function quoteIdentifier(string $identifier): string {
-	 return "`$identifier`";
- }
+	protected function quoteElement(string $identifier): string {
+		return "`$identifier`";
+	}
 }

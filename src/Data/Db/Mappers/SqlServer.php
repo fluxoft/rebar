@@ -11,7 +11,7 @@ use PDO;
  *
  * @package Fluxoft\Rebar\Data\Db\Mappers
  */
-class SqlServer extends GenericSql {
+abstract class SqlServer extends GenericSql {
 	/**
 	 * Format an identifier for use in SQL specific to SQL Server.
 	 * SQL Server uses square brackets ([]) to quote identifiers.
@@ -19,7 +19,7 @@ class SqlServer extends GenericSql {
 	 * @param string $identifier
 	 * @return string
 	 */
-	protected function quoteIdentifier(string $identifier): string {
+	protected function quoteElement(string $identifier): string {
 		return "[$identifier]";
 	}
 
