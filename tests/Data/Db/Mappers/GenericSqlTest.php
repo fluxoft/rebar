@@ -10,6 +10,7 @@ use Fluxoft\Rebar\Data\Db\Mappers\GenericSql;
 use Fluxoft\Rebar\Data\Db\Property;
 use Fluxoft\Rebar\Data\Db\Sort;
 use Fluxoft\Rebar\Model;
+use InvalidArgumentException;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
@@ -49,6 +50,184 @@ class GenericSqlTest extends TestCase {
 		$this->assertInstanceOf(Property::class, $dbMap['Username']);
 		$this->assertInstanceOf(Property::class, $dbMap['Password']);
 	}
+
+	/**
+	 * @param array $dbMap
+	 * @param string|null $expectedException
+	 * @param array|null $expectedPropertyDbMap
+	 * @dataProvider initializePropertyDbMapProvider
+	 */
+	public function testInitializePropertyDbMap(
+		array $dbMap,
+		?string $expectedException,
+		?array $expectedPropertyDbMap
+	): void {
+		$this->mapper->SetPropertyDbMapWithoutValidation($dbMap);
+
+		if ($expectedException) {
+			$this->expectException(InvalidArgumentException::class);
+		}
+
+		// Invoke the public method
+		$this->mapper->PublicInitializePropertyDbMap();
+
+		if ($expectedPropertyDbMap) {
+			$this->assertEquals($expectedPropertyDbMap, $this->mapper->GetPropertyDbMap());
+		}
+	}
+	public function initializePropertyDbMapProvider(): array {
+		return [
+			// Case 1: Property already as Property instance
+			'Property already as Property instance' => [
+				'dbMap' => [
+					'Id' => new Property('id', 'integer'),
+					'Username' => new Property('username', 'string')
+				],
+				'expectedException' => null,
+				'expectedPropertyDbMap' => [
+					'Id' => new Property('id', 'integer'),
+					'Username' => new Property('username', 'string')
+				]
+			],
+			// Case 2: Property as string
+			'Property as string' => [
+				'dbMap' => [
+					'Id' => 'id',
+					'Username' => 'username'
+				],
+				'expectedException' => null,
+				'expectedPropertyDbMap' => [
+					'Id' => new Property('id', 'string'),
+					'Username' => new Property('username', 'string')
+				]
+			],
+			// Case 3: Property as array with column and type
+			'Property as array with column and type' => [
+				'dbMap' => [
+					'Id' => ['column' => 'id', 'type' => 'integer'],
+					'Username' => ['column' => 'username', 'type' => 'string']
+				],
+				'expectedException' => null,
+				'expectedPropertyDbMap' => [
+					'Id' => new Property('id', 'integer'),
+					'Username' => new Property('username', 'string')
+				]
+			],
+			// Case 4: Invalid property definition
+			'Invalid property definition' => [
+				'dbMap' => [
+					'Id' => 123
+				],
+				'expectedException' => \InvalidArgumentException::class,
+				'expectedPropertyDbMap' => null
+			]
+		];
+	}
+
+	/**
+	 * @param array $dbMap
+	 * @param string|null $expectedException
+	 * @dataProvider validateJoinsDataProvider
+	 */
+	public function testValidateJoins(
+		array $joins,
+		?string $expectedException
+	): void {
+		// Prepare the test subject
+		$this->mapper->SetJoinsWithoutValidation($joins);
+
+		if ($expectedException !== null) {
+			$this->expectException($expectedException);
+		}
+
+		// Call the method
+		$this->mapper->PublicValidateJoins();
+
+		// If no exception is expected, validate that joins are correctly set
+		if ($expectedException === null) {
+			$this->assertSame($joins, $this->mapper->GetJoins());
+		}
+	}
+	public function validateJoinsDataProvider(): array {
+		return [
+			'Valid joins' => [
+				[ // Joins array
+					new Join('INNER', 'users', 'users.id = posts.user_id'),
+					new Join('LEFT', 'comments', 'comments.post_id = posts.id')
+				],
+				null, // Expected exception
+			],
+			'Invalid join object' => [
+				[
+					new Join('INNER', 'users', 'users.id = posts.user_id'),
+					123 // Invalid join
+				],
+				MapperException::class, // Expected exception
+			],
+			'Empty joins array' => [
+				[], // Empty array should be valid
+				null,
+			]
+		];
+	}
+
+	/**
+	 * @param array $propertyDbMap
+	 * @param string $idProperty
+	 * @param string|null $expectedException
+	 * @dataProvider validateIdPropertyDataProvider
+	 */
+	public function testValidateIdProperty(
+		array $propertyDbMap,
+		string $idProperty,
+		?string $expectedException
+	): void {
+		// Set up the propertyDbMap
+		$this->mapper->SetPropertyDbMap($propertyDbMap);
+
+		// Set the ID property
+		$this->mapper->SetIdProperty($idProperty);
+
+		// Expect exception if specified
+		if ($expectedException !== null) {
+			$this->expectException($expectedException);
+		}
+
+		// Call the method to validate the ID property
+		$this->mapper->PublicValidateIdProperty();
+
+		// If no exception is expected, validate that the ID property is correctly set
+		if ($expectedException === null) {
+			$this->assertSame($idProperty, $this->mapper->GetIdProperty());
+		}
+	}
+	public function validateIdPropertyDataProvider(): array {
+		return [
+			'Valid ID property' => [
+				'propertyDbMap' => [
+					'Id' => new Property('id', 'integer'),
+					'Name' => new Property('name', 'string')
+				],
+				'idProperty' => 'Id',
+				'expectedException' => null,
+			],
+			'Missing ID property' => [
+				'propertyDbMap' => [
+					'Name' => new Property('name', 'string')
+				],
+				'idProperty' => 'Id',
+				'expectedException' => \InvalidArgumentException::class,
+			],
+			'Empty ID property' => [
+				'propertyDbMap' => [
+					'Id' => new Property('id', 'integer')
+				],
+				'idProperty' => '',
+				'expectedException' => \InvalidArgumentException::class,
+			]
+		];
+	}
+
 
 	public function testHasAggregatesWithAggregateProperty() {
 		$this->mapper->SetPropertyDbMap([
@@ -1448,17 +1627,46 @@ class ConcreteGenericSql extends GenericSql {
 
 	private mixed $executeReturn = null;
 
+	// Expose protected methods for testing
+	public function PublicInitializePropertyDbMap(): void {
+		$this->initializePropertyDbMap();
+	}
+	public function PublicValidateJoins(): void {
+		$this->validateJoins();
+	}
+	public function PublicValidateIdProperty(): void {
+		$this->validateIdProperty();
+	}
+
+	public function GetPropertyDbMap(): array {
+		return $this->propertyDbMap;
+	}
 	// Allow changing the propertyDbMap for testing
 	public function SetPropertyDbMap(array $dbProperties): void {
 		$propertyDbMap = [];
 		foreach ($dbProperties as $propertyName => $property) {
 			if ($property instanceof Property) {
+				// Already a Property object
 				$propertyDbMap[$propertyName] = $property;
+			} elseif (is_array($property)) {
+				// Array with column and type
+				$column = $property[0] ?? $propertyName;
+				$type = $property[1] ?? 'string';
+				$propertyDbMap[$propertyName] = new Property($column, $type);
+			} elseif (is_string($property)) {
+				// String mapping
+				$propertyDbMap[$propertyName] = new Property($property, 'string');
 			} else {
-				$propertyDbMap[$propertyName] = new Property($propertyName, 'string');
+				throw new \InvalidArgumentException(sprintf(
+					"Invalid property definition for '%s'. Expected Property object, array, or string.",
+					$propertyName
+				));
 			}
 		}
 		$this->propertyDbMap = $propertyDbMap;
+	}
+	public function SetPropertyDbMapWithoutValidation(array $dbProperties): void {
+		$this->propertyDbMap = $dbProperties;
 	}
 	// Allow changing the joins for testing
 	public function SetJoins(array $joins): void {
@@ -1468,6 +1676,18 @@ class ConcreteGenericSql extends GenericSql {
 			}
 		}
 		$this->joins = $joins;
+	}
+	public function SetJoinsWithoutValidation(array $joins): void {
+		$this->joins = $joins;
+	}
+	public function GetJoins(): array {
+		return $this->joins;
+	}
+	public function SetIdProperty(string $idProperty): void {
+		$this->idProperty = $idProperty;
+	}
+	public function GetIdProperty(): string {
+		return $this->idProperty;
 	}
 
 	// Expose protected methods for testing

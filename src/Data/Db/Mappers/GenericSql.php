@@ -89,7 +89,13 @@ abstract class GenericSql implements MapperInterface {
 		$this->reader        = $reader;
 		$this->writer        = $writer ?? $reader;
 
-		// Ensure the propertyDbMap is properly initialized
+		$this->initializePropertyDbMap();
+		$this->validateJoins();
+		$this->validateIdProperty();
+	}
+
+	// Constructor initialization tasks
+	protected function initializePropertyDbMap(): void {
 		foreach ($this->propertyDbMap as $property => &$dbMap) {
 			if ($dbMap instanceof Property) {
 				continue;
@@ -97,23 +103,23 @@ abstract class GenericSql implements MapperInterface {
 			if (is_string($dbMap)) {
 				$this->propertyDbMap[$property] = new Property($dbMap, 'string');
 			} elseif (is_array($dbMap)) {
-				$column                         = $dbMap['column'] ?? $property;
-				$type                           = $dbMap['type'] ?? 'string';
+				$column = $dbMap['column'] ?? $property;
+				$type   = $dbMap['type'] ?? 'string';
+
 				$this->propertyDbMap[$property] = new Property($column, $type);
 			} else {
-				error_log("Warning: Legacy property definition for $property. Please migrate to the new format.");
 				throw new \InvalidArgumentException("Invalid property definition for $property.");
 			}
 		}
-
-		// Validate the joins
+	}
+	protected function validateJoins(): void {
 		foreach ($this->joins as $join) {
 			if (!$join instanceof Join) {
 				throw new MapperException('Invalid join definition. Expected instance of Join.');
 			}
 		}
-
-		// Ensure idProperty is properly defined in propertyDbMap
+	}
+	protected function validateIdProperty(): void {
 		if (!isset($this->propertyDbMap[$this->idProperty])) {
 			throw new \InvalidArgumentException(sprintf(
 				"ID property '%s' is not defined in the propertyDbMap.",
