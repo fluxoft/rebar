@@ -105,6 +105,7 @@ abstract class GenericSql implements MapperInterface {
 			} elseif (is_array($dbMap)) {
 				$column = $dbMap['column'] ?? $property;
 				$type   = $dbMap['type'] ?? 'string';
+
 				$this->propertyDbMap[$property] = new Property($column, $type);
 			} else {
 				throw new \InvalidArgumentException("Invalid property definition for $property.");
