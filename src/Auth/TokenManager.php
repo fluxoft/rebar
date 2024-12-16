@@ -3,6 +3,7 @@
 namespace Fluxoft\Rebar\Auth;
 
 use Firebase\JWT\JWT;
+use Firebase\JWT\Key;
 use Fluxoft\Rebar\Auth\Exceptions\InvalidTokenException;
 use Fluxoft\Rebar\Utils;
 
@@ -11,6 +12,7 @@ class TokenManager {
 		private RefreshTokenMapperInterface $refreshTokenMapper,
 		private ClaimsProviderInterface     $claimsProvider,
 		private string                      $secretKey,
+		private string                      $algorithm = 'HS256',
 		// Default access token expiration is 15 minutes
 		private \DateInterval               $accessExpires = new \DateInterval('PT15M'),
 		// Default refresh token expiration is 30 days
@@ -27,7 +29,7 @@ class TokenManager {
 			'exp' => $now->add($this->accessExpires)->getTimestamp()
 		]);
 
-		return JWT::encode($payload, $this->secretKey);
+		return JWT::encode($payload, $this->secretKey, $this->algorithm);
 	}
 
 	// Generate a simpler RefreshToken
@@ -60,7 +62,7 @@ class TokenManager {
 	public function ValidateRefreshToken(string $refreshTokenString) : bool {
 		[$userId, $seriesId, $token] = $this->decodeRefreshTokenString($refreshTokenString);
 		$refreshToken                = $this->refreshTokenMapper->GetRefreshToken($userId, $seriesId, $token, true);
-		
+
 		if ($refreshToken instanceof RefreshToken) {
 			$expiresAt = new \DateTimeImmutable($refreshToken->ExpiresAt);
 			$now       = new \DateTimeImmutable();
@@ -76,7 +78,7 @@ class TokenManager {
 	public function RevokeRefreshToken(string $refreshTokenString) : void {
 		[$userId, $seriesId, $token] = $this->decodeRefreshTokenString($refreshTokenString);
 		$refreshToken                = $this->refreshTokenMapper->GetRefreshToken($userId, $seriesId, $token, false);
-		
+
 		if ($refreshToken instanceof RefreshToken) {
 			$refreshToken->RevokedAt = (new \DateTimeImmutable())->format('Y-m-d H:i:s');
 			$refreshToken->ExpiresAt = $refreshToken->RevokedAt; // Also expire the token
@@ -117,7 +119,8 @@ class TokenManager {
 
 	public function DecodeAccessToken(string $accessToken) : array {
 		try {
-			return (array) JWT::decode($accessToken, $this->secretKey, ['HS256']);
+			$decoded = JWT::decode($accessToken, new Key($this->secretKey, $this->algorithm));
+			return (array) $decoded;
 		} catch (\Exception $e) {
 			throw new InvalidTokenException('Invalid or expired token', 0, $e);
 		}
