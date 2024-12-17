@@ -1,5 +1,6 @@
 {
 	"name": "fluxoft/rebar",
+	"version": "1.0.0",
 	"description": "Rebar: A simple but sturdy support framework.",
 	"type": "library",
 	"keywords": [
