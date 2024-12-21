@@ -2,6 +2,9 @@
 
 Thank you for your interest in contributing to Rebar! Contributions are what make open-source projects thrive. Whether it’s reporting bugs, suggesting features, or submitting code, we appreciate your efforts.
 
+## Code of Conduct
+Please note that this project adheres to a [Code of Conduct](CODE_OF_CONDUCT.md). By participating, you agree to uphold these standards. If you have any concerns, please reach out to the maintainer at [joe@fluxoft.com](mailto:joe@fluxoft.com).
+
 ## How to Report Issues
 If you encounter a bug or have an idea for improvement:
 
