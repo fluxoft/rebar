@@ -42,7 +42,7 @@ class Environment implements \ArrayAccess, \Iterator {
 
 	public static function GetInstance(): Environment {
 		if (is_null(static::$environment)) {
-			static::$environment = new self();
+			static::$environment = new static();
 		}
 		return static::$environment;
 	}
@@ -56,7 +56,7 @@ class Environment implements \ArrayAccess, \Iterator {
 		'secure'   => null, // Will be dynamically set in the constructor
 		'httponly' => true // Default to HTTP-only cookies for security
 	];
-	private function __construct() {
+	final private function __construct() {
 		$this->defaultCookieSettings['domain'] = $this->ServerParams['HTTP_HOST'] ?? null;
 		$this->defaultCookieSettings['secure'] = isset($this->ServerParams['HTTPS']) &&
 			$this->ServerParams['HTTPS'] !== 'off';
