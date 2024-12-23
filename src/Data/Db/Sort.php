@@ -10,8 +10,8 @@ use Fluxoft\Rebar\Data\SortInterface;
 /**
  * Class Sort
  * @package Fluxoft\Rebar\Data\Db
- * @property string Property
- * @property string Direction
+ * @property string $Property
+ * @property string $Direction
  */
 final class Sort implements SortInterface, \ArrayAccess, \Iterator {
 	use GettableProperties;

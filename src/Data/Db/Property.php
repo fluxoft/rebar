@@ -7,11 +7,11 @@ namespace Fluxoft\Rebar\Data\Db;
  * This class is a property mapper, used to map properties to database columns.
  * It can be used to implement property-specific logic as needed.
  * @package Fluxoft\Rebar\Db
- * @property string Column
- * @property string Type
- * @property-read bool IsWriteable
- * @property-read bool IsAggregate
- * @property-read bool IsSubquery
+ * @property string    $Column
+ * @property string    $Type
+ * @property-read bool $IsWriteable
+ * @property-read bool $IsAggregate
+ * @property-read bool $IsSubquery
  */
 final class Property {
 	use \Fluxoft\Rebar\_Traits\GettableProperties;

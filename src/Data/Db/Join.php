@@ -9,10 +9,10 @@ use Fluxoft\Rebar\_Traits\SettableProperties;
  * Class Join
  * This class represents a SQL JOIN clause, defining its type, table, and condition.
  * @package Fluxoft\Rebar\Db
- * @property string Type The type of join (e.g., INNER, LEFT).
- * @property string Table The table to join.
- * @property string On The ON clause for the join condition.
- * @property string|null Alias The alias for the joined table.
+ * @property string  $Type The type of join (e.g., INNER, LEFT).
+ * @property string  $Table The table to join.
+ * @property string  $On The ON clause for the join condition.
+ * @property ?string $Alias The alias for the joined table.
  */
 final class Join {
 	use GettableProperties;

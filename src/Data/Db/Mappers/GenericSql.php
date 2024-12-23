@@ -223,7 +223,7 @@ abstract class GenericSql implements MapperInterface {
 	/**
 	 * Format an identifier for use in SQL
 	 * This method can be overridden in the extending class if the database server requires
-	 * @param string $identifier
+	 * @param string $element
 	 * @return string
 	 */
 	protected function quoteElement(string $element): string {
@@ -273,7 +273,6 @@ abstract class GenericSql implements MapperInterface {
 	/**
 	 * Create a new record in the database.
 	 * @param Model $model
-	 * @throws Exception
 	 */
 	protected function performCreate(Model $model): void {
 		$properties = array_intersect_key(
@@ -292,7 +291,6 @@ abstract class GenericSql implements MapperInterface {
 	/**
 	 * Update an existing record in the database.
 	 * @param Model $model
-	 * @throws Exception
 	 */
 	protected function performUpdate(Model $model): void {
 		$properties = array_intersect_key(
@@ -327,7 +325,6 @@ abstract class GenericSql implements MapperInterface {
 	/**
 	 * Delete a record from the database.
 	 * @param array $conditions
-	 * @throws Exception
 	 */
 	protected function performDelete(array $conditions): void {
 		// Generate SQL and params using the helper
@@ -343,7 +340,7 @@ abstract class GenericSql implements MapperInterface {
 	 * @param string $sql
 	 * @param array $params
 	 * @param bool $fetch Whether to fetch the results or not
-	 * @return array|null
+	 * @return ?array
 	 */
 	protected function executeQuery(PDO $dbConnection, string $sql, array $params, bool $fetch = false): ?array {
 		try {
@@ -579,10 +576,7 @@ abstract class GenericSql implements MapperInterface {
 	}
 
 	/**
-	 * Determine if there are aggregates in the SELECT clause or filters.
-	 *
-	 * @param array $filters
-	 * @return bool
+	 * Determine if there are aggregates in the SELECT clause.
 	 */
 	protected function hasAggregatesInSelect(): bool {
 		foreach ($this->propertyDbMap as $propertyObject) {
@@ -596,7 +590,6 @@ abstract class GenericSql implements MapperInterface {
 	/**
 	 * Add a GROUP BY clause to the SQL statement if there are aggregates in the select.
 	 * @param string $sql
-	 * @param Filter[] $filters
 	 */
 	protected function applyGrouping(string $sql): string {
 		if ($this->hasAggregatesInSelect()) {
