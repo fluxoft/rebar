@@ -6,14 +6,14 @@ use Fluxoft\Rebar\Model;
 
 /**
  * Class RefreshToken
- * @package Fluxoft\Rebar\Auth
- * @property int Id
- * @property int UserId
- * @property int SeriesId
- * @property string Token
- * @property string ExpiresAt
- * @property string CreatedAt
- * @property string RevokedAt
+ * A model for a refresh token.
+ * @property int $Id
+ * @property int $UserId
+ * @property int $SeriesId
+ * @property string $Token
+ * @property string $ExpiresAt
+ * @property string $CreatedAt
+ * @property string $RevokedAt
  */
 class RefreshToken extends Model {
 	protected static array $defaultProperties = [
