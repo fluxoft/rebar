@@ -42,7 +42,7 @@ class Environment implements \ArrayAccess, \Iterator {
 
 	public static function GetInstance(): Environment {
 		if (is_null(static::$environment)) {
-			static::$environment = new static();
+			static::$environment = new self();
 		}
 		return static::$environment;
 	}
