@@ -3,7 +3,6 @@
 namespace Fluxoft\Rebar\Auth;
 
 use Fluxoft\Rebar\Auth\Exceptions\BasicAuthChallengeException;
-use Fluxoft\Rebar\Http\ParameterSet;
 use Fluxoft\Rebar\Http\Request;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -15,29 +14,16 @@ class BasicAuthTest extends TestCase {
 	private $userObserver;
 	/** @var Request|MockObject */
 	private $requestObserver;
-	/** @var ParameterSet|MockObject */
-	private $serverParamSet;
 
 	protected function setup(): void {
 		$this->userMapperObserver = $this->getMockBuilder('\Fluxoft\Rebar\Auth\UserMapperInterface')
 			->getMock();
 		$this->userObserver       = $this->getMockBuilder('\Fluxoft\Rebar\Auth\UserInterface')
 			->getMock();
-		$this->serverParamSet     = $this->getMockBuilder('\Fluxoft\Rebar\Http\ParameterSet')
-			->disableOriginalConstructor()
-			->getMock();
 
 		$this->requestObserver = $this->getMockBuilder('\Fluxoft\Rebar\Http\Request')
 			->disableOriginalConstructor()
 			->getMock();
-		$this->requestObserver
-			->method('__get')
-			->willReturnCallback(function ($key) {
-				if ($key === 'Server') {
-					return $this->serverParamSet;
-				}
-				return null;
-			});
 	}
 
 
@@ -54,18 +40,18 @@ class BasicAuthTest extends TestCase {
 	 */
 	public function testAuthUser($phpAuthUser) {
 		// Mock the ParameterSet::Get method with willReturnCallback
-		$this->serverParamSet
-			->method('Get')
-			->willReturnCallback(function ($key, $default = null) use ($phpAuthUser) {
+		$this->requestObserver
+			->method('Server')
+			->willReturnCallback(function ($key) use ($phpAuthUser) {
 				if ($key === 'PHP_AUTH_USER') {
-					return $phpAuthUser ?? $default;
+					return $phpAuthUser ?? null;
 				}
 				if ($key === 'PHP_AUTH_PW') {
 					return 'test-password';
 				}
-				return $default;
+				return null;
 			});
-	
+
 		// Handle the two cases: when $phpAuthUser is null and when it's provided
 		if (!isset($phpAuthUser)) {
 			// Use PHPUnit's try-catch to inspect the exception
@@ -93,13 +79,13 @@ class BasicAuthTest extends TestCase {
 				])
 				->onlyMethods(['Login'])
 				->getMock();
-	
+
 			// Expect the Login method to be called with correct parameters
 			$basicAuthMock
 				->expects($this->once())
 				->method('Login')
 				->with($this->requestObserver, $phpAuthUser, 'test-password');
-	
+
 			// Trigger GetAuthenticatedUser to test behavior
 			$basicAuthMock->GetAuthenticatedUser($this->requestObserver);
 		}

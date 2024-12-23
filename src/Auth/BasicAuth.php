@@ -21,12 +21,12 @@ class BasicAuth implements AuthInterface {
 	 * {@inheritdoc}
 	 */
 	public function GetAuthenticatedUser(Request $request): ?Reply {
-		$basicAuthUser = $request->Server->Get('PHP_AUTH_USER');
+		$basicAuthUser = $request->Server('PHP_AUTH_USER');
 
 		if (!isset($basicAuthUser)) {
 			throw new BasicAuthChallengeException($this->realm, $this->message);
 		}
-		return $this->Login($request, $basicAuthUser, $request->Server->Get('PHP_AUTH_PW', ''));
+		return $this->Login($request, $basicAuthUser, $request->Server('PHP_AUTH_PW', ''));
 	}
 
 	/**
@@ -36,7 +36,7 @@ class BasicAuth implements AuthInterface {
 	public function Login(Request $request, string $username, string $password, bool $remember = false): Reply {
 		// unused in this implementation
 		unset($request, $remember);
-		
+
 		$reply       = new Reply();
 		$user        = $this->userMapper->GetAuthorizedUserForUsernameAndPassword($username, $password);
 		$reply->Auth = true;

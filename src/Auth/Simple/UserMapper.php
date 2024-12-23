@@ -42,10 +42,7 @@ class UserMapper implements UserMapperInterface {
 
 	/**
 	 * Return the user for the given username and password.
-	 * @param $username
-	 * @param $password
-	 * @return mixed
-	 * @throws InvalidPasswordException
+	 * @throws InvalidCredentialsException
 	 * @throws UserNotFoundException
 	 */
 	public function GetAuthorizedUserForUsernameAndPassword(string $username, string $password): UserInterface {
@@ -71,8 +68,6 @@ class UserMapper implements UserMapperInterface {
 
 	/**
 	 * Return the user for the given ID
-	 * @param $id
-	 * @return mixed
 	 * @throws UserNotFoundException
 	 */
 	public function GetAuthorizedUserById(mixed $id): UserInterface {
@@ -98,7 +93,7 @@ class UserMapper implements UserMapperInterface {
 			throw new \RuntimeException(sprintf('Failed to save users to file: %s', $filePath));
 		}
 	}
-	
+
 	public function LoadFromFile(string $filePath): void {
 		if (!file_exists($filePath)) {
 			throw new \RuntimeException(sprintf('File not found: %s', $filePath));
@@ -109,6 +104,6 @@ class UserMapper implements UserMapperInterface {
 			throw new \RuntimeException(sprintf('Failed to load users from file: %s', $filePath));
 		}
 		$this->users = $users;
-	}	
+	}
 	// @codeCoverageIgnoreEnd
 }

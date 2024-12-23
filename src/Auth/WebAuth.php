@@ -26,13 +26,13 @@ class WebAuth extends BaseAuth {
 
 		// Retrieve the AccessToken
 		$accessToken = $this->getToken($request, 'AccessToken');
-	
+
 		if (isset($accessToken)) {
 			try {
 				// Decode the AccessToken to get user claims
 				$claims = $this->tokenManager->DecodeAccessToken($accessToken);
 				$userId = $claims['userId'] ?? null;
-	
+
 				if (isset($userId)) {
 					$user = $this->userMapper->GetAuthorizedUserById($userId);
 					if ($user instanceof UserInterface) {
@@ -55,10 +55,10 @@ class WebAuth extends BaseAuth {
 		} else {
 			$authReply->Message = 'No token provided'; // Set message for no token
 		}
-	
+
 		// Fall back to RefreshToken
 		$refreshToken = $this->getToken($request, 'RefreshToken');
-	
+
 		if (isset($refreshToken)) {
 			if ($this->tokenManager->ValidateRefreshToken($refreshToken)) {
 				$userId = $this->extractUserIdFromToken($refreshToken);
@@ -69,12 +69,12 @@ class WebAuth extends BaseAuth {
 						$accessToken = $this->tokenManager->GenerateAccessToken($user);
 						// Decode the AccessToken to get user claims
 						$claims = $this->tokenManager->DecodeAccessToken($accessToken);
-	
+
 						// Extend the expiration of the refresh token
 						$this->tokenManager->ExtendRefreshTokenExpiration($refreshToken);
-	
+
 						$this->persistTokens($request, $user, $accessToken, $refreshToken, false);
-	
+
 						$authReply->Auth         = true;
 						$authReply->User         = $user;
 						$authReply->AccessToken  = $accessToken;
@@ -89,7 +89,7 @@ class WebAuth extends BaseAuth {
 				$authReply->Message = 'Invalid refresh token';
 			}
 		}
-	
+
 		$authReply->Auth = false;
 		return $authReply;
 	}
@@ -102,13 +102,13 @@ class WebAuth extends BaseAuth {
 	 */
 	public function Logout(Request $request): Reply {
 		$authReply = new Reply();
-	
+
 		// Check for a global logout flag
-		$globalLogout = (bool) $request->Get->Get('globalLogout', false);
-	
+		$globalLogout = (bool) $request->Get('globalLogout', false);
+
 		// Attempt to retrieve the RefreshToken
 		$refreshToken = $this->getToken($request, 'RefreshToken');
-	
+
 		if (isset($refreshToken)) {
 			// Extract userId from the refresh token to revoke all tokens for global logout
 			$userId = $this->extractUserIdFromToken($refreshToken);
@@ -118,22 +118,22 @@ class WebAuth extends BaseAuth {
 				$this->tokenManager->RevokeRefreshToken($refreshToken);
 			}
 		}
-	
+
 		if ($this->useSession) {
 			// Delete session tokens
 			$request->Session->Delete('AccessToken');
 			$request->Session->Delete('RefreshToken');
 		}
-	
+
 		// Delete cookies
 		$request->Cookies->Delete('AccessToken');
 		$request->Cookies->Delete('RefreshToken');
-	
+
 		$authReply->Auth    = false;
 		$authReply->Message = $globalLogout
 			? 'User logged out from all devices.'
 			: 'User logged out from this session.';
-		
+
 		return $authReply;
 	}
 

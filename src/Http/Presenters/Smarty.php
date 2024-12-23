@@ -8,8 +8,8 @@ use \Fluxoft\Rebar\Http\Response;
 /**
  * Class Smarty
  * @package Fluxoft\Rebar\Presenters
- * @property string Layout
- * @property string Template
+ * @property string $Layout
+ * @property string $Template
  */
 class Smarty implements PresenterInterface {
 	public function __construct(
@@ -21,9 +21,9 @@ class Smarty implements PresenterInterface {
 
 	public function Render(Response $response, array $data): void {
 		$this->smarty->assign($data);
-	
+
 		$templatePath = rtrim($this->templatePath, '/') . '/';
-	
+
 		if ($this->layout !== '') {
 			$this->smarty->assign('templateFile', $templatePath . ltrim($this->template, '/'));
 			$template = $templatePath . ltrim($this->layout, '/');
@@ -31,11 +31,11 @@ class Smarty implements PresenterInterface {
 			$template = $templatePath . ltrim($this->template, '/');
 		}
 		$output = $this->smarty->fetch($template);
-	
+
 		$response->Body = $output;
 		$response->Send();
 	}
-	
+
 	public function __set($var, $val) {
 		switch ($var) {
 			case 'Template': // @codeCoverageIgnore

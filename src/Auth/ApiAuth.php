@@ -16,7 +16,7 @@ class ApiAuth extends BaseAuth {
 		$authReply = new Reply();
 
 		// Retrieve the Authorization header
-		$authorizationHeader = $request->Headers->Get('Authorization');
+		$authorizationHeader = $request->Headers('Authorization');
 		if (!isset($authorizationHeader) || stripos($authorizationHeader, 'Bearer ') !== 0) {
 			$authReply->Auth    = false;
 			$authReply->Message = 'Missing or invalid Authorization header.';
@@ -65,11 +65,11 @@ class ApiAuth extends BaseAuth {
 		$authReply = new Reply();
 
 		// Check for a global logout flag
-		$globalLogout = (bool) $request->Get->Get('globalLogout', false);
+		$globalLogout = (bool) $request->Get('globalLogout', false);
 
 		if ($globalLogout) {
 			// Retrieve the Authorization header
-			$authorizationHeader = $request->Headers->Get('Authorization');
+			$authorizationHeader = $request->Headers('Authorization');
 			if (!isset($authorizationHeader) || stripos($authorizationHeader, 'Bearer ') !== 0) {
 				$authReply->Auth    = false;
 				$authReply->Message = 'Missing or invalid Authorization header.';
@@ -106,7 +106,7 @@ class ApiAuth extends BaseAuth {
 			$request->Cookies->Delete('RefreshToken');
 		} else {
 			// Check for a refresh token in the headers
-			$refreshToken = $request->Headers->Get('RefreshToken');
+			$refreshToken = $request->Headers('RefreshToken');
 		}
 
 		// If we still don't have a refresh token, we can't revoke it

@@ -24,7 +24,6 @@ class Cors implements MiddlewareInterface {
 
 	public function Process(Request $request, Response $response, callable $next): Response {
 		$allowedMethods = array_map('strtoupper', $this->allowedMethods);
-		$requestHeaders = $request->Headers;
 		$requestMethod  = $request->Method;
 
 		// always allow OPTIONS requests
@@ -34,9 +33,10 @@ class Cors implements MiddlewareInterface {
 
 		// set CORS headers if configured
 		if ($this->crossOriginEnabled) {
-			if (isset($requestHeaders['Origin'])) {
-				$allowedHeaders = ($requestHeaders['Access-Control-Request-Headers'] ?? '');
-				$origin         = $requestHeaders['Origin'];
+			$origin = $request->Headers('Origin');
+			if (isset($origin)) {
+				$allowedHeaders = $request->Headers('Access-Control-Request-Headers', '');
+				$origin         = $request->Headers('Origin');
 				if (in_array($origin, $this->crossOriginDomainsAllowed)) {
 					$response->AddHeader('Access-Control-Allow-Origin', $origin);
 					$response->AddHeader('Access-Control-Allow-Credentials', 'true');

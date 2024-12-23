@@ -16,15 +16,15 @@ use Fluxoft\Rebar\Http\Response;
  * transitioned at one time.
  *
  * @package Fluxoft\Rebar\Presenters
- * @property string Layout
- * @property string Template
+ * @property string $Layout
+ * @property string $Template
  */
 class Phtml implements PresenterInterface {
 	public function __construct(
 		private readonly string $templatePath,
 		private string $template = '/default.phtml',
 		private string $layout = ''
-	) {}	
+	) {}
 
 	/**
 	 * Render the given data using the specified template or layout.
@@ -80,10 +80,10 @@ class Phtml implements PresenterInterface {
 		if (!$this->fileExists($include)) {
 			return null; // Return null if the file doesn't exist
 		}
-	
+
 		// Extract variables into the scope of the template
 		extract($variables);
-	
+
 		ob_start();
 		include $include;
 		return ob_get_clean();

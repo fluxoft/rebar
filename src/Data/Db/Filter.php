@@ -9,9 +9,9 @@ use Fluxoft\Rebar\Data\Db\Exceptions\InvalidFilterException;
 use Fluxoft\Rebar\Data\FilterInterface;
 
 /**
- * @property string Property
- * @property string Operator
- * @property mixed  Value
+ * @property string $Property
+ * @property string $Operator
+ * @property mixed  $Value
  */
 final class Filter implements FilterInterface, \ArrayAccess, \Iterator {
 	use GettableProperties;
