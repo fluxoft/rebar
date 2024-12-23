@@ -12,15 +12,15 @@ use Fluxoft\Rebar\Http\Exceptions\EnvironmentException;
 /**
  * Class Environment
  * @package Fluxoft\Rebar\Http
- * @property-read array ServerParams This is the $_SERVER superglobal
- * @property-read array GetParams This is the $_GET superglobal
- * @property-read array PostParams This is the $_POST superglobal
- * @property-read array PutParams This is the $_POST superglobal, but only if the request method is PUT
- * @property-read array PatchParams This is the $_POST superglobal, but only if the request method is PATCH
- * @property-read array DeleteParams This is the $_POST superglobal, but only if the request method is DELETE
- * @property-read array Headers This is an array of all headers sent in the request
- * @property-read string Input This is the raw input from the request
- * @property array CookieSettings This is an array of settings for cookies, valid keys are:
+ * @property-read array  $ServerParams This is the $_SERVER superglobal
+ * @property-read array  $GetParams This is the $_GET superglobal
+ * @property-read array  $PostParams This is the $_POST superglobal
+ * @property-read array  $PutParams This is the $_POST superglobal, but only if the request method is PUT
+ * @property-read array  $PatchParams This is the $_POST superglobal, but only if the request method is PATCH
+ * @property-read array  $DeleteParams This is the $_POST superglobal, but only if the request method is DELETE
+ * @property-read array  $Headers This is an array of all headers sent in the request
+ * @property-read string $Input This is the raw input from the request
+ * @property      array  $CookieSettings This is an array of settings for cookies, valid keys are:
  *  - expires: The expiration time of the cookie. Default is 0 (session cookie)
  *  - path: The path on the server in which the cookie will be available on. Default is '/'
  *  - domain: The (sub)domain that the cookie is available to. Default is the host of the server
@@ -140,7 +140,7 @@ class Environment implements \ArrayAccess, \Iterator {
 		}
 		return $this->properties['Input'];
 	}
-	
+
 	// CookieSettings
 	public function SetCookieSettings(array $settings): void {
 		$this->properties['CookieSettings'] = $this->validateCookieSettings($settings);
