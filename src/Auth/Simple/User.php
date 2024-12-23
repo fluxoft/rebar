@@ -9,9 +9,9 @@ use Fluxoft\Rebar\Model;
 /**
  * Class User
  * @package Fluxoft\Rebar\Auth\Users\Simple
- * @property int Id
- * @property string Username
- * @property string Password
+ * @property int    $Id
+ * @property string $Username
+ * @property string $Password
  */
 class User extends Model implements UserInterface {
 	protected array $properties = [
