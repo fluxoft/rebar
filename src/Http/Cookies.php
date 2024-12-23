@@ -34,7 +34,6 @@ class Cookies extends ParameterSet {
 	 * Use $overrides to override the default settings, if needed.
 	 * @param string $key
 	 * @param mixed  $value
-	 * @param int    $expires
 	 * @param array  $overrides Settings overrides, valid keys are: expires, path, domain, secure, httponly
 	 */
 	public function Set(

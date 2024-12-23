@@ -20,14 +20,14 @@ abstract class Controller {
 	 * The presenter property determines which presenter class
 	 * will be used to render the display.
 	 *
-	 * @var \Fluxoft\Rebar\Presenters\PresenterInterface $presenter
+	 * @var PresenterInterface $presenter
 	 */
 	protected $presenter = null;
 	/**
 	 * @var null|string The name of a class implementing PresenterInterface that
 	 * should be used for setting the presenter if no other presenter has been set.
 	 * Either a fully-qualified class name should be given or a Presenter that can be
-	 * found in the \Fluxoft\Rebar\Presenters namespace should be used.
+	 * found in the \Fluxoft\Rebar\Http\Presenters namespace should be used.
 	 */
 	protected $presenterClass = null;
 	/**
@@ -41,7 +41,6 @@ abstract class Controller {
 	 * Controller constructor.
 	 * @param Request $request
 	 * @param Response $response
-	 * @param AuthInterface|null $auth
 	 */
 	public function __construct(
 		protected Request $request,
