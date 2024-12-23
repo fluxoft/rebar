@@ -35,6 +35,9 @@ jobs:
       - run:
           name: "PHPUnit"
           command: "phpdbg -qrr vendor/bin/phpunit -c phpunit.xml.dist"
+      - run:
+          name: "PHPStan"
+          command: "vendor/bin/phpstan analyse"
       - php-coveralls/upload:
           clover-path: '${CLOVER_PATH}'
           json-path: '${JSON_PATH}'
