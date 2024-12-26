@@ -36,11 +36,21 @@ class CorsTest extends \PHPUnit\Framework\TestCase {
 
 	public function testAllowedOriginSetsHeaders() {
 		$this->request
+			->method('Headers')
+			->willReturnCallback(function($header) {
+				if ($header === 'Origin') {
+					return 'http://allowed-origin.com';
+				}
+				if ($header === 'Access-Control-Request-Headers') {
+					return 'X-Custom-Header';
+				}
+				return null;
+			});
+
+		$this->request
 			->method('__get')
-			->will($this->returnValueMap([
-				['Headers', ['Origin' => 'http://allowed-origin.com']],
-				['Method', 'GET']
-			]));
+			->with('Method')
+			->willReturn('GET');
 
 		$response = $this->cors->Process($this->request, $this->response, function($req, $res) {
 			$req = null;
@@ -54,11 +64,20 @@ class CorsTest extends \PHPUnit\Framework\TestCase {
 
 	public function testDisallowedOriginThrowsException() {
 		$this->request
+			->method('Headers')
+			->willReturnCallback(function($header) {
+				if ($header === 'Origin') {
+					return 'http://disallowed-origin.com';
+				}
+				if ($header === 'Access-Control-Request-Headers') {
+					return 'X-Custom-Header';
+				}
+				return null;
+			});
+		$this->request
 			->method('__get')
-			->will($this->returnValueMap([
-				['Headers', ['Origin' => 'http://disallowed-origin.com']],
-				['Method', 'GET']
-			]));
+			->with('Method')
+			->willReturn('GET');
 
 		$this->expectException(CrossOriginException::class);
 		$this->cors->Process($this->request, $this->response, function($req, $res) {
@@ -71,11 +90,20 @@ class CorsTest extends \PHPUnit\Framework\TestCase {
 		// Instantiate Cors with allowed methods excluding PATCH
 		$this->cors = new Cors(['http://allowed-origin.com'], true, ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']);
 		$this->request
+			->method('Headers')
+			->willReturnCallback(function($header) {
+				if ($header === 'Origin') {
+					return 'http://allowed-origin.com';
+				}
+				if ($header === 'Access-Control-Request-Headers') {
+					return 'X-Custom-Header';
+				}
+				return null;
+			});
+		$this->request
 			->method('__get')
-			->will($this->returnValueMap([
-				['Headers', ['Origin' => 'http://allowed-origin.com']],
-				['Method', 'PATCH']
-			]));
+			->with('Method')
+			->willReturn('PATCH');
 
 		$this->expectException(MethodNotAllowedException::class);
 		$this->cors->Process($this->request, $this->response, function($req, $res) {
@@ -86,17 +114,26 @@ class CorsTest extends \PHPUnit\Framework\TestCase {
 
 	public function testOptionsAlwaysIncludedInAllowedMethods() {
 		$this->request
+			->method('Headers')
+			->willReturnCallback(function($header) {
+				if ($header === 'Origin') {
+					return 'http://allowed-origin.com';
+				}
+				if ($header === 'Access-Control-Request-Headers') {
+					return 'X-Custom-Header';
+				}
+				return null;
+			});
+		$this->request
 			->method('__get')
-			->will($this->returnValueMap([
-				['Method', 'GET'],
-				['Headers', ['Origin' => 'http://allowed-origin.com']]
-			]));
-	
+			->with('Method')
+			->willReturn('GET');
+
 		$response = $this->cors->Process($this->request, $this->response, function($req, $res) {
 			$req = null; // unused
 			return $res;
 		});
-	
+
 		$headers = $response->GetCapturedHeaders();
 		$this->assertEquals('http://allowed-origin.com', $headers['Access-Control-Allow-Origin']);
 		$this->assertStringContainsString('OPTIONS', $headers['Access-Control-Allow-Methods']);
@@ -109,27 +146,36 @@ class CorsTest extends \PHPUnit\Framework\TestCase {
 			true,
 			['GET', 'POST', 'DELETE']
 		);
-	
+
+		$this->request
+			->method('Headers')
+			->willReturnCallback(function($header) {
+				if ($header === 'Origin') {
+					return 'http://allowed-origin.com';
+				}
+				if ($header === 'Access-Control-Request-Headers') {
+					return 'X-Custom-Header';
+				}
+				return null;
+			});
 		$this->request
 			->method('__get')
-			->will($this->returnValueMap([
-				['Method', 'OPTIONS'],
-				['Headers', ['Origin' => 'http://allowed-origin.com']]
-			]));
-	
+			->with('Method')
+			->willReturn('OPTIONS');
+
 		/** @var MockResponse $response */
 		$response = $this->cors->Process($this->request, $this->response, function ($req, $res) {
 			$req = null; // unused
 			return $res;
 		});
-	
+
 		$headers = $response->GetCapturedHeaders();
-	
+
 		// Assert CORS headers are correctly set
 		$this->assertEquals('http://allowed-origin.com', $headers['Access-Control-Allow-Origin']);
 		$this->assertEquals('true', $headers['Access-Control-Allow-Credentials']);
 		$this->assertStringContainsString('OPTIONS', $headers['Access-Control-Allow-Methods']);
-	
+
 		// Assert OPTIONS request gets a 200 OK response
 		$this->assertEquals(200, $response->Status);
 		$this->assertEquals('OK', $response->GetCapturedBody());

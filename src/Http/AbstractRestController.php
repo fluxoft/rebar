@@ -68,13 +68,13 @@ abstract class AbstractRestController extends Controller {
 						// Fetch single model
 						$responseData = ['data' => $this->service->Fetch($id)];
 					} else {
-						$pageParams = $this->request->Get->Get('page', []);
-						$page       = (int) ($pageParams['number'] ?? $this->request->Get->Get('page', 1));
-						$pageSize   = (int) ($pageParams['size'] ?? $this->request->Get->Get('pageSize', 20));
+						$pageParams = $this->request->Get('page', []);
+						$page       = (int) ($pageParams['number'] ?? $this->request->Get('page', 1));
+						$pageSize   = (int) ($pageParams['size'] ?? $this->request->Get('pageSize', 20));
 
-						$filterParams = $this->request->Get->Get('filter', []);
-						$sortParams   = $this->request->Get->Get('sort', []);
-						
+						$filterParams = $this->request->Get('filter', []);
+						$sortParams   = $this->request->Get('sort', []);
+
 						$responseData = [
 							'data' => $this->service->FetchAll($filterParams, $sortParams, $page, $pageSize),
 							'meta' => [
@@ -87,7 +87,7 @@ abstract class AbstractRestController extends Controller {
 					break;
 
 				case 'POST': // @codeCoverageIgnore
-					$data         = $this->request->Post->Get();
+					$data         = $this->request->Post();
 					$responseData = ['data' => $this->service->Create($data)];
 					$status       = 201;
 					break;
@@ -96,7 +96,7 @@ abstract class AbstractRestController extends Controller {
 					if ($id === null) {
 						throw new \InvalidArgumentException('ID parameter is required for PUT.');
 					}
-					$data         = $this->request->Post->Get();
+					$data         = $this->request->Post();
 					$responseData = ['data' => $this->service->Update($id, $data)];
 					break;
 

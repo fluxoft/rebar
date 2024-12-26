@@ -9,28 +9,28 @@ use Fluxoft\Rebar\Auth\UserInterface;
 /**
  * Class Request
  * @package Fluxoft\Rebar\Http
- * @property AuthInterface|null Auth              The auth module for this request, if any.
- * @property UserInterface|null AuthenticatedUser The authenticated user for this request, if any.
- * @property-read string Method   The HTTP method of the request (GET, POST, PUT, DELETE, etc.)
- * @property-read string Protocol Protocol used for the request (http, https, etc.)
- * @property-read string Host     Hostname of the request
- * @property-read int    Port     Port of the request
- * @property-read string URL      Full URL of the request
- * @property-read string URI      URI of the request
- * @property-read string Path     Path of the request
- * @property-read string RemoteIP IP address of the remote client
- * @property-read string RawBody  Raw body of the request. Immutable once set.
- * @property string Body     Body of the request. Mutable.
- * @property-read Session|null Session Session object for the request
- * @property-read Cookies|null Cookies Cookies object for the request
- * 
- * @method string Server(string $var = null, string $default = null) Retrieves one or all server parameters.
- * @method string Headers(string $var = null, string $default = null) Retrieves one or all headers.
- * @method string Get(string $var = null, string $default = null) Retrieves one or all GET parameters.
- * @method string Post(string $var = null, string $default = null) Retrieves one or all POST parameters.
- * @method string Put(string $var = null, string $default = null) Retrieves one or all PUT parameters.
- * @method string Patch(string $var = null, string $default = null) Retrieves one or all PATCH parameters.
- * @method string Delete(string $var = null, string $default = null) Retrieves one or all DELETE parameters.
+ * @property AuthInterface|null $Auth              The auth module for this request, if any.
+ * @property UserInterface|null $AuthenticatedUser The authenticated user for this request, if any.
+ * @property-read string $Method   The HTTP method of the request (GET, POST, PUT, DELETE, etc.)
+ * @property-read string $Protocol Protocol used for the request (http, https, etc.)
+ * @property-read string $Host     Hostname of the request
+ * @property-read int    $Port     Port of the request
+ * @property-read string $URL      Full URL of the request
+ * @property-read string $URI      URI of the request
+ * @property-read string $Path     Path of the request
+ * @property-read string $RemoteIP IP address of the remote client
+ * @property-read string $RawBody  Raw body of the request. Immutable once set.
+ * @property string      $Body     Body of the request. Mutable.
+ * @property-read Session|null $Session Session object for the request
+ * @property-read Cookies|null $Cookies Cookies object for the request
+ *
+ * @method ?string Server(string $var = null, ?string $default = null) Retrieves one or all server parameters.
+ * @method ?string Headers(string $var = null, ?string $default = null) Retrieves one or all headers.
+ * @method ?string Get(string $var = null, ?string $default = null) Retrieves one or all GET parameters.
+ * @method ?string Post(string $var = null, ?string $default = null) Retrieves one or all POST parameters.
+ * @method ?string Put(string $var = null, ?string $default = null) Retrieves one or all PUT parameters.
+ * @method ?string Patch(string $var = null, ?string $default = null) Retrieves one or all PATCH parameters.
+ * @method ?string Delete(string $var = null, ?string $default = null) Retrieves one or all DELETE parameters.
  */
 class Request {
 	use GettableProperties;
@@ -44,13 +44,13 @@ class Request {
 	private ParameterSet $putParamSet;
 	private ParameterSet $patchParamSet;
 	private ParameterSet $deleteParamSet;
-	
+
 	/**
 	 * Request constructor.
 	 * Sets up the request object with the environment.
 	 * Also sets up the properties array with the default properties. All properties are null by default,
 	 * except for RawBody, which is set to the raw input from the environment (which can only be read once).
-	 * 
+	 *
 	 * @param Environment $environment
 	 */
 	public function __construct(Environment $environment) {

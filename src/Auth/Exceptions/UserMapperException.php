@@ -1,5 +1,5 @@
 <?php
 
-namespace Fluxoft\rebar\Auth\Exceptions;
+namespace Fluxoft\Rebar\Auth\Exceptions;
 
 class UserMapperException extends \Exception {}

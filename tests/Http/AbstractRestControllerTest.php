@@ -72,9 +72,7 @@ class AbstractRestControllerTest extends TestCase {
 			->with([])
 			->willReturn(count($models));
 
-		$getParamsMock = $this->createMock(ParameterSet::class);
-
-		$getParamsMock->expects($this->exactly(5))
+		$this->requestMock
 			->method('Get')
 			->willReturnMap([
 				['filter', [], []], // Ensures `filter` returns an empty array by default
@@ -82,13 +80,10 @@ class AbstractRestControllerTest extends TestCase {
 				['page', 1, 1],     // Default page number
 				['pageSize', 20, 20] // Default page size
 			]);
-
 		$this->requestMock
 			->method('__get')
-			->willReturnMap([
-				['Get', $getParamsMock],
-				['Method', 'GET']
-			]);
+			->with('Method')
+			->willReturn('GET');
 
 		$this->controller->Default();
 
@@ -98,56 +93,50 @@ class AbstractRestControllerTest extends TestCase {
 	}
 
 	public function testPost(): void {
-		$modelMock      = $this->createMock(Model::class);
-		$data           = ['name' => 'New Item'];
-		$postParamsMock = $this->createMock(ParameterSet::class);
-	
-		$postParamsMock->expects($this->once())
-			->method('Get')
-			->willReturn($data);
-	
+		$modelMock = $this->createMock(Model::class);
+		$data      = ['name' => 'New Item'];
+
 		$this->serviceMock->expects($this->once())
 			->method('Create')
 			->with($data)
 			->willReturn($modelMock);
-	
-		$this->requestMock->method('__get')
-			->willReturnMap([
-				['Post', $postParamsMock],
-				['Method', 'POST']
-			]);
-	
+		$this->requestMock
+			->method('Post')
+			->with()
+			->willReturn($data);
+		$this->requestMock
+			->method('__get')
+			->with('Method')
+			->willReturn('POST');
+
 		$this->controller->Default();
-	
+
 		$this->assertEquals(201, $this->responseMock->Status);
 		$this->assertArrayHasKey('data', $this->controller->GetData());
 		$this->assertSame($modelMock, $this->controller->GetData()['data']);
 	}
-	
+
 
 	public function testPut(): void {
-		$id             = 1;
-		$data           = ['name' => 'Updated Item'];
-		$modelMock      = $this->createMock(Model::class);
-		$postParamsMock = $this->createMock(ParameterSet::class);
-	
-		$postParamsMock->expects($this->once())
-			->method('Get')
-			->willReturn($data);
-	
+		$id        = 1;
+		$data      = ['name' => 'Updated Item'];
+		$modelMock = $this->createMock(Model::class);
+
 		$this->serviceMock->expects($this->once())
 			->method('Update')
 			->with($id, $data)
 			->willReturn($modelMock);
-	
-		$this->requestMock->method('__get')
-			->willReturnMap([
-				['Post', $postParamsMock],
-				['Method', 'PUT']
-			]);
-	
+		$this->requestMock
+			->method('Post')
+			->with()
+			->willReturn($data);
+		$this->requestMock
+			->method('__get')
+			->with('Method')
+			->willReturn('PUT');
+
 		$this->controller->Default($id);
-	
+
 		$this->assertEquals(200, $this->responseMock->Status);
 		$this->assertArrayHasKey('data', $this->controller->GetData());
 		$this->assertSame($modelMock, $this->controller->GetData()['data']);
@@ -155,18 +144,18 @@ class AbstractRestControllerTest extends TestCase {
 
 	public function testDelete(): void {
 		$id = 1;
-	
+
 		$this->serviceMock->expects($this->once())
 			->method('Delete')
 			->with($id);
-	
+
 		$this->requestMock->method('__get')
 			->willReturnMap([
 				['Method', 'DELETE']
 			]);
-	
+
 		$this->controller->Default($id);
-	
+
 		$this->assertEquals(204, $this->responseMock->Status);
 		$this->assertArrayNotHasKey('data', $this->controller->GetData());
 	}
@@ -176,22 +165,22 @@ class AbstractRestControllerTest extends TestCase {
 			->willReturnMap([
 				['Method', 'PUT'],
 			]);
-	
+
 		$this->controller->Default(null);
-	
+
 		$this->assertEquals(400, $this->responseMock->Status);
 		$this->assertArrayHasKey('error', $this->controller->GetData());
 		$this->assertEquals('ID parameter is required for PUT.', $this->controller->GetData()['error']);
 	}
-	
+
 	public function testDeleteWithoutId(): void {
 		$this->requestMock->method('__get')
 			->willReturnMap([
 				['Method', 'DELETE'],
 			]);
-	
+
 		$this->controller->Default(null);
-	
+
 		$this->assertEquals(400, $this->responseMock->Status);
 		$this->assertArrayHasKey('error', $this->controller->GetData());
 		$this->assertEquals('ID parameter is required for DELETE.', $this->controller->GetData()['error']);
@@ -201,14 +190,14 @@ class AbstractRestControllerTest extends TestCase {
 		$this->serviceMock->expects($this->once())
 			->method('Fetch')
 			->willThrowException(new \InvalidArgumentException('Invalid ID.'));
-	
+
 		$this->requestMock->method('__get')
 			->willReturnMap([
 				['Method', 'GET'],
 			]);
-	
+
 		$this->controller->Default(999);
-	
+
 		$this->assertEquals(400, $this->responseMock->Status);
 		$this->assertArrayHasKey('error', $this->controller->GetData());
 		$this->assertEquals('Invalid ID.', $this->controller->GetData()['error']);
@@ -218,14 +207,14 @@ class AbstractRestControllerTest extends TestCase {
 		$this->serviceMock->expects($this->once())
 			->method('Fetch')
 			->willThrowException(new \Exception('Unexpected error occurred.'));
-	
+
 		$this->requestMock->method('__get')
 			->willReturnMap([
 				['Method', 'GET'],
 			]);
-	
+
 		$this->controller->Default(999);
-	
+
 		$this->assertEquals(500, $this->responseMock->Status);
 		$this->assertArrayHasKey('error', $this->controller->GetData());
 		$this->assertEquals('An unexpected error occurred.', $this->controller->GetData()['error']);
@@ -233,20 +222,22 @@ class AbstractRestControllerTest extends TestCase {
 
 	public function testSetupThrowsLogicExceptionForInvalidServiceClass(): void {
 		// Create a mock controller to override getServiceClass
+		/** @var ConcreteRestController|MockObject */
 		$controllerMock = $this->getMockBuilder(ConcreteRestController::class)
 			->onlyMethods(['getServiceClass'])
 			->setConstructorArgs([$this->requestMock, $this->responseMock, $this->serviceMock])
 			->getMock();
-	
+
 		// Mock getServiceClass to return an invalid class
 		$controllerMock->method('getServiceClass')
 			->willReturn('NonExistent\\InvalidServiceClass');
-	
+
+		/** @var Container|MockObject */
 		$containerMock = $this->createMock(Container::class);
-	
+
 		$this->expectException(\LogicException::class);
 		$this->expectExceptionMessage('Service class NonExistent\InvalidServiceClass does not exist.');
-	
+
 		$controllerMock->Setup($containerMock);
 	}
 }

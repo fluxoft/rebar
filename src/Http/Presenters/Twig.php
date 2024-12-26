@@ -8,8 +8,8 @@ use Twig\Environment;
 /**
  * Class Twig
  * @package Fluxoft\Rebar\Presenters
- * @property string Layout
- * @property string Template
+ * @property string $Layout
+ * @property string $Template
  */
 class Twig implements PresenterInterface {
 	public function __construct(

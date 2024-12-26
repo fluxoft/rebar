@@ -8,7 +8,7 @@ use Fluxoft\Rebar\Http\Response;
 /**
  * Class Pug
  * @package Fluxoft\Rebar\Presenters
- * @property string Template
+ * @property string $Template
  */
 class Pug implements PresenterInterface {
 	protected string $template;

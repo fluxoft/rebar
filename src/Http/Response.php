@@ -8,10 +8,10 @@ use InvalidArgumentException;
 /**
  * Class Response
  * @package Fluxoft\Rebar\Http
- * @property int Status
- * @property string StatusMessage
- * @property string Body
- * @property array Headers
+ * @property int    $Status
+ * @property string $StatusMessage
+ * @property string $Body
+ * @property array  $Headers
  */
 class Response {
 	use GettableProperties;
@@ -23,7 +23,7 @@ class Response {
 		101 => 'Switching Protocols',
 		102 => 'Processing', // WebDAV
 		103 => 'Early Hints',
-	
+
 		// Successful 2xx
 		200 => 'OK',
 		201 => 'Created',
@@ -35,7 +35,7 @@ class Response {
 		207 => 'Multi-Status', // WebDAV
 		208 => 'Already Reported', // WebDAV
 		226 => 'IM Used',
-	
+
 		// Redirection 3xx
 		300 => 'Multiple Choices',
 		301 => 'Moved Permanently',
@@ -45,7 +45,7 @@ class Response {
 		305 => 'Use Proxy',
 		307 => 'Temporary Redirect',
 		308 => 'Permanent Redirect',
-	
+
 		// Client Error 4xx
 		400 => 'Bad Request',
 		401 => 'Unauthorized',
@@ -76,7 +76,7 @@ class Response {
 		429 => 'Too Many Requests',
 		431 => 'Request Header Fields Too Large',
 		451 => 'Unavailable For Legal Reasons',
-	
+
 		// Server Error 5xx
 		500 => 'Internal Server Error',
 		501 => 'Not Implemented',
@@ -90,7 +90,7 @@ class Response {
 		510 => 'Not Extended',
 		511 => 'Network Authentication Required'
 	];
-	
+
 
 	public function __construct(
 		int $status = 200,
