@@ -109,14 +109,11 @@ class ControllerTest extends TestCase {
 		$controller->PublicInitializePresenter();
 	}
 
-	public function testDisplayWithManuallySetInvalidPresenterThrowsException(): void {
+	public function testManuallySettingInvalidPresenterThrowsTypeError(): void {
+		$this->expectException(\TypeError::class);
+
 		$controller = new DummyController($this->request, $this->response);
-		$controller->SetPresenter(new InvalidPresenter());
-	
-		$this->expectException(InvalidPresenterException::class);
-		$this->expectExceptionMessage('Presenter must implement PresenterInterface.');
-	
-		$controller->Display();
+		$controller->SetPresenter(new InvalidPresenter()); // Triggers TypeError
 	}
 }
 
