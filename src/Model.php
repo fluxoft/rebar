@@ -22,7 +22,9 @@ abstract class Model implements \Iterator, \ArrayAccess {
 	protected static array $defaultProperties = []; // Define defaults in subclasses
 
 	public function __construct(array $properties = []) {
-		$this->properties = array_merge(static::$defaultProperties, $properties);
+		foreach (static::$defaultProperties as $key => $defaultValue) {
+			$this->properties[$key] = $properties[$key] ?? $defaultValue;
+		}
 	}
 
 	/**
@@ -63,7 +65,7 @@ abstract class Model implements \Iterator, \ArrayAccess {
 		return $valid;
 	}
 	private array $validationErrors = [];
-	
+
 	/**
 	 * Returns any validation errors that were found on the last run of IsValid()
 	 * @return array
