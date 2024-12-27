@@ -12,7 +12,7 @@ use Fluxoft\Rebar\_Traits\StringableProperties;
  * Class Model
  * @package Fluxoft\Rebar
  */
-abstract class Model implements \Iterator, \ArrayAccess {
+abstract class Model implements \Iterator, \ArrayAccess, \JsonSerializable {
 	use GettableProperties;
 	use SettableProperties;
 	use IterableProperties;
@@ -85,5 +85,10 @@ abstract class Model implements \Iterator, \ArrayAccess {
 				$this->properties[$key] = $value;
 			}
 		}
+	}
+
+	// Implementing JsonSerializable
+	public function jsonSerialize(): array {
+		return $this->properties;
 	}
 }
