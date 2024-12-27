@@ -1601,14 +1601,12 @@ class GenericSqlTest extends TestCase {
 
 // @codingStandardsIgnoreStart
 class ConcreteModel extends Model {
-	public function __construct() {
-		parent::__construct([
-			'Id' => 1,
-			'Username' => 'testuser',
-			'Password' => 'testpassword',
-			'Valid' => true // Default to valid
-		]);
-	}
+	protected static array $defaultProperties = [
+		'Id' => 1,
+		'Username' => 'testuser',
+		'Password' => 'testpassword',
+		'Valid' => true // Default to valid
+	];
 	protected function validateValid($value): bool {
 		return $value === true;
 	}

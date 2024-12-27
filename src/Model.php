@@ -81,7 +81,7 @@ abstract class Model implements \Iterator, \ArrayAccess {
 	 */
 	public function InitializeProperties(array $initialProperties): void {
 		foreach ($initialProperties as $key => $value) {
-			if (isset($this->properties[$key])) {
+			if (array_key_exists($key, $this->properties)) {
 				$this->properties[$key] = $value;
 			}
 		}
