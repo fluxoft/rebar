@@ -12,19 +12,19 @@ class ModelTest extends TestCase {
 	}
 
 	public function testGetAndSetProperties(): void {
-		$model = new TestModel();
+		$model                   = new TestModel();
 		$model->OptionalProperty = 'optionalValue';
 		$this->assertEquals('optionalValue', $model->OptionalProperty);
 	}
 
 	public function testModifiedProperties(): void {
-		$model = new TestModel();
+		$model                   = new TestModel();
 		$model->OptionalProperty = 'newValue';
 		$this->assertEquals(['OptionalProperty' => 'newValue'], $model->GetModifiedProperties());
 	}
 
 	public function testArrayAccess(): void {
-		$model = new TestModel();
+		$model                     = new TestModel();
 		$model['OptionalProperty'] = 'arrayValue';
 		$this->assertEquals('arrayValue', $model['OptionalProperty']);
 		unset($model['OptionalProperty']);
@@ -32,7 +32,7 @@ class ModelTest extends TestCase {
 	}
 
 	public function testIteration(): void {
-		$model = new TestModel(['Property' => 'validValue', 'OptionalProperty' => 'optionalValue']);
+		$model      = new TestModel(['Property' => 'validValue', 'OptionalProperty' => 'optionalValue']);
 		$properties = [];
 		foreach ($model as $key => $value) {
 			$properties[$key] = $value;
@@ -94,7 +94,9 @@ class ModelTest extends TestCase {
 		$model = new TestModel();
 
 		// Assert that isset() returns false for a non-existent property
-		$this->assertFalse(isset($model->NonExistentProperty), 'Expected isset() to return false for a non-existent property.');
+		$this->assertFalse(
+			isset($model->NonExistentProperty), 'Expected isset() to return false for a non-existent property.'
+		);
 	}
 
 	public function testUnsetProperty(): void {
