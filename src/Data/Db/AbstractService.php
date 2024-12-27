@@ -107,7 +107,7 @@ abstract class AbstractService implements ServiceInterface {
 					$operatorKey = strtolower($operatorKey);
 					$operator    = self::OPERATOR_MAP[$operatorKey]
 						?? throw new \InvalidArgumentException("Invalid operator '$operatorKey' for property '$property'.");
-					
+
 					if ($operator === 'IN' ||
 						$operator === 'NOT IN' ||
 						$operator === 'BETWEEN'
@@ -128,7 +128,7 @@ abstract class AbstractService implements ServiceInterface {
 		}
 		return $filters;
 	}
-	
+
 	/**
 	 * @param array $rawSort
 	 * @return SortInterface[]
