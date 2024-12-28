@@ -10,5 +10,5 @@ interface NotifierInterface {
 	 * @param \Throwable|\Exception $t
 	 * @return mixed
 	 */
-	public function Notify(\Throwable $t);
+	public function Notify(\Throwable $t): void;
 }
