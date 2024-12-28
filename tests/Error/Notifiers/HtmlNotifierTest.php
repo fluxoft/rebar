@@ -15,7 +15,7 @@ class HtmlNotifierTest extends TestCase {
 
 		$exception = new \Exception('Test Exception');
 
-		$expectedOutput  = "<h1>An error occurred</h1>";
+		$expectedOutput  = "<h1>An error occurred.</h1>";
 		$expectedOutput .= "<p>" . htmlspecialchars($exception->getMessage()) . "</p>";
 		$expectedOutput .= "<pre>" . htmlspecialchars($exception->getTraceAsString()) . "</pre>";
 
@@ -40,7 +40,7 @@ class HtmlNotifierTest extends TestCase {
 
 		$exception = new \Exception('Test Exception');
 
-		$expectedOutput  = "<h1>An error occurred</h1>";
+		$expectedOutput  = "<h1>An error occurred.</h1>";
 		$expectedOutput .= "<p>" . htmlspecialchars($exception->getMessage()) . "</p>";
 
 		$htmlNotifier
@@ -52,6 +52,30 @@ class HtmlNotifierTest extends TestCase {
 			->with($expectedOutput);
 
 		$htmlNotifier->__construct(false);
+		$htmlNotifier->Notify($exception);
+	}
+
+	public function testNotifyVerboseFalseCustomErrorMessage() {
+		/** @var HtmlNotifier|MockObject $htmlNotifier */
+		$htmlNotifier = $this->getMockBuilder(HtmlNotifier::class)
+			->disableOriginalConstructor()
+			->onlyMethods(['setHeader', 'outputHtml', '__construct'])
+			->getMock();
+
+		$exception = new \Exception('Test Exception');
+
+		$expectedOutput  = "<h1>Custom error message.</h1>";
+		$expectedOutput .= "<p>" . htmlspecialchars($exception->getMessage()) . "</p>";
+
+		$htmlNotifier
+			->expects($this->once())
+			->method('setHeader');
+		$htmlNotifier
+			->expects($this->once())
+			->method('outputHtml')
+			->with($expectedOutput);
+
+		$htmlNotifier->__construct(false, 'Custom error message.');
 		$htmlNotifier->Notify($exception);
 	}
 
