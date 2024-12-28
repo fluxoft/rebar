@@ -8,7 +8,7 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Twig\Environment;
 
-class TwigTest extends TestCase {
+class TwigPresenterTest extends TestCase {
 	/** @var Response|MockObject */
 	private $responseObserver;
 	/** @var MockObject|Environment */
@@ -35,7 +35,7 @@ class TwigTest extends TestCase {
 	 * @dataProvider renderProvider
 	 */
 	public function testRender($template, $layout, $data) {
-		$presenter = new Twig(
+		$presenter = new TwigPresenter(
 			$this->twigObserver
 		);
 
@@ -75,7 +75,7 @@ class TwigTest extends TestCase {
 		];
 	}
 	public function testSetNonExistentProperty() {
-		$presenter = new Twig(
+		$presenter = new TwigPresenter(
 			$this->twigObserver
 		);
 
@@ -84,7 +84,7 @@ class TwigTest extends TestCase {
 		$presenter->NonExistent = 'will fail';
 	}
 	public function testGetNonExistentProperty() {
-		$presenter = new Twig(
+		$presenter = new TwigPresenter(
 			$this->twigObserver
 		);
 

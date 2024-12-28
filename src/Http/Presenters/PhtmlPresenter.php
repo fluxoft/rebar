@@ -19,7 +19,7 @@ use Fluxoft\Rebar\Http\Response;
  * @property string $Layout
  * @property string $Template
  */
-class Phtml implements PresenterInterface {
+class PhtmlPresenter implements PresenterInterface {
 	public function __construct(
 		private readonly string $templatePath,
 		private string $template = '/default.phtml',

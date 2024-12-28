@@ -6,7 +6,7 @@ use Fluxoft\Rebar\Http\Response;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
-class DebugTest extends TestCase {
+class DebugPresenterTest extends TestCase {
 	/** @var MockObject|Response */
 	private $responseObserver;
 
@@ -72,7 +72,7 @@ class DebugTest extends TestCase {
 }
 
 // @codingStandardsIgnoreStart
-class DebugMock extends Debug {
+class DebugMock extends DebugPresenter {
 	// @codingStandardsIgnoreEnd
 
 	public function PublicRenderData(array $data, $indent = null) {

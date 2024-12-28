@@ -6,7 +6,7 @@ use Fluxoft\Rebar\Http\Response;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
-class JsonTest extends TestCase {
+class JsonPresenterTest extends TestCase {
 	/** @var MockObject|Response */
 	private $responseObserver;
 
@@ -30,8 +30,8 @@ class JsonTest extends TestCase {
 	 * @dataProvider renderProvider
 	 */
 	public function testRender(array $data, ?string $callback, string $expectedJson): void {
-		$presenter = new Json($callback);
-	
+		$presenter = new JsonPresenter($callback);
+
 		if ($callback !== null) {
 			$expectedType = 'text/javascript;charset=utf-8';
 			$expectedBody = $callback . '(' . $expectedJson . ');';
@@ -39,7 +39,7 @@ class JsonTest extends TestCase {
 			$expectedType = 'application/json;charset=utf-8';
 			$expectedBody = $expectedJson;
 		}
-	
+
 		$this->responseObserver
 			->expects($this->once())
 			->method('AddHeader')
@@ -51,7 +51,7 @@ class JsonTest extends TestCase {
 				$this->equalTo('Body'),
 				$this->equalTo($expectedBody)
 			);
-	
+
 		$presenter->Render($this->responseObserver, $data);
 	}
 
@@ -59,14 +59,14 @@ class JsonTest extends TestCase {
 		$simpleObject              = new \stdClass();
 		$simpleObject->propertyOne = "valueOne";
 		$simpleObject->propertyTwo = "valueTwo";
-	
+
 		$simpleAssocArray   = [
 			'foo' => 'bar'
 		];
 		$simpleIndexedArray = [
 			'one', 'two', 'three'
 		];
-	
+
 		return [
 			'empty' => [
 				'data' => [],
@@ -135,7 +135,7 @@ class JsonTest extends TestCase {
 	}
 
 	public function testSetCallback(): void {
-		$presenter = new Json();
+		$presenter = new JsonPresenter();
 
 		$data = [
 			'foo' => 'bar',
@@ -170,27 +170,27 @@ class JsonTest extends TestCase {
 
 	public function testJsonEncodingException(): void {
 		$data = ['invalid' => "\xB1\x31"]; // Invalid UTF-8 sequence to force JsonException
-	
+
 		/** @var MockObject|Response $response */
 		$response = $this->createMock(Response::class);
-	
+
 		$response->expects($this->once())
 			->method('AddHeader')
 			->with('Content-type', 'application/json;charset=utf-8');
-	
+
 		$response->expects($this->exactly(2))
 			->method('__set')
 			->willReturnMap([
 				['Status', 500],
 				['Body', '{"error":"JSON encoding failed"}']
 			]);
-	
+
 		$response->expects($this->once())
 			->method('Send');
-	
-		$presenter = new Json();
+
+		$presenter = new JsonPresenter();
 		$presenter->Render($response, $data);
-	
+
 		// No exception expected here since it is handled inside the method.
 	}
 }

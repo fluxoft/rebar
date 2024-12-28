@@ -10,7 +10,7 @@
  */
 namespace Fluxoft\Rebar\Http;
 
-use Fluxoft\Rebar\Http\Presenters\Debug;
+use Fluxoft\Rebar\Http\Presenters\DebugPresenter;
 use Fluxoft\Rebar\Http\Presenters\Exceptions\InvalidPresenterException;
 use Fluxoft\Rebar\Http\Presenters\PresenterInterface;
 
@@ -62,7 +62,7 @@ abstract class Controller {
 			}
 			return new $this->presenterClass();
 		}
-		return new Debug();
+		return new DebugPresenter();
 	}
 
 	/**

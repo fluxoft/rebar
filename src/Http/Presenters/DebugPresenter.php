@@ -3,7 +3,7 @@ namespace Fluxoft\Rebar\Http\Presenters;
 
 use Fluxoft\Rebar\Http\Response;
 
-class Debug implements PresenterInterface {
+class DebugPresenter implements PresenterInterface {
 	public function Render(Response $response, array $data): void {
 		$body  = "*** The page's data set: ***\n\n";
 		$body .= $this->renderData($data);
@@ -13,8 +13,8 @@ class Debug implements PresenterInterface {
 		$response->Body = $body;
 		$response->Send();
 	}
-	
-	private $tab = "    ";
+
+	private $tab = "	";
 	protected function renderData($data, $indent = null) {
 		if (!isset($indent)) {
 			$padding = '';

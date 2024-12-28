@@ -2,34 +2,40 @@
 namespace Fluxoft\Rebar\Http\Presenters;
 
 use Fluxoft\Rebar\Exceptions\PropertyNotFoundException;
-use Fluxoft\Rebar\Http\Response;
-use Twig\Environment;
+
+use \Fluxoft\Rebar\Http\Response;
 
 /**
- * Class Twig
+ * Class Smarty
  * @package Fluxoft\Rebar\Presenters
  * @property string $Layout
  * @property string $Template
  */
-class Twig implements PresenterInterface {
+class SmartyPresenter implements PresenterInterface {
 	public function __construct(
-		protected Environment $twig,
-		protected string $template = '/default.html.twig',
-		protected string $layout = ''
+		private \Smarty $smarty,
+		private string $templatePath,
+		private string $template = '/default.html',
+		private string $layout = ''
 	) {}
 
 	public function Render(Response $response, array $data): void {
-		if (!empty($this->layout)) {
-			$data['pageTemplate'] = $this->template;
-			$template             = $this->layout;
+		$this->smarty->assign($data);
+
+		$templatePath = rtrim($this->templatePath, '/') . '/';
+
+		if ($this->layout !== '') {
+			$this->smarty->assign('templateFile', $templatePath . ltrim($this->template, '/'));
+			$template = $templatePath . ltrim($this->layout, '/');
 		} else {
-			$template = $this->template;
+			$template = $templatePath . ltrim($this->template, '/');
 		}
-		$output = $this->twig->render($template, $data);
+		$output = $this->smarty->fetch($template);
 
 		$response->Body = $output;
 		$response->Send();
 	}
+
 	public function __set($var, $val) {
 		switch ($var) {
 			case 'Template': // @codeCoverageIgnore

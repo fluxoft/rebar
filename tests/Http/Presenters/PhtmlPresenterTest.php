@@ -7,7 +7,7 @@ use Fluxoft\Rebar\Http\Response;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
-class PhtmlTest extends TestCase {
+class PhtmlPresenterTest extends TestCase {
 	/** @var MockObject|Response */
 	private $responseObserver;
 
@@ -96,7 +96,7 @@ class PhtmlTest extends TestCase {
 }
 
 // @codingStandardsIgnoreStart
-class PhtmlMock extends Phtml {
+class PhtmlMock extends PhtmlPresenter {
 	// @codingStandardsIgnoreEnd
 
 	// This needs to be a no-op so execution isn't interrupted

@@ -4,7 +4,7 @@ namespace Fluxoft\Rebar\Http\Presenters;
 
 use Fluxoft\Rebar\Http\Response;
 
-class Json implements PresenterInterface {
+class JsonPresenter implements PresenterInterface {
 	public function __construct(
 		protected ?string $callback = null
 	) {}

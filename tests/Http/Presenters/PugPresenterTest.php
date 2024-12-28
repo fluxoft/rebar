@@ -6,100 +6,71 @@ use Fluxoft\Rebar\Exceptions\PropertyNotFoundException;
 use Fluxoft\Rebar\Http\Response;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use Pug\Pug;
 
-class SmartyTest extends TestCase {
+class PugPresenterTest extends TestCase {
 	/** @var Response|MockObject */
-	private $responseObserver;
-	/** @var MockObject|\Smarty */
-	private $smartyObserver;
+	private Response|MockObject $responseObserver;
+	/** @var MockObject|\Pug\Pug */
+	private Pug|MockObject $pugObserver;
 
 	protected function setup():void {
 		$this->responseObserver = $this->getMockBuilder('\Fluxoft\Rebar\Http\Response')
 			->disableOriginalConstructor()
 			->getMock();
-		$this->smartyObserver   = $this->getMockBuilder('\Smarty')
+		$this->pugObserver      = $this->getMockBuilder('\Pug\Pug')
+			->onlyMethods(['renderFile'])
 			->disableOriginalConstructor()
 			->getMock();
 	}
 
 	protected function teardown():void {
 		unset($this->responseObserver);
-		unset($this->smartyObserver);
+		unset($this->pugObserver);
 	}
 
 	/**
-	 * @param $templatePath
 	 * @param $template
 	 * @param $layout
 	 * @param $data
 	 * @dataProvider renderProvider
 	 */
-	public function testRender($templatePath, $template, $layout, $data) {
-		$presenter = new Smarty(
-			$this->smartyObserver,
-			$templatePath
-		);
+	public function testRender($template, $data) {
+		$presenter = new \Fluxoft\Rebar\Http\Presenters\PugPresenter($this->pugObserver);
 
 		$presenter->Template = $template;
-		$presenter->Layout   = $layout;
 		$this->assertEquals($template, $presenter->Template);
-		$this->assertEquals($layout, $presenter->Layout);
 
-		if (strlen($layout)) {
-			$this->smartyObserver
-				->expects($this->any())
-				->method('assign')
-				->willReturnMap([
-					[$data, null],
-					[['templateFile', $templatePath . $template], null]
-				]);
-			$renderTemplate = $templatePath.$layout;
-		} else {
-			$this->smartyObserver
-				->expects($this->once())
-				->method('assign')
-				->with($data);
-			$renderTemplate = $templatePath.$template;
-		}
-		$this->smartyObserver
+		$this->pugObserver
 			->expects($this->once())
-			->method('fetch')
-			->with($renderTemplate);
+			->method('renderFile')
+			->with(
+				$template,
+				['data' => $data]
+			);
 
 		$presenter->Render($this->responseObserver, $data);
 	}
 	public function renderProvider() {
 		return [
-			'noLayout' => [
-				'templatePath' => '/templatePath/',
-				'template' => 'template.html',
-				'layout' => '',
-				'data' => []
-			],
-			'withLayout' => [
-				'templatePath' => '/templatePath/',
-				'template' => 'template.html',
-				'layout' => 'layout.html',
+			'testRender' => [
+				'template' => 'template.pug',
 				'data' => []
 			]
 		];
 	}
 	public function testSetNonExistentProperty() {
-		$presenter = new Smarty(
-			$this->smartyObserver,
-			'/'
-		);
+		$presenter = new \Fluxoft\Rebar\Http\Presenters\PugPresenter($this->pugObserver);
 
 		$this->expectException(PropertyNotFoundException::class);
 		$this->expectExceptionMessage('The property NonExistent does not exist.');
 
 		$presenter->NonExistent = 'will fail';
+
+		unset($presenter);
 	}
 	public function testGetNonExistentProperty() {
-		$presenter = new Smarty(
-			$this->smartyObserver,
-			'/'
-		);
+		$presenter = new PugPresenter($this->pugObserver);
 
 		$this->expectException(PropertyNotFoundException::class);
 		$this->expectExceptionMessage('The property NonExistent does not exist.');
