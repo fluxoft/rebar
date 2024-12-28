@@ -79,7 +79,7 @@ class TextNotifierTest extends TestCase {
 
 	private function getPrivateProperty($object, $property) {
 		$reflection = new \ReflectionClass($object);
-		$property = $reflection->getProperty($property);
+		$property   = $reflection->getProperty($property);
 		$property->setAccessible(true);
 		return $property->getValue($object);
 	}

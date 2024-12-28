@@ -15,7 +15,7 @@ class HtmlNotifierTest extends TestCase {
 
 		$exception = new \Exception('Test Exception');
 
-		$expectedOutput = "<h1>An error occurred</h1>";
+		$expectedOutput  = "<h1>An error occurred</h1>";
 		$expectedOutput .= "<p>" . htmlspecialchars($exception->getMessage()) . "</p>";
 		$expectedOutput .= "<pre>" . htmlspecialchars($exception->getTraceAsString()) . "</pre>";
 
@@ -40,7 +40,7 @@ class HtmlNotifierTest extends TestCase {
 
 		$exception = new \Exception('Test Exception');
 
-		$expectedOutput = "<h1>An error occurred</h1>";
+		$expectedOutput  = "<h1>An error occurred</h1>";
 		$expectedOutput .= "<p>" . htmlspecialchars($exception->getMessage()) . "</p>";
 
 		$htmlNotifier
@@ -65,7 +65,7 @@ class HtmlNotifierTest extends TestCase {
 
 	private function getPrivateProperty($object, $property) {
 		$reflection = new \ReflectionClass($object);
-		$property = $reflection->getProperty($property);
+		$property   = $reflection->getProperty($property);
 		$property->setAccessible(true);
 		return $property->getValue($object);
 	}

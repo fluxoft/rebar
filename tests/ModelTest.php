@@ -121,7 +121,7 @@ class ModelTest extends TestCase {
 		$testModel = new TestModel();
 
 		// Set properties
-		$testModel->Property = 'validValue';
+		$testModel->Property         = 'validValue';
 		$testModel->OptionalProperty = 'Optional Value';
 
 		// Expected array for jsonSerialize
