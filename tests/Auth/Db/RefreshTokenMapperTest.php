@@ -6,6 +6,7 @@ use Fluxoft\Rebar\Auth\RefreshToken;
 use Fluxoft\Rebar\Auth\RefreshTokenMapperInterface;
 use Fluxoft\Rebar\Data\Db\MapperFactory;
 use Fluxoft\Rebar\Data\Db\Mappers\GenericSql;
+use Fluxoft\Rebar\Data\Db\Mappers\GenericSqlMapper;
 use Fluxoft\Rebar\Model;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -59,7 +60,7 @@ class RefreshTokenMapperTest extends TestCase {
 			'ExpiresAt' => date('Y-m-d H:i:s', strtotime('+1 day')),
 			'RevokedAt' => null,
 		]);
-	
+
 		// Mock the RefreshTokenMapper
 		/** @var ConcreteRefreshTokenMapper|MockObject $mapper */
 		$mapper = $this->getMockBuilder(ConcreteRefreshTokenMapper::class)
@@ -70,7 +71,7 @@ class RefreshTokenMapperTest extends TestCase {
 			])
 			->onlyMethods(['GetOne'])
 			->getMock();
-	
+
 		// Expect the `GetOne` method to be called with the correct filters
 		$mapper->expects($this->once())
 			->method('GetOne')
@@ -83,10 +84,10 @@ class RefreshTokenMapperTest extends TestCase {
 					$filters[4]->Property === 'RevokedAt' && $filters[4]->Operator === 'IS';
 			}))
 			->willReturn($expectedToken);
-	
+
 		// Act
 		$result = $mapper->GetRefreshToken($userId, $seriesId, $token, true);
-	
+
 		// Assert
 		$this->assertEquals($expectedToken, $result);
 	}
@@ -109,7 +110,7 @@ class RefreshTokenMapperTest extends TestCase {
 				'RevokedAt' => null,
 			])
 		];
-	
+
 		/** @var ConcreteRefreshTokenMapper|MockObject $mapper */
 		$mapper = $this->getMockBuilder(ConcreteRefreshTokenMapper::class)
 			->setConstructorArgs([
@@ -119,7 +120,7 @@ class RefreshTokenMapperTest extends TestCase {
 			])
 			->onlyMethods(['GetSet'])
 			->getMock();
-	
+
 		$mapper->expects($this->once())
 			->method('GetSet')
 			->with($this->callback(function ($filters) use ($userId) {
@@ -128,10 +129,10 @@ class RefreshTokenMapperTest extends TestCase {
 					$filters[0]->Value === $userId;
 			}))
 			->willReturn($expectedTokens);
-	
+
 		// Act
 		$result = $mapper->GetRefreshTokensByUserId($userId);
-	
+
 		// Assert
 		$this->assertEquals($expectedTokens, $result);
 	}
@@ -144,7 +145,7 @@ class RefreshTokenMapperTest extends TestCase {
 			'ExpiresAt' => date('Y-m-d H:i:s', strtotime('+1 day')),
 			'RevokedAt' => null,
 		]);
-	
+
 		/** @var ConcreteRefreshTokenMapper|MockObject $mapper */
 		$mapper = $this->getMockBuilder(ConcreteRefreshTokenMapper::class)
 			->setConstructorArgs([
@@ -154,14 +155,14 @@ class RefreshTokenMapperTest extends TestCase {
 			])
 			->onlyMethods(['Save'])
 			->getMock();
-	
+
 		$mapper->expects($this->once())
 			->method('Save')
 			->with($refreshToken);
-	
+
 		// Act
 		$mapper->SaveRefreshToken($refreshToken);
-	
+
 		// Assert
 		$this->addToAssertionCount(1); // Verify Save was called without exceptions
 	}
@@ -174,7 +175,7 @@ class RefreshTokenMapperTest extends TestCase {
 			'ExpiresAt' => date('Y-m-d H:i:s', strtotime('+1 day')),
 			'RevokedAt' => null,
 		]);
-	
+
 		/** @var ConcreteRefreshTokenMapper|MockObject $mapper */
 		$mapper = $this->getMockBuilder(ConcreteRefreshTokenMapper::class)
 			->setConstructorArgs([
@@ -184,7 +185,7 @@ class RefreshTokenMapperTest extends TestCase {
 			])
 			->onlyMethods(['Save'])
 			->getMock();
-	
+
 		$mapper->expects($this->once())
 			->method('Save')
 			->with($this->callback(function (DummyRefreshTokenModel $token) use ($refreshToken) {
@@ -194,10 +195,10 @@ class RefreshTokenMapperTest extends TestCase {
 					$token->SeriesId === $refreshToken->SeriesId &&
 					$token->Token === $refreshToken->Token;
 			}));
-	
+
 		// Act
 		$mapper->RevokeRefreshToken($refreshToken);
-	
+
 		// Assert
 		$this->addToAssertionCount(1); // Verify Save was called without exceptions
 	}
@@ -259,7 +260,7 @@ class RefreshTokenMapperTest extends TestCase {
 
 // Dummy classes
 // @codingStandardsIgnoreStart
-class ConcreteRefreshTokenMapper extends GenericSql implements RefreshTokenMapperInterface {
+class ConcreteRefreshTokenMapper extends GenericSqlMapper implements RefreshTokenMapperInterface {
 	use RefreshTokenMapperTrait;
 
 	protected array $propertyDbMap = [
@@ -288,7 +289,7 @@ class DummyRefreshTokenModel extends RefreshToken {
 
 class DummyInvalidModel extends Model {}
 
-class DummyRefreshTokenMapper_NoRefreshTokenMapperInterface extends GenericSql {
+class DummyRefreshTokenMapper_NoRefreshTokenMapperInterface extends GenericSqlMapper {
 	use RefreshTokenMapperTrait;
 
 	protected array $propertyDbMap = [
@@ -316,7 +317,7 @@ class DummyRefreshTokenMapper_NoMapperInterface implements RefreshTokenMapperInt
 	protected string $dbTable = 'refresh_tokens';
 }
 
-class DummyRefreshTokenMapperWithoutRefreshToken extends GenericSql implements RefreshTokenMapperInterface {
+class DummyRefreshTokenMapperWithoutRefreshToken extends GenericSqlMapper implements RefreshTokenMapperInterface {
 	use RefreshTokenMapperTrait;
 
 	protected array $propertyDbMap = [

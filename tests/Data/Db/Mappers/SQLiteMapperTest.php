@@ -7,7 +7,7 @@ use Fluxoft\Rebar\Model;
 use PDO;
 use PHPUnit\Framework\TestCase;
 
-class MySqlTest extends TestCase {
+class SQLiteMapperTest extends TestCase {
 	public function testQuoteElement() {
 		/** @var MapperFactory $mapperFactory */
 		$mapperFactory = $this->getMockBuilder(MapperFactory::class)
@@ -22,27 +22,27 @@ class MySqlTest extends TestCase {
 			->disableOriginalConstructor()
 			->getMock();
 
-		$mySql = new ConcreteMySql(
+		$sqlite = new ConcreteSQLite(
 			$mapperFactory,
 			$model,
 			$pdo
 		);
 
 		$element  = 'test';
-		$expected = '`test`';
-		$actual   = $mySql->PublicQuoteElement($element);
+		$expected = '"test"';
+		$actual   = $sqlite->PublicQuoteElement($element);
 		$this->assertEquals($expected, $actual);
 	}
 }
 
 // @codingStandardsIgnoreStart
-class ConcreteMySql extends MySql {
+class ConcreteSQLite extends SQLiteMapper {
 	protected array $propertyDbMap = [
-		'Id'  => 'id',
-		'Test' => 'test'
+		'Id'   => 'id',
+		'Name' => 'name'
 	];
-	public function PublicQuoteElement($element) {
-		return $this->QuoteElement($element);
+	public function PublicQuoteElement(string $element): string {
+		return $this->quoteElement($element);
 	}
 }
 // @codingStandardsIgnoreEnd

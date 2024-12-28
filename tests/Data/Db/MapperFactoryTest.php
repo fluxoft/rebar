@@ -5,7 +5,7 @@ namespace Fluxoft\Rebar\Data\Db;
 use Fluxoft\Rebar\Data\Db\Exceptions\MapperFactoryException;
 use Fluxoft\Rebar\Data\Db\MapperFactory;
 use Fluxoft\Rebar\Data\Db\Mappers\ConcreteModel;
-use Fluxoft\Rebar\Data\Db\Mappers\GenericSql;
+use Fluxoft\Rebar\Data\Db\Mappers\GenericSqlMapper;
 use Fluxoft\Rebar\Model;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -127,13 +127,13 @@ class MapperFactoryTest extends TestCase {
 class BadConcreteModelMapper {}
 class BadConcreteModel {}
 class ConcreteMapperFactory extends MapperFactory {}
-class ConcreteModelForMapperFactoryTestMapper extends GenericSql {
+class ConcreteModelForMapperFactoryTestMapper extends GenericSqlMapper {
 	protected string $idProperty = 'Foo';
 	protected string $dbTable       = 'foo';
 	protected array $propertyDbMap = ['Foo' => 'foo'];
 }
 class ConcreteModelForMapperFactoryTest extends Model {}
-class NoModelMapper extends GenericSql { // No corresponding model
+class NoModelMapper extends GenericSqlMapper { // No corresponding model
 	protected string $idProperty = 'Foo';
 	protected string $dbTable       = 'foo';
 	protected array $propertyDbMap = ['Foo' => 'foo'];

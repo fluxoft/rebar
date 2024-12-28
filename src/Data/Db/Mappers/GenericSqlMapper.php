@@ -24,7 +24,7 @@ use PDO;
  *
  * @package Fluxoft\Rebar\Data\Db\Mappers
  */
-abstract class GenericSql implements MapperInterface {
+abstract class GenericSqlMapper implements MapperInterface {
 	/** @var MapperFactory */
 	protected MapperFactory $mapperFactory;
 	/** @var Model */

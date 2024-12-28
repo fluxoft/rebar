@@ -6,12 +6,12 @@ use PDO;
 
 /**
  * Class MariaDb
- * This class is a MariaDB database mapper, extending the GenericSql mapper.
+ * This class is a MariaDB database mapper, extending the GenericSqlMapper.
  * It can be used to implement MariaDB-specific logic as needed.
  *
  * @package Fluxoft\Rebar\Data\Db\Mappers
  */
-abstract class MariaDb extends GenericSql {
+abstract class MariaDbMapper extends GenericSqlMapper {
 
 	/**
 	 * Format an identifier for use in SQL specific to MariaDB.

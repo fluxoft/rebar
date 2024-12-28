@@ -7,10 +7,10 @@ use Fluxoft\Rebar\Model;
 use PDO;
 use PHPUnit\Framework\TestCase;
 
-class SQLiteTest extends TestCase {
+class MariaDbMapperTest extends TestCase {
 	public function testQuoteElement() {
-		/** @var MapperFactory $mapperFactory */
-		$mapperFactory = $this->getMockBuilder(MapperFactory::class)
+		/** @var MapperFactory $mapperFactor */
+		$mapperFactor = $this->getMockBuilder(MapperFactory::class)
 			->disableOriginalConstructor()
 			->getMock();
 		/** @var Model $model */
@@ -22,27 +22,27 @@ class SQLiteTest extends TestCase {
 			->disableOriginalConstructor()
 			->getMock();
 
-		$sqlite = new ConcreteSQLite(
-			$mapperFactory,
+		$mariaDb = new ConcreteMariaDb(
+			$mapperFactor,
 			$model,
 			$pdo
 		);
 
 		$element  = 'test';
-		$expected = '"test"';
-		$actual   = $sqlite->PublicQuoteElement($element);
+		$expected = '`test`';
+		$actual   = $mariaDb->PublicQuoteElement($element);
 		$this->assertEquals($expected, $actual);
 	}
 }
 
 // @codingStandardsIgnoreStart
-class ConcreteSQLite extends SQLite {
+class ConcreteMariaDb extends MariaDbMapper {
 	protected array $propertyDbMap = [
-		'Id'   => 'id',
-		'Name' => 'name'
+		'Id'  => 'id',
+		'Test' => 'test'
 	];
-	public function PublicQuoteElement(string $element): string {
-		return $this->quoteElement($element);
+	public function PublicQuoteElement($element) {
+		return $this->QuoteElement($element);
 	}
 }
 // @codingStandardsIgnoreEnd

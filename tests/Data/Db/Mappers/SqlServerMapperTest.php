@@ -7,7 +7,7 @@ use Fluxoft\Rebar\Model;
 use PDO;
 use PHPUnit\Framework\TestCase;
 
-class OracleTest extends TestCase {
+class SqlServerMapperTest extends TestCase {
 	public function testQuoteElement() {
 		/** @var MapperFactory $mapperFactory */
 		$mapperFactory = $this->getMockBuilder(MapperFactory::class)
@@ -22,22 +22,22 @@ class OracleTest extends TestCase {
 			->disableOriginalConstructor()
 			->getMock();
 
-		$oracle = new ConcreteOracle(
+		$sqlServer = new ConcreteSqlServer(
 			$mapperFactory,
 			$model,
 			$pdo
 		);
 
 		$element  = 'test';
-		$expected = '"test"';
-		$actual   = $oracle->PublicQuoteElement($element);
+		$expected = '[test]';
+		$actual   = $sqlServer->PublicQuoteElement($element);
 		$this->assertEquals($expected, $actual);
 	}
 
 	/**
-	 * @dataProvider formatValueForInsertProvider
+	 * @dataProvider applyPaginationProvider
 	 */
-	public function testFormatValueForInsert(string $type, mixed $value, mixed $expected) {
+	public function testApplyPagination(string $sql, int $page, int $pageSize, string $expected) {
 		/** @var MapperFactory $mapperFactory */
 		$mapperFactory = $this->getMockBuilder(MapperFactory::class)
 			->disableOriginalConstructor()
@@ -51,54 +51,42 @@ class OracleTest extends TestCase {
 			->disableOriginalConstructor()
 			->getMock();
 
-		$oracle = new ConcreteOracle(
+		$sqlServer = new ConcreteSqlServer(
 			$mapperFactory,
 			$model,
 			$pdo
 		);
 
-		if ($expected === 'InvalidArgumentException') {
-			$this->expectException(\InvalidArgumentException::class);
-			$this->expectExceptionMessage("Invalid date/time format for value '$value'");
-		}
-
-		$actual = $oracle->PublicFormatValueForInsert($type, $value);
+		$actual = $sqlServer->PublicApplyPagination($sql, $page, $pageSize);
 		$this->assertEquals($expected, $actual);
 	}
 
-	public function formatValueForInsertProvider(): array {
+	public function applyPaginationProvider(): array {
 		return [
-			'Valid datetime string' => [
-				'type'     => 'datetime',
-				'value'    => '2024-12-31 15:30:00',
-				'expected' => '2024-12-31 15:30:00'
+			'No pagination needed' => [
+				'sql'      => 'SELECT * FROM Users',
+				'page'     => 1,
+				'pageSize' => 0,
+				'expected' => 'SELECT * FROM Users'
 			],
-			'Valid date string' => [
-				'type'     => 'date',
-				'value'    => '2024-12-31',
-				'expected' => '2024-12-31'
+			'Pagination with ORDER BY' => [
+				'sql'      => 'SELECT * FROM Users ORDER BY Id',
+				'page'     => 2,
+				'pageSize' => 10,
+				'expected' => 'SELECT * FROM Users ORDER BY Id OFFSET 10 ROWS FETCH NEXT 10 ROWS ONLY'
 			],
-			'Valid time string' => [
-				'type'     => 'time',
-				'value'    => '15:30:00',
-				'expected' => '15:30:00'
-			],
-			'Invalid datetime string' => [
-				'type'     => 'datetime',
-				'value'    => 'invalid-date',
-				'expected' => 'InvalidArgumentException'
-			],
-			'DateTime object' => [
-				'type'     => 'datetime',
-				'value'    => new \DateTime('2024-12-31 15:30:00'),
-				'expected' => '2024-12-31 15:30:00'
+			'Pagination without ORDER BY' => [
+				'sql'      => 'SELECT * FROM Users',
+				'page'     => 1,
+				'pageSize' => 10,
+				'expected' => 'SELECT * FROM Users ORDER BY (SELECT NULL) OFFSET 0 ROWS FETCH NEXT 10 ROWS ONLY'
 			]
 		];
 	}
 }
 
 // @codingStandardsIgnoreStart
-class ConcreteOracle extends Oracle {
+class ConcreteSqlServer extends SqlServerMapper {
 	protected array $propertyDbMap = [
 		'Id'   => 'id',
 		'Name' => 'name'
@@ -106,8 +94,8 @@ class ConcreteOracle extends Oracle {
 	public function PublicQuoteElement(string $element): string {
 		return $this->quoteElement($element);
 	}
-	public function PublicFormatValueForInsert(string $type, mixed $value): mixed {
-		return $this->formatValueForInsert($type, $value);
+	public function PublicApplyPagination(string $sql, int $page, int $pageSize): string {
+		return $this->applyPagination($sql, $page, $pageSize);
 	}
 }
 // @codingStandardsIgnoreEnd

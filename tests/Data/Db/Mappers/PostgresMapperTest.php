@@ -7,7 +7,7 @@ use Fluxoft\Rebar\Model;
 use PDO;
 use PHPUnit\Framework\TestCase;
 
-class PostgresTest extends TestCase {
+class PostgresMapperTest extends TestCase {
 	public function testQuoteElement() {
 		/** @var MapperFactory $mapperFactory */
 		$mapperFactory = $this->getMockBuilder(MapperFactory::class)
@@ -98,7 +98,7 @@ class PostgresTest extends TestCase {
 }
 
 // @codingStandardsIgnoreStart
-class ConcretePostgres extends Postgres {
+class ConcretePostgres extends PostgresMapper {
 	protected array $propertyDbMap = [
 		'Id'   => 'id',
 		'Name' => 'name'

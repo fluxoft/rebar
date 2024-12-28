@@ -6,7 +6,7 @@ use Fluxoft\Rebar\Data\Db\Exceptions\MapperException;
 use Fluxoft\Rebar\Data\Db\Filter;
 use Fluxoft\Rebar\Data\Db\Join;
 use Fluxoft\Rebar\Data\Db\MapperFactory;
-use Fluxoft\Rebar\Data\Db\Mappers\GenericSql;
+use Fluxoft\Rebar\Data\Db\Mappers\GenericSqlMapper;
 use Fluxoft\Rebar\Data\Db\Property;
 use Fluxoft\Rebar\Data\Db\Sort;
 use Fluxoft\Rebar\Model;
@@ -14,8 +14,8 @@ use InvalidArgumentException;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
-class GenericSqlTest extends TestCase {
-	protected ConcreteGenericSql $mapper;
+class GenericSqlMapperTest extends TestCase {
+	protected ConcreteGenericSqlMapper $mapper;
 
 	private $mapperFactory;
 	private $model;
@@ -32,7 +32,7 @@ class GenericSqlTest extends TestCase {
 		/** @var \PDO|MockObject $writer */
 		$this->writer = $this->createMock(\PDO::class);
 
-		$this->mapper = new ConcreteGenericSql(
+		$this->mapper = new ConcreteGenericSqlMapper(
 			$this->mapperFactory,
 			$this->model,
 			$this->reader,
@@ -1533,7 +1533,7 @@ class GenericSqlTest extends TestCase {
 
 	public function testExecuteQuery() {
 		// Create the specialized subclass for this test
-		$mapper = new ConcreteGenericSqlForExecuteTest(
+		$mapper = new ConcreteGenericSqlMapperForExecuteTest(
 			$this->mapperFactory,
 			$this->model,
 			$this->reader,
@@ -1583,7 +1583,7 @@ class GenericSqlTest extends TestCase {
 		$this->expectExceptionMessage('Error executing query: Execution error');
 		$this->expectExceptionCode(5678);
 
-		$mapper = new ConcreteGenericSqlForExecuteTest(
+		$mapper = new ConcreteGenericSqlMapperForExecuteTest(
 			$this->mapperFactory,
 			$this->model,
 			$this->reader,
@@ -1612,7 +1612,7 @@ class ConcreteModel extends Model {
 	}
 }
 
-class ConcreteGenericSql extends GenericSql {
+class ConcreteGenericSqlMapper extends GenericSqlMapper {
 	protected string $idProperty = 'Id';
 	protected array $propertyDbMap = [
 		'Id' => 'id',
@@ -1718,7 +1718,7 @@ class ConcreteGenericSql extends GenericSql {
 		return $this->executeReturn;
 	}
 }
-class ConcreteGenericSqlForExecuteTest extends GenericSql {
+class ConcreteGenericSqlMapperForExecuteTest extends GenericSqlMapper {
 	protected string $idProperty = 'Id';
 	protected array $propertyDbMap = [
 		'Id' => 'id',

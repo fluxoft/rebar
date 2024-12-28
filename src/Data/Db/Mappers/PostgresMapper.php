@@ -6,12 +6,12 @@ use PDO;
 
 /**
  * Class Postgres
- * This class is a PostgreSQL database mapper, extending the GenericSql mapper.
+ * This class is a PostgreSQL database mapper, extending the GenericSqlMapper.
  * It can be used to implement PostgreSQL-specific logic as needed.
  *
  * @package Fluxoft\Rebar\Data\Db\Mappers
  */
-abstract class Postgres extends GenericSql {
+abstract class PostgresMapper extends GenericSqlMapper {
 	/**
 	 * Format an identifier for use in SQL specific to PostgreSQL.
 	 * PostgreSQL uses double quotes (") to quote identifiers.

@@ -6,12 +6,12 @@ use PDO;
 
 /**
  * Class SqlServer
- * This class is a SQL Server database mapper, extending the GenericSql mapper.
+ * This class is a SQL Server database mapper, extending the GenericSqlMapper.
  * It can be used to implement SQL Server-specific logic as needed.
  *
  * @package Fluxoft\Rebar\Data\Db\Mappers
  */
-abstract class SqlServer extends GenericSql {
+abstract class SqlServerMapper extends GenericSqlMapper {
 	/**
 	 * Format an identifier for use in SQL specific to SQL Server.
 	 * SQL Server uses square brackets ([]) to quote identifiers.

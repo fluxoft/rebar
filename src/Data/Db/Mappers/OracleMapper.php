@@ -6,12 +6,12 @@ use PDO;
 
 /**
  * Class Oracle
- * This class is an Oracle database mapper, extending the GenericSql mapper.
+ * This class is an Oracle database mapper, extending the GenericSqlMapper.
  * It can be used to implement Oracle-specific logic as needed.
  *
  * @package Fluxoft\Rebar\Data\Db\Mappers
  */
-abstract class Oracle extends GenericSql {
+abstract class OracleMapper extends GenericSqlMapper {
 	/**
 	 * Format an identifier for use in SQL specific to Oracle.
 	 * Oracle uses double quotes (") to quote identifiers.

@@ -7,10 +7,10 @@ use Fluxoft\Rebar\Model;
 use PDO;
 use PHPUnit\Framework\TestCase;
 
-class MariaDbTest extends TestCase {
+class MySqlMapperTest extends TestCase {
 	public function testQuoteElement() {
-		/** @var MapperFactory $mapperFactor */
-		$mapperFactor = $this->getMockBuilder(MapperFactory::class)
+		/** @var MapperFactory $mapperFactory */
+		$mapperFactory = $this->getMockBuilder(MapperFactory::class)
 			->disableOriginalConstructor()
 			->getMock();
 		/** @var Model $model */
@@ -22,21 +22,21 @@ class MariaDbTest extends TestCase {
 			->disableOriginalConstructor()
 			->getMock();
 
-		$mariaDb = new ConcreteMariaDb(
-			$mapperFactor,
+		$mySql = new ConcreteMySql(
+			$mapperFactory,
 			$model,
 			$pdo
 		);
 
 		$element  = 'test';
 		$expected = '`test`';
-		$actual   = $mariaDb->PublicQuoteElement($element);
+		$actual   = $mySql->PublicQuoteElement($element);
 		$this->assertEquals($expected, $actual);
 	}
 }
 
 // @codingStandardsIgnoreStart
-class ConcreteMariaDb extends MariaDb {
+class ConcreteMySql extends MySqlMapper {
 	protected array $propertyDbMap = [
 		'Id'  => 'id',
 		'Test' => 'test'
