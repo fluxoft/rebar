@@ -115,6 +115,27 @@ class ModelTest extends TestCase {
 		// Verify that the property is no longer in modified properties
 		$this->assertArrayNotHasKey('Property', $model->GetModifiedProperties());
 	}
+
+	public function testJsonSerialize() {
+		// Create an instance of TestModel
+		$testModel = new TestModel();
+
+		// Set properties
+		$testModel->Property = 'validValue';
+		$testModel->OptionalProperty = 'Optional Value';
+
+		// Expected array for jsonSerialize
+		$expectedJson = [
+			'Property' => 'validValue',
+			'OptionalProperty' => 'Optional Value'
+		];
+
+		// Assert that jsonSerialize produces the correct array
+		$this->assertSame($expectedJson, $testModel->jsonSerialize());
+
+		// Assert that json_encode works as expected with the model
+		$this->assertSame(json_encode($expectedJson), json_encode($testModel));
+	}
 }
 /**
  * Class TestModel used to test the abstract Model class.
