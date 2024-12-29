@@ -23,4 +23,13 @@ class ContainerDefinitionTest extends TestCase {
 
 		new ContainerDefinition($nonExistentClass);
 	}
+
+	public function testThrowsExceptionForNonStringClass(): void {
+		$nonStringDependencyName = 12345;
+
+		$this->expectException(\InvalidArgumentException::class);
+		$this->expectExceptionMessage('Dependency for class \'PDO\' must be a string key. Found: ' . gettype($nonStringDependencyName));
+
+		new ContainerDefinition('PDO', [$nonStringDependencyName]);
+	}
 }

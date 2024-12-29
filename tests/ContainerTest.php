@@ -123,83 +123,83 @@ class ContainerTest extends TestCase {
 
 	public function testLoadDefinitionsWithContainerDefinition() {
 		$container = new Container();
-	
+
 		$definitions = [
 			'DbReaderConnectionString' => 'sqlite::memory:',
 			'DbReader' => new ContainerDefinition(\PDO::class, ['DbReaderConnectionString']),
 		];
-	
+
 		$container->LoadDefinitions($definitions);
-	
+
 		// Verify the scalar value
 		$this->assertEquals('sqlite::memory:', $container['DbReaderConnectionString']);
 		// Verify the object
 		$this->assertInstanceOf(\PDO::class, $container['DbReader']);
 	}
-	
+
 	public function testLoadDefinitionsWithInvalidDefinitionType() {
 		$container = new Container();
-	
+
 		$definitions = [
 			'InvalidType' => new \stdClass(), // Invalid definition
 		];
-	
+
 		$this->expectException(\InvalidArgumentException::class);
 		$this->expectExceptionMessage(
 			"Invalid definition for key 'InvalidType'. Expected a ContainerDefinition, alias string, or scalar."
 		);
-	
+
 		$container->LoadDefinitions($definitions);
 	}
-	
-	
+
+
 	public function testLoadDefinitionsThrowsOnNonExistentDependency() {
 		$container = new Container();
-	
+
 		$definitions = [
 			'WidgetService' => new ContainerDefinition(WidgetService::class, ['NonExistentDependency']),
 		];
-	
+
+		$this->expectException(\InvalidArgumentException::class);
+		$this->expectExceptionMessage(
+			"Invalid dependency 'NonExistentDependency' for key 'WidgetService'. It is not defined in the container."
+		);
+
 		$container->LoadDefinitions($definitions);
-	
-		$this->expectException(\Fluxoft\Rebar\Exceptions\NotFoundException::class);
-		$this->expectExceptionMessage('Value "NonExistentDependency" is not defined.');
-	
-		$container['WidgetService'];
 	}
-	
+
 	public function testLoadDefinitionsWithComplexDependencyGraph() {
 		$container = new Container();
-	
+
 		$definitions = [
 			'DbReaderConnectionString' => 'sqlite::memory:',
 			'DbReader' => new ContainerDefinition(\PDO::class, ['DbReaderConnectionString']),
 			'WidgetMapper' => new ContainerDefinition(WidgetMapper::class, ['DbReader']),
 			'WidgetService' => new ContainerDefinition(WidgetService::class, ['WidgetMapper']),
 		];
-	
+
 		$container->LoadDefinitions($definitions);
-	
+
 		$widgetService = $container['WidgetService'];
 		$this->assertInstanceOf(WidgetService::class, $widgetService);
-	
+
 		$widgetMapper = $container['WidgetMapper'];
 		$this->assertInstanceOf(WidgetMapper::class, $widgetMapper);
-	
+
 		$dbReader = $container['DbReader'];
 		$this->assertInstanceOf(\PDO::class, $dbReader);
 	}
 
 	public function testLoadDefinitionsWithAlias() {
 		$container = new Container();
-	
+
 		$definitions = [
 			'ActualKey' => 'ActualValue',
 			'Alias' => 'ActualKey',
 		];
-	
+
 		$container->LoadDefinitions($definitions);
-	
+
 		$this->assertTrue($container->has('Alias'));
 		$this->assertEquals('ActualValue', $container->get('Alias'));
 		$this->assertEquals('ActualValue', $container->get('ActualKey'));
@@ -207,14 +207,14 @@ class ContainerTest extends TestCase {
 
 	public function testLoadDefinitionsWithAliasReverseOrder() {
 		$container = new Container();
-	
+
 		$definitions = [
 			'Alias' => 'ActualKey',
 			'ActualKey' => 'ActualValue',
 		];
-	
+
 		$container->LoadDefinitions($definitions);
-	
+
 		$this->assertTrue($container->has('Alias'));
 		$this->assertEquals('ActualValue', $container->get('Alias'));
 		$this->assertEquals('ActualValue', $container->get('ActualKey'));

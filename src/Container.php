@@ -34,13 +34,26 @@ class Container implements \ArrayAccess, ContainerInterface {
 			}
 			// Skip alias resolution for now
 		}
-	
+
 		// Second pass: resolve aliases
 		foreach ($definitions as $key => $value) {
 			if (is_string($value) && isset($this[$value])) {
 				$this[$key] = fn() => $this[$value]; // Alias resolution
 			} elseif (is_string($value) && !$this->offsetExists($value)) {
 				continue; // This must be a scalar value, do not change it.
+			}
+		}
+
+		// Third pass: validate dependencies
+		foreach ($definitions as $key => $value) {
+			if ($value instanceof ContainerDefinition) {
+				foreach ($value->Dependencies as $dependency) {
+					if (!isset($this[$dependency])) {
+						throw new \InvalidArgumentException(
+							"Invalid dependency '$dependency' for key '$key'. It is not defined in the container."
+						);
+					}
+				}
 			}
 		}
 	}
