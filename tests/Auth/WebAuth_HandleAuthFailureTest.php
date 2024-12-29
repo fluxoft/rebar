@@ -20,7 +20,7 @@ class WebAuth_HandleAuthFailureTest extends TestCase {
 		/** @var Request|MockObject $mockRequest */
 		$mockRequest = $this->getMockBuilder(Request::class)
 			->disableOriginalConstructor()
-			->onlyMethods(['__get'])
+			->onlyMethods(['__get', 'Server'])
 			->getMock();
 
 		$mockRequest
@@ -34,6 +34,10 @@ class WebAuth_HandleAuthFailureTest extends TestCase {
 				}
 				return null;
 			});
+		$mockRequest
+			->method('Server')
+			->with('QUERY_STRING', '')
+			->willReturn('test=1');
 
 		$expectedLoginUrl = '/auth/login?redirect=%2Ftest%3Ftest%3D1';
 

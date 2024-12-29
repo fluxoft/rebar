@@ -103,7 +103,7 @@ class Router {
 	 * @throws AuthenticationException
 	 */
 	public function Route(Request $request, Response $response) {
-		$request = $this->processMiddleware($request, $response);
+		$this->processMiddleware($request, $response);
 
 		$route = $this->getRoute($request->Path);
 
@@ -162,9 +162,9 @@ class Router {
 	 *
 	 * @param Request $request
 	 * @param Response $response
-	 * @return Request
+	 * @return Response
 	 */
-	protected function processMiddleware(Request $request, Response $response) {
+	protected function processMiddleware(Request $request, Response $response): Response {
 		$middlewareStack = $this->middlewareStack;
 
 		$next = function() use ($request, $response, &$middlewareStack, &$next) {
