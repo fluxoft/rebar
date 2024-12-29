@@ -49,6 +49,10 @@ class Environment implements \ArrayAccess, \Iterator {
 	public function __clone(): void {
 		throw new EnvironmentException('Cloning not allowed.');
 	}
+	final private function __construct() {
+		$this->configureDefaultCookieSettings();
+	}
+
 	protected array $defaultCookieSettings = [
 		'expires'  => 0, // Default to session cookies
 		'path'     => '/', // Default to root path
@@ -56,10 +60,18 @@ class Environment implements \ArrayAccess, \Iterator {
 		'secure'   => null, // Will be dynamically set in the constructor
 		'httponly' => true // Default to HTTP-only cookies for security
 	];
-	final private function __construct() {
-		$this->defaultCookieSettings['domain'] = $this->ServerParams['HTTP_HOST'] ?? null;
-		$this->defaultCookieSettings['secure'] = isset($this->ServerParams['HTTPS']) &&
-			$this->ServerParams['HTTPS'] !== 'off';
+	protected function configureDefaultCookieSettings(): void {
+		$serverParams = array_change_key_case($this->ServerParams, CASE_LOWER);
+
+		$httpHost = $serverParams['http_host'] ?? null;
+		if ($httpHost) {
+			$this->defaultCookieSettings['domain'] = explode(':', $httpHost)[0];
+		} else {
+			$this->defaultCookieSettings['domain'] = null;
+		}
+		$this->defaultCookieSettings['secure'] =
+			(isset($serverParams['https']) && strtolower($serverParams['https']) !== 'off') ||
+			(isset($serverParams['http_x_forwarded_proto']) && strtolower($serverParams['http_x_forwarded_proto']) === 'https');
 		$this->properties['CookieSettings']    = $this->defaultCookieSettings;
 	}
 

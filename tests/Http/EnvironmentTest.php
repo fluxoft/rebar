@@ -520,7 +520,7 @@ class EnvironmentTest extends TestCase {
 		/** @var MockableEnvironment $environment */
 		$environment = MockableEnvironment::GetInstance();
 		$environment->Reset();
-	
+
 		$validSettings = [
 			'expires' => time() + 3600,
 			'path' => '/test',
@@ -528,26 +528,95 @@ class EnvironmentTest extends TestCase {
 			'secure' => true,
 			'httponly' => false
 		];
-	
+
 		$environment->SetCookieSettings($validSettings);
-	
+
 		$expectedSettings = array_merge($environment->GetDefaultCookieSettings(), $validSettings);
 		$this->assertSame($expectedSettings, $environment->CookieSettings);
 	}
-	
+
 	public function testSetCookieSettingsWithUnexpectedKeysThrowsException(): void {
 		/** @var MockableEnvironment $environment */
 		$environment = MockableEnvironment::GetInstance();
 		$environment->Reset();
-	
+
 		$invalidSettings = [
 			'invalidKey' => 'value'
 		];
-	
+
 		$this->expectException(EnvironmentException::class);
 		$this->expectExceptionMessage('Unexpected cookie settings: invalidKey');
-	
+
 		$environment->SetCookieSettings($invalidSettings);
+	}
+
+	public function testConfigureDefaultCookieSettings(): void {
+		/** @var MockableEnvironment $environment */
+		$environment = MockableEnvironment::GetInstance();
+
+		// Test with "localhost"
+		$environment->Reset();
+		$environment->SetServerGlobal(['HTTP_HOST' => 'localhost']);
+		$environment->PublicConfigureDefaultCookieSettings();
+		$this->assertEquals(
+			'localhost',
+			$environment->GetDefaultCookieSettings()['domain'],
+			'Failed asserting that "localhost" is set correctly as domain.'
+		);
+		$this->assertFalse(
+			$environment->GetDefaultCookieSettings()['secure'],
+			'Failed asserting that "secure" is false when no HTTPS is present.'
+		);
+
+		// Test with "localhost:8000"
+		$environment->Reset();
+		$environment->SetServerGlobal(['HTTP_HOST' => 'localhost:8000']);
+		$environment->PublicConfigureDefaultCookieSettings();
+		$this->assertEquals(
+			'localhost',
+			$environment->GetDefaultCookieSettings()['domain'],
+			'Failed asserting that "localhost" is extracted correctly from "localhost:8000".'
+		);
+		$this->assertFalse(
+			$environment->GetDefaultCookieSettings()['secure'],
+			'Failed asserting that "secure" is false when no HTTPS is present.'
+		);
+
+		// Test with HTTPS enabled
+		$environment->Reset();
+		$environment->SetServerGlobal(['HTTP_HOST' => 'localhost', 'HTTPS' => 'on']);
+		$environment->PublicConfigureDefaultCookieSettings();
+		$this->assertTrue(
+			$environment->GetDefaultCookieSettings()['secure'],
+			'Failed asserting that "secure" is true when HTTPS is present.'
+		);
+
+		// Test with HTTPS disabled
+		$environment->Reset();
+		$environment->SetServerGlobal(['HTTP_HOST' => 'localhost', 'HTTPS' => 'off']);
+		$environment->PublicConfigureDefaultCookieSettings();
+		$this->assertFalse(
+			$environment->GetDefaultCookieSettings()['secure'],
+			'Failed asserting that "secure" is false when HTTPS is explicitly off.'
+		);
+
+		// Test with "X-Forwarded-Proto" for HTTPS
+		$environment->Reset();
+		$environment->SetServerGlobal(['HTTP_HOST' => 'localhost', 'HTTP_X_FORWARDED_PROTO' => 'https']);
+		$environment->PublicConfigureDefaultCookieSettings();
+		$this->assertTrue(
+			$environment->GetDefaultCookieSettings()['secure'],
+			'Failed asserting that "secure" is true when X-Forwarded-Proto is "https".'
+		);
+
+		// Test with "X-Forwarded-Proto" for HTTP
+		$environment->Reset();
+		$environment->SetServerGlobal(['HTTP_HOST' => 'localhost', 'HTTP_X_FORWARDED_PROTO' => 'http']);
+		$environment->PublicConfigureDefaultCookieSettings();
+		$this->assertFalse(
+			$environment->GetDefaultCookieSettings()['secure'],
+			'Failed asserting that "secure" is false when X-Forwarded-Proto is "http".'
+		);
 	}
 }
 
@@ -601,6 +670,11 @@ class MockableEnvironment extends Environment {
 	 */
 	protected function getRawInput() {
 		return $this->rawInput;
+	}
+
+	// public method to call configureDefaultCookieSettings:
+	public function PublicConfigureDefaultCookieSettings(): void {
+		$this->configureDefaultCookieSettings();
 	}
 
 	// public getter for defaultCookieSettings
