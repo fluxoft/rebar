@@ -280,6 +280,9 @@ abstract class GenericSqlMapper implements MapperInterface {
 			$this->propertyDbMap // Only include mapped properties
 		);
 
+		// Do not include the Id property in the INSERT query
+		unset($properties[$this->idProperty]);
+
 		$merged = array_replace_recursive($properties, $model->GetModifiedProperties());
 
 		$insertQuery = $this->getInsertQuery($merged);
@@ -348,7 +351,8 @@ abstract class GenericSqlMapper implements MapperInterface {
 			$stmt->execute($params);
 			return $fetch ? $stmt->fetchAll(PDO::FETCH_ASSOC) : null;
 		} catch (\PDOException $e) {
-			throw new MapperException('Error executing query: '.$e->getMessage(), $e->getCode(), $e);
+			$code = is_numeric($e->getCode()) ? (int) $e->getCode() : 0;
+			throw new MapperException('Error executing query: '.$e->getMessage(), $code, $e);
 		}
 	}
 
