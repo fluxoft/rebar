@@ -4,6 +4,7 @@ namespace Fluxoft\Rebar\Auth;
 
 use Fluxoft\Rebar\Auth\Exceptions\InvalidCredentialsException;
 use Fluxoft\Rebar\Http\Request;
+use Fluxoft\Rebar\Http\Response;
 
 abstract class BaseAuth implements AuthInterface {
 	public function __construct(
@@ -60,6 +61,10 @@ abstract class BaseAuth implements AuthInterface {
 		return $reply;
 	}
 
+	public function HandleAuthFailure(Request $request, Response $response): void {
+		unset($request); // unused
+		$response->Halt(403, 'Access denied');
+	}
 
 	/**
 	 * Logout logic for specific auth implementations can override this as needed.

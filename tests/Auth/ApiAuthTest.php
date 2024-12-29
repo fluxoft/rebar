@@ -5,6 +5,7 @@ namespace Fluxoft\Rebar\Auth;
 use Fluxoft\Rebar\Auth\Exceptions\InvalidTokenException;
 use Fluxoft\Rebar\Http\Cookies;
 use Fluxoft\Rebar\Http\Request;
+use Fluxoft\Rebar\Http\Response;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
@@ -439,5 +440,19 @@ class ApiAuthTest extends TestCase {
 		// Assert the expected error response
 		$this->assertFalse($reply->Auth);
 		$this->assertEquals('Invalid token payload.', $reply->Message);
+	}
+
+	public function testHandleAuthFailure(): void {
+		$auth = new ApiAuth($this->userMapperObserver, $this->tokenManagerObserver);
+
+		/** @var Response|MockObject $mockResponse */
+		$mockResponse = $this->createMock(Response::class);
+
+		$mockResponse
+			->expects($this->once())
+			->method('Halt')
+			->with(403, 'Access denied');
+
+		$auth->HandleAuthFailure($this->requestObserver, $mockResponse);
 	}
 }

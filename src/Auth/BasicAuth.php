@@ -4,6 +4,7 @@ namespace Fluxoft\Rebar\Auth;
 
 use Fluxoft\Rebar\Auth\Exceptions\BasicAuthChallengeException;
 use Fluxoft\Rebar\Http\Request;
+use Fluxoft\Rebar\Http\Response;
 use RuntimeException;
 
 /**
@@ -52,5 +53,15 @@ class BasicAuth implements AuthInterface {
 		unset($request);
 
 		throw new RuntimeException('Logout is not supported with Basic Auth');
+	}
+
+	/**
+	 * In this implementation, the HandleAuthFailure method sends a 403 response, because the 401 challenge
+	 * has already been issued and answered, but the user is still not authenticated (presumably because they
+	 * entered the wrong credentials).
+	 */
+	public function HandleAuthFailure(Request $request, Response $response): void {
+		unset($request); // unused
+		$response->Halt(403, 'Access denied');
 	}
 }

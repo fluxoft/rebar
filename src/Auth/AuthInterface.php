@@ -2,6 +2,7 @@
 namespace Fluxoft\Rebar\Auth;
 
 use Fluxoft\Rebar\Http\Request;
+use Fluxoft\Rebar\Http\Response;
 
 /**
  * Interface AuthInterface
@@ -33,4 +34,6 @@ interface AuthInterface {
 	 * @return Reply
 	 */
 	public function Logout(Request $request): Reply;
+
+	public function HandleAuthFailure(Request $request, Response $response): void;
 }

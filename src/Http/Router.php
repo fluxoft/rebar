@@ -172,7 +172,7 @@ class Router {
 			if ($middleware) {
 				return $middleware->Process($request, $response, $next);
 			}
-			return $request;
+			return $response;
 		};
 
 		return $next();
