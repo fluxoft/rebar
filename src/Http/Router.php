@@ -268,9 +268,21 @@ class Router {
 			));
 		}
 
-		// Assign the next part as the action, or default to 'Default'
-		$routeParts['action'] = !empty($pathParts) ? ucwords(array_shift($pathParts)) : 'Default';
-		$routeParts['url']    = $pathParts;
+		// Check if the next part is a valid method; otherwise, use 'Default'
+		$nextPart = !empty($pathParts) ? ucwords(array_shift($pathParts)) : 'Default';
+
+		if (method_exists($routeParts['controller'], $nextPart)) {
+			$routeParts['action'] = $nextPart;
+		} else {
+			$routeParts['action'] = 'Default';
+
+			// If the next part was not a valid method, treat it as a parameter
+			if (!empty($nextPart) && $nextPart !== 'Default') {
+				array_unshift($pathParts, strtolower($nextPart));
+			}
+		}
+
+		$routeParts['url'] = $pathParts;
 
 		return $routeParts;
 	}

@@ -159,31 +159,31 @@ class RouterTest extends TestCase {
 	public function testResolveRouteDefinitionThrowsExceptionForInvalidRoute() {
 		$this->expectException(RouterException::class);
 		$this->expectExceptionMessage('Routes must be instance of the Route class.');
-	
+
 		$router = new TestRouter('\\App\\Controllers');
-	
+
 		// Directly inject an invalid route into the routes array for testing
 		$invalidRoute = new \stdClass(); // Not a Route instance
 		$reflection   = new \ReflectionClass($router);
 		$property     = $reflection->getProperty('routes');
 		$property->setAccessible(true);
 		$property->setValue($router, [$invalidRoute]);
-	
+
 		$router->PublicResolveRouteDefinition('/');
 	}
 
 	public function testProcessMiddlewareModifiesRequest() {
 		$router           = new TestRouter('\\App\\Controllers');
 		$modifiedResponse = $this->createMock(Response::class);
-	
+
 		/** @var MiddlewareInterface|MockObject $middleware */
 		$middleware = $this->createMock(MiddlewareInterface::class);
 		$middleware->expects($this->once())
 			->method('Process')
 			->willReturn($modifiedResponse);
-	
+
 		$router->AddMiddleware($middleware);
-	
+
 		$processedResponse = $router->PublicProcessMiddleware($this->requestObserver, $this->responseObserver);
 		$this->assertSame($modifiedResponse, $processedResponse);
 	}
@@ -232,47 +232,47 @@ class RouterTest extends TestCase {
 
 	public function intuitiveRouteProvider() {
 		return [
-			// Case: Default action and no params
-			[
+			'Case: Default action and no params' => [
 				'/validController/default',
 				'\\App\\Controllers\\ValidController',
 				'Default',
 				[]
 			],
-			// Case: Nested controller with params
-			[
+			'Case: Nested controller with params' => [
 				'/package/contents/default/one/two',
 				'\\App\\Controllers\\Package\\Contents',
 				'Default',
 				['one', 'two']
 			],
-			// Case: Main controller with index action
-			[
+			'Case: Main controller with index action' => [
 				'/main/index',
 				'\\App\\Controllers\\Main',
 				'Index',
 				[]
 			],
-			// Case: Main controller with extra params
-			[
+			'Case: Main controller with extra params' => [
 				'/main/default/param1/param2',
 				'\\App\\Controllers\\Main',
 				'Default',
 				['param1', 'param2']
 			],
-			// Case: Default fallback to main/index
-			[
+			'Case: Default fallback to main/index' => [
 				'/',
 				'\\App\\Controllers\\Main',
 				'Default',
 				[]
 			],
-			// Case: Single path segment treated as controller and default action
-			[
+			'Case: Single path segment treated as controller and default action' => [
 				'/singleController',
 				'\\App\\Controllers\\SingleController',
 				'Default',
 				[]
+			],
+			'Case: Route to controller with no action, but with a param' => [
+				'/singleController/param1',
+				'\\App\\Controllers\\SingleController',
+				'Default',
+				['param1']
 			],
 		];
 	}
@@ -282,35 +282,35 @@ class RouterTest extends TestCase {
 		$this->expectExceptionMessage(
 			'Controller class \\App\\Controllers\\InvalidController must extend Fluxoft\\Rebar\\Http\\Controller.'
 		);
-	
+
 		$router = new TestRouter('\\App\\Controllers');
-	
+
 		// Simulate a class that exists but does not extend Controller
 		eval('namespace App\\Controllers; class InvalidController {}');
 		$router->PublicResolveController('InvalidController');
 	}
-	
+
 	public function testResolveControllerWithNamespaceAndNonExistentClass() {
 		$this->expectException(RouterException::class);
 		$this->expectExceptionMessage('The controller \\App\\Controllers\\NonExistentController specified does not exist.');
-	
+
 		$router = new TestRouter('\\App\\Controllers');
 		$router->PublicResolveController('NonExistentController');
 	}
-	
+
 	public function testResolveControllerWithEmptyNamespace() {
 		$router = new TestRouter('');
-		
+
 		// Simulate a valid FQCN without a namespace
 		eval('class GlobalController extends \\Fluxoft\\Rebar\\Http\\Controller {}');
-		
+
 		$resolvedController = $router->PublicResolveController('GlobalController');
 		$this->assertEquals('\\GlobalController', $resolvedController);
 	}
-	
+
 	public function testResolveControllerWithNamespaceAndValidController() {
 		$router = new TestRouter('\\App\\Controllers');
-	
+
 		$resolvedController = $router->PublicResolveController('ValidController');
 		$this->assertEquals('\\App\\Controllers\\ValidController', $resolvedController);
 	}
@@ -318,19 +318,19 @@ class RouterTest extends TestCase {
 	public function testResolveControllerThrowsExceptionForValidFQCNNonControllerClass() {
 		$this->expectException(RouterException::class);
 		$this->expectExceptionMessage('Controller class \\App\\ValidClass must extend Fluxoft\\Rebar\\Http\\Controller.');
-	
+
 		$router = new TestRouter('\\App\\Controllers');
-	
+
 		$router->PublicResolveController(ValidClass::class);
 	}
 
 	public function testResolveControllerWithoutNamespace() {
 		$this->expectException(RouterException::class);
 		$this->expectExceptionMessage('The controller \\TestController specified does not exist.');
-	
+
 		// Instantiate a TestRouter with an empty ControllerNamespace
 		$router = new TestRouter('');
-	
+
 		// Attempt to resolve a controller without a namespace
 		$router->PublicResolveController('TestController');
 	}
@@ -338,22 +338,22 @@ class RouterTest extends TestCase {
 	public function testRouteCallsControllerLifecycleMethods() {
 		// Reset the called methods before the test
 		TestController::resetCalledMethods();
-	
+
 		$router = new TestRouter('App\\Controllers');
-	
+
 		// Add a route pointing to the TestController
 		$route = new Route('/test', TestController::class, 'Action1');
 		$router->AddRoute($route);
-	
+
 		$this->requestObserver
 			->expects($this->once())
 			->method('__get')
 			->with('Path')
 			->willReturn('/test');
-	
+
 		// Execute the Route method
 		$router->Route($this->requestObserver, $this->responseObserver);
-	
+
 		// Assert that the lifecycle methods were called
 		$this->assertContains('Setup', TestController::$calledMethods);
 		$this->assertContains('Action1', TestController::$calledMethods);
@@ -367,29 +367,29 @@ class RouterTest extends TestCase {
 			$this->requestObserver,
 			$this->responseObserver
 		);
-	
+
 		$this->assertInstanceOf(TestController::class, $controller);
 	}
-	
+
 	public function testInstantiateControllerThrowsExceptionForInvalidClass() {
 		$this->expectException(RouterException::class);
 		$this->expectExceptionMessage('Controller InvalidClass does not exist.');
-	
+
 		$router = new TestRouter('App\\Controllers');
 		$router->PublicInstantiateController('InvalidClass', $this->requestObserver, $this->responseObserver);
 	}
-	
+
 	public function testInstantiateControllerThrowsExceptionForNonControllerClass() {
 		$this->expectException(RouterException::class);
 		$this->expectExceptionMessage('Controller App\InvalidClass must extend Fluxoft\Rebar\Http\Controller.');
-	
+
 		$router = new TestRouter('App\\Controllers');
 		$router->PublicInstantiateController(\App\InvalidClass::class, $this->requestObserver, $this->responseObserver);
 	}
 
 	public function testInvokeActionCallsLifecycleMethods() {
 		$router = new TestRouter('App\\Controllers');
-	
+
 		/** @var TestController|MockObject $controllerMock */
 		$controllerMock = $this->createMock(TestController::class);
 		$controllerMock->expects($this->once())
@@ -398,18 +398,18 @@ class RouterTest extends TestCase {
 			->method('Action1');
 		$controllerMock->expects($this->once())
 			->method('Cleanup');
-	
+
 		$router->PublicInvokeAction($controllerMock, 'Action1', ['param1', 'param2']);
 	}
 
 	public function testInvokeActionThrowsExceptionForInvalidAction() {
 		$this->expectException(RouterException::class);
 		$this->expectExceptionMessage('Could not find a method called Action3 in App\\Controllers\\TestController.');
-	
+
 		$router = new TestRouter('App\\Controllers');
-		
+
 		$controller = new TestController($this->requestObserver, $this->responseObserver);
-	
+
 		// Call a non-existent action
 		$router->PublicInvokeAction($controller, 'Action3', []);
 	}
@@ -418,18 +418,18 @@ class RouterTest extends TestCase {
 		$router = new TestRouter('App\\Controllers');
 		$route  = new Route('/defined', TestController::class, 'DefinedAction');
 		$router->AddRoute($route);
-	
+
 		$routeParts = $router->PublicGetRoute('/defined');
-	
+
 		$this->assertEquals('\\App\\Controllers\\TestController', $routeParts['controller']);
 		$this->assertEquals('DefinedAction', $routeParts['action']);
 		$this->assertEmpty($routeParts['url']);
 	}
-	
+
 	public function testGetRouteWithIntuitiveRoute() {
 		$router     = new TestRouter('App\\Controllers');
 		$routeParts = $router->PublicGetRoute('/main');
-	
+
 		$this->assertEquals('\\App\\Controllers\\Main', $routeParts['controller']);
 		$this->assertEquals('Default', $routeParts['action']);
 		$this->assertEmpty($routeParts['url']);
@@ -437,13 +437,13 @@ class RouterTest extends TestCase {
 
 	public function testCallControllerMethodWithParams() {
 		$router = new TestRouter('App\\Controllers');
-		
+
 		/** @var TestController|MockObject $controllerMock */
 		$controllerMock = $this->createMock(TestController::class);
 		$controllerMock->expects($this->once())
 			->method('Action1')
 			->with('param1', 'param2');
-	
+
 		$router->PublicCallControllerMethodWithParams($controllerMock, 'Action1', ['param1', 'param2']);
 	}
 }
