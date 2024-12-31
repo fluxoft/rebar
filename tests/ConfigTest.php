@@ -7,11 +7,23 @@ use Fluxoft\Rebar\ConfigSourcesLoader;
 use PHPUnit\Framework\TestCase;
 
 class ConfigTest extends TestCase {
+	protected function setUp(): void {
+		parent::setUp();
+		// Ensure a fresh instance for each test
+		Config::Reset();
+	}
+
+	protected function tearDown(): void {
+		parent::tearDown();
+		// Reset the singleton after each test to avoid contamination
+		Config::Reset();
+	}
+
 	public function testLoadFromArray(): void {
 		$configSourcesLoader = new ConfigSourcesLoaderProxy_ConfigTest();
 		$configSourcesLoader::setMockData('LoadArray', ['app' => ['env' => 'local']]);
 
-		$config = new Config(['array' => ['app' => ['env' => 'production']]], $configSourcesLoader);
+		$config = Config::Instance(['array' => ['app' => ['env' => 'production']]], $configSourcesLoader);
 
 		$this->assertSame('local', $config->app['env']);
 	}
@@ -20,7 +32,7 @@ class ConfigTest extends TestCase {
 		$configSourcesLoader = new ConfigSourcesLoaderProxy_ConfigTest();
 		$configSourcesLoader::setMockData('LoadIni', ['app' => ['env' => 'local']]);
 
-		$config = new Config(['ini' => '/mock/path/config.ini'], $configSourcesLoader);
+		$config = Config::Instance(['ini' => '/mock/path/config.ini'], $configSourcesLoader);
 
 		$this->assertSame('local', $config->app['env']);
 	}
@@ -29,7 +41,7 @@ class ConfigTest extends TestCase {
 		$configSourcesLoader = new ConfigSourcesLoaderProxy_ConfigTest();
 		$configSourcesLoader::setMockData('LoadJson', ['app' => ['env' => 'production']]);
 
-		$config = new Config(['json' => '/mock/path/config.json'], $configSourcesLoader);
+		$config = Config::Instance(['json' => '/mock/path/config.json'], $configSourcesLoader);
 
 		$this->assertSame('production', $config->app['env']);
 	}
@@ -38,7 +50,7 @@ class ConfigTest extends TestCase {
 		$configSourcesLoader = new ConfigSourcesLoaderProxy_ConfigTest();
 		$configSourcesLoader::setMockData('LoadDotenv', ['DB_HOST' => 'localhost']);
 
-		$config = new Config(['dotenv' => '/mock/path/.env'], $configSourcesLoader);
+		$config = Config::Instance(['dotenv' => '/mock/path/.env'], $configSourcesLoader);
 
 		$this->assertSame('localhost', $config->DB_HOST);
 	}
@@ -47,7 +59,7 @@ class ConfigTest extends TestCase {
 		$configSourcesLoader = new ConfigSourcesLoaderProxy_ConfigTest();
 		$configSourcesLoader::setMockData('LoadEnvironment', ['DB_PASSWORD' => 'secret']);
 
-		$config = new Config(['env' => null], $configSourcesLoader);
+		$config = Config::Instance(['env' => null], $configSourcesLoader);
 
 		$this->assertSame('secret', $config->DB_PASSWORD);
 	}
@@ -57,7 +69,10 @@ class ConfigTest extends TestCase {
 		$configSourcesLoader::setMockData('LoadIni', ['app' => ['env' => 'local']]);
 		$configSourcesLoader::setMockData('LoadJson', ['app' => ['env' => 'production']]);
 
-		$config = new Config(['ini' => '/mock/path/config.ini', 'json' => '/mock/path/config.json'], $configSourcesLoader);
+		$config = Config::Instance(
+			['ini' => '/mock/path/config.ini', 'json' => '/mock/path/config.json'],
+			$configSourcesLoader
+		);
 
 		// JSON should overwrite INI values.
 		$this->assertSame('production', $config->app['env']);
@@ -66,17 +81,22 @@ class ConfigTest extends TestCase {
 	public function testInvalidSourcesThrowException(): void {
 		$this->expectException(\InvalidArgumentException::class);
 		$this->expectExceptionMessage(
-			// @codingStandardsIgnoreLine
 			"Invalid configuration sources provided: invalidSource1, invalidSource2. Allowed sources are: array, ini, json, dotenv, env."
 		);
-	
-		// Attempt to create a Config object with invalid sources
-		$sources = [
+
+		// Attempt to initialize Config with invalid sources
+		Config::Instance([
 			'invalidSource1' => '/path/to/invalid1',
 			'invalidSource2' => '/path/to/invalid2'
-		];
-	
-		new Config($sources);
+		]);
+	}
+
+	public function testAccessBeforeInitializationThrowsException(): void {
+		$this->expectException(\LogicException::class);
+		$this->expectExceptionMessage("Config::Instance must be initialized with sources on the first call.");
+
+		// Attempt to access Config without initializing it
+		Config::Instance()['some_setting'];
 	}
 }
 
