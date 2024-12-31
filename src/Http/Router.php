@@ -277,7 +277,7 @@ class Router {
 			$routeParts['action'] = 'Default';
 
 			// If the next part was not a valid method, treat it as a parameter
-			if (!empty($nextPart) && $nextPart !== 'Default') {
+			if ($nextPart !== 'Default') {
 				array_unshift($pathParts, strtolower($nextPart));
 			}
 		}
