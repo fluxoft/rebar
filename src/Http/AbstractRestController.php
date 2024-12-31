@@ -4,6 +4,8 @@ namespace Fluxoft\Rebar\Http;
 
 use Fluxoft\Rebar\Container;
 use Fluxoft\Rebar\Data\ServiceInterface;
+use Fluxoft\Rebar\Http\Presenters\JsonPresenter;
+use PHPUnit\Util\Json;
 
 abstract class AbstractRestController extends Controller {
 	protected ?ServiceInterface $service = null;
@@ -18,7 +20,8 @@ abstract class AbstractRestController extends Controller {
 			!class_exists($serviceClass)) {
 			throw new \LogicException("Service class $serviceClass does not exist.");
 		}
-		$this->service = $container[$serviceClass];
+		$this->service   = $container[$serviceClass];
+		$this->presenter = new JsonPresenter();
 	}
 
 	/**
