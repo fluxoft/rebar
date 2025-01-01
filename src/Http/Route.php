@@ -12,6 +12,11 @@ use Fluxoft\Rebar\Model;
  * @property string $Action
  */
 class Route extends Model {
+	protected static array $defaultProperties = [
+		'Path'       => '',
+		'Controller' => '',
+		'Action'     => ''
+	];
 	/**
 	 * @param string $path
 	 * @param string $controller

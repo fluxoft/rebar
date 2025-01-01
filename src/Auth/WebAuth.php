@@ -5,14 +5,24 @@ namespace Fluxoft\Rebar\Auth;
 use Fluxoft\Rebar\Auth\Exceptions\InvalidTokenException;
 use Fluxoft\Rebar\Auth\Reply;
 use Fluxoft\Rebar\Http\Request;
+use Fluxoft\Rebar\Http\Response;
 
 class WebAuth extends BaseAuth {
 	public function __construct(
 		protected UserMapperInterface $userMapper,
 		protected TokenManager        $tokenManager,
-		protected bool                $useSession = false
+		protected bool                $useSession = false,
+		protected string              $loginPath = '/auth/login'
 	) {
 		parent::__construct($userMapper, $tokenManager);
+	}
+
+	public function HandleAuthFailure(Request $request, Response $response): void {
+		$path        = $request->Path;
+		$queryString = $request->Server('QUERY_STRING', '');
+		$redirectUrl = $path . ($queryString ? '?' . $queryString : '');
+		$loginUrl    = $this->loginPath . ($redirectUrl ? '?redirect=' . urlencode($redirectUrl) : '');
+		$response->Redirect($loginUrl);
 	}
 
 	/**

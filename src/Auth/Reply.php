@@ -17,14 +17,12 @@ use Fluxoft\Rebar\Model;
  * @property array  $Claims User claims fro the access token
  */
 class Reply extends Model {
-	public function __construct() {
-		parent::__construct([
-			'Auth' => false,
-			'User' => null,
-			'AccessToken' => null,
-			'RefreshToken' => null,
-			'Message' => null,
-			'Claims' => []
-		]);
-	}
+	protected static array $defaultProperties = [
+		'Auth' => false,
+		'User' => null,
+		'AccessToken' => null,
+		'RefreshToken' => null,
+		'Message' => null,
+		'Claims' => []
+	];
 }

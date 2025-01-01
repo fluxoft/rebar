@@ -5,32 +5,61 @@ namespace Fluxoft\Rebar;
 use Fluxoft\Rebar\_Traits\ArrayAccessibleProperties;
 use Fluxoft\Rebar\_Traits\GettableProperties;
 use Fluxoft\Rebar\_Traits\UnsettableProperties;
-use Fluxoft\Rebar\Exceptions\FileNotFoundException;
 
 /**
  * Class Config
  * A centralized repository for configuration values from multiple sources.
  * Supports environment variables, .env files, .ini files, JSON files, and arrays.
  */
-class Config {
+class Config implements \ArrayAccess {
 	use GettableProperties, UnsettableProperties, ArrayAccessibleProperties;
+
+	private static ?Config $instance = null;
+	private ConfigSourcesLoader $loader;
 
 	private const ALLOWED_SOURCES = ['array', 'ini', 'json', 'dotenv', 'env'];
 
-	private ConfigSourcesLoader $loader;
-
 	/**
-	 * Config constructor.
-	 *
-	 * @param array $sources Associative array of source types and their locations.
-	 * @param ConfigSourcesLoader|null $loader A loader instance (used for testing).
-	 * @throws FileNotFoundException|\InvalidArgumentException
+	 * Private constructor to prevent direct instantiation.
 	 */
-	public function __construct(array $sources, ?ConfigSourcesLoader $loader = null) {
+	private function __construct(array $sources, ?ConfigSourcesLoader $loader = null) {
 		$this->loader = $loader ?? new ConfigSourcesLoader();
 		$this->validateSources($sources);
 		$this->properties = []; // Initialize properties array.
 
+		$this->loadSources($sources);
+	}
+
+	/**
+	 * Initializes the singleton instance if not already initialized.
+	 * p
+	 * @param array $sources
+	 * @param ConfigSourcesLoader|null $loader
+	 * @return Config
+	 */
+	public static function Instance(array $sources = [], ?ConfigSourcesLoader $loader = null): Config {
+		if (self::$instance === null) {
+			if (empty($sources)) {
+				throw new \LogicException("Config::Instance must be initialized with sources on the first call.");
+			}
+			self::$instance = new self($sources, $loader);
+		}
+		return self::$instance;
+	}
+
+	/**
+	 * Resets the singleton instance. Useful for testing or reinitializing.
+	 */
+	public static function Reset(): void {
+		self::$instance = null;
+	}
+
+	/**
+	 * Loads sources into the configuration.
+	 *
+	 * @param array $sources
+	 */
+	private function loadSources(array $sources): void {
 		foreach (self::ALLOWED_SOURCES as $allowedSource) {
 			if (array_key_exists($allowedSource, $sources)) {
 				$location = $sources[$allowedSource];

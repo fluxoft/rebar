@@ -45,8 +45,7 @@ class Auth implements MiddlewareInterface {
 			// Check if the user is authenticated
 			$authReply = $auth->GetAuthenticatedUser($request);
 			if (!$authReply->Auth) {
-				// Halt processing and return a 403 response
-				$response->Halt(403, 'Access denied');
+				$auth->HandleAuthFailure($request, $response);
 			}
 
 			// Attach the authenticated user to the request

@@ -14,14 +14,16 @@ use Fluxoft\Rebar\Model;
  * @property string $Password
  */
 class User extends Model implements UserInterface {
-	protected array $properties = [
+	protected static array $defaultProperties = [
 		'Id'	   => 0,
 		'Username' => '',
 		'Password' => ''
 	];
 	public function __construct(int $id, string $username, string $password) {
-		$this->Id       = $id;
-		$this->Username = $username;
+		parent::__construct([
+			'Id'	   => $id,
+			'Username' => $username
+		]);
 		$this->Password = $password;
 
 		if (!$this->IsValid()) {

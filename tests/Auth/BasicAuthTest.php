@@ -4,6 +4,7 @@ namespace Fluxoft\Rebar\Auth;
 
 use Fluxoft\Rebar\Auth\Exceptions\BasicAuthChallengeException;
 use Fluxoft\Rebar\Http\Request;
+use Fluxoft\Rebar\Http\Response;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
@@ -134,5 +135,19 @@ class BasicAuthTest extends TestCase {
 		$this->expectExceptionMessage('Logout is not supported with Basic Auth');
 
 		$basicAuth->Logout($this->requestObserver);
+	}
+
+	public function testHandleAuthFailure(): void {
+		$basicAuth = new BasicAuth($this->userMapperObserver);
+
+		/** @var Response|MockObject $mockResponse */
+		$mockResponse = $this->createMock(Response::class);
+
+		$mockResponse
+			->expects($this->once())
+			->method('Halt')
+			->with(403, 'Access denied');
+
+		$basicAuth->HandleAuthFailure($this->requestObserver, $mockResponse);
 	}
 }

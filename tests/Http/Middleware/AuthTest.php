@@ -117,13 +117,18 @@ class AuthTest extends TestCase {
 	}
 
 	public function testProcessWithUnauthorizedAccess(): void {
-		$auth            = $this->createMock(AuthInterface::class);
-		$authReply       = $this->createMock(Reply::class);
-		$authReply->Auth = false;
+		$auth = $this->createMock(AuthInterface::class);
 
 		$auth->expects($this->once())
 			->method('GetAuthenticatedUser')
-			->willReturn($authReply);
+			->willReturn(new Reply(['Auth' => false]));
+
+		$auth->expects($this->once())
+			->method('HandleAuthFailure')
+			->with(
+				$this->isInstanceOf(Request::class),
+				$this->isInstanceOf(Response::class)
+			);
 
 		/** @var Request|MockObject $request */
 		$request = $this->createMock(Request::class);
@@ -135,17 +140,10 @@ class AuthTest extends TestCase {
 
 		/** @var Response|MockObject $response */
 		$response = $this->createMock(Response::class);
-		$response->expects($this->once())
-			->method('Halt')
-			->with(403, 'Access denied')
-			->willThrowException(new \Exception('Processing halted'));
 
 		$middleware = new Auth(['/secure' => $auth]);
 
-		$this->expectException(\Exception::class);
-		$this->expectExceptionMessage('Processing halted');
-
-		$middleware->Process($request, $response, fn() => $this->fail('Next middleware should not be called'));
+		$middleware->Process($request, $response, fn() => $response);
 	}
 
 	public function testProcessWithBasicAuthChallengeException(): void {

@@ -1,101 +1,169 @@
 # Authentication
 
-Authentication in Rebar provides the tools to secure your application by verifying the identity of users or services. It is designed to be flexible and integrate with various authentication mechanisms.
+Rebar’s authentication system is designed to integrate seamlessly into your application while offering flexibility for both web-based and API-based authentication workflows. This document provides an overview of the key components and the steps required to configure and implement authentication in your Rebar application.
 
-## Overview
-Rebar’s authentication system supports different strategies, such as:
+## Overview of Authentication
+Rebar’s authentication system includes:
 
-- **Token-based authentication**: For APIs or applications requiring stateless authentication.
-- **Custom strategies**: Implement your own authentication logic to fit specific requirements.
+- **Middleware:** The `Auth` middleware handles authentication for incoming requests.
+- **AuthInterface Implementations:** The framework includes `WebAuth` and `ApiAuth` for common use cases, and you can create custom implementations if needed.
+- **User Models and Mappers:** A user model implementing `UserInterface` and a user mapper implementing `UserMapperInterface` are required.
 
-## Key Concepts
-### Auth Interface
-The `AuthInterface` defines the core methods that any authentication class must implement:
+## Key Components
+
+### Middleware
+The `Auth` middleware ensures only authenticated requests can access specific paths. It integrates with `AuthInterface` implementations to authenticate users.
+
+#### Adding Middleware to the Router
+To protect routes with authentication, add the `Auth` middleware to the router:
+
+```php
+use Fluxoft\Rebar\Http\Middleware\Auth;
+
+$authConfig = [
+    '/api' => $apiAuthInstance,
+    '/web' => $webAuthInstance
+];
+$authMiddleware = new Auth($authConfig);
+
+$router = new Router();
+$router->AddMiddleware($authMiddleware);
+```
+
+#### Configuring Auth Middleware
+The `Auth` middleware takes an array of paths mapped to their respective `AuthInterface` implementations. The paths are checked in descending specificity (e.g., `/api/private` is matched before `/api`).
+
+```php
+$authMiddleware->SetAuthForPath($customAuthInstance, '/custom-path');
+```
+
+### AuthInterface
+The `AuthInterface` defines the methods required for authentication classes:
 
 ```php
 interface AuthInterface {
-    public function Authenticate(Request $request): ?UserInterface;
-    public function GetUser(): ?UserInterface;
+    public function GetAuthenticatedUser(Request $request): Reply;
+    public function Logout(Request $request): Reply;
 }
 ```
 
-### User Interface
-The `UserInterface` represents an authenticated user. It includes methods for retrieving user-specific properties, such as:
+#### WebAuth Example
+`WebAuth` handles cookie- and session-based authentication for web applications:
+
+```php
+use Fluxoft\Rebar\Auth\WebAuth;
+use Fluxoft\Rebar\Auth\TokenManager;
+use MyApp\Mappers\UserMapper;
+
+$webAuth = new WebAuth(
+    new UserMapper(),
+    new TokenManager(),
+    true // Use session-based tokens
+);
+```
+
+### UserInterface
+Your user model must implement `UserInterface` to integrate with Rebar’s authentication system:
 
 ```php
 interface UserInterface {
-    public function GetId(): mixed;
+    public function GetID(): int;
     public function GetAuthUsernameProperty(): string;
 }
 ```
 
-### TokenManager
-For token-based authentication, the `TokenManager` class handles:
-
-- Generating access tokens and refresh tokens.
-- Validating tokens to ensure they haven’t expired or been tampered with.
-- Revoking tokens for user logout or security purposes.
-
-## Getting Started with Authentication
-### Adding Authentication to Your Application
-To include authentication in your application:
-
-1. **Implement `AuthInterface`**:
-   Create a class that defines how users are authenticated based on your application’s needs.
-
-2. **Configure the Router**:
-   Pass your authentication class to the router during initialization. For example:
-
-   ```php
-   $auth = new MyAuthClass();
-   $router = new Router($auth);
-   ```
-
-3. **Protect Routes**:
-   Middleware can be used to verify authentication before reaching certain routes.
-
-   ```php
-   $router->AddRoute(‘/secure’, SecureController::class, [$authMiddleware]);
-   ```
-
-## Token-based Authentication Example
-### Generating a Token
-Use the `TokenManager` to generate tokens for authenticated users:
-
+#### User Model Example
 ```php
-$tokenManager = new TokenManager($refreshTokenMapper, $claimsProvider, $secretKey);
-$accessToken = $tokenManager->GenerateAccessToken($user);
-```
+use Fluxoft\Rebar\Auth\UserInterface;
 
-### Validating a Token
-Decode and validate tokens to ensure they are authentic and unexpired:
+class User implements UserInterface {
+    private int $id;
+    private string $username;
 
-```php
-try {
-    $claims = $tokenManager->DecodeAccessToken($accessToken);
-    // Proceed with authenticated actions
-} catch (InvalidTokenException $e) {
-    // Handle invalid or expired token
+    public function __construct(int $id, string $username) {
+        $this->id = $id;
+        $this->username = $username;
+    }
+
+    public function GetID(): int {
+        return $this->id;
+    }
+
+    public function GetAuthUsernameProperty(): string {
+        return 'username';
+    }
 }
 ```
 
-### Revoking a Token
-Revoke refresh tokens as needed:
+### UserMapperInterface
+To connect your user model to a database, implement the `UserMapperInterface`. Rebar includes a `UserMapperTrait` to simplify this:
 
 ```php
-$tokenManager->RevokeRefreshTokensByUserId($userId);
+use Fluxoft\Rebar\Auth\UserMapperInterface;
+use Fluxoft\Rebar\Auth\UserMapperTrait;
+
+class UserMapper implements UserMapperInterface {
+    use UserMapperTrait;
+
+    public function GetAuthorizedUserById(int $id): ?UserInterface {
+        // Fetch user from database
+        return new User($id, 'exampleUser');
+    }
+
+    public function ValidateCredentials(string $username, string $password): ?UserInterface {
+        // Validate credentials against database
+        return new User(1, $username);
+    }
+}
 ```
 
-## Custom Authentication
-To create a custom authentication system:
+## Setting Up Authentication
 
-1. Implement the `AuthInterface` to define custom login or authentication rules.
-2. Optionally, create a user model implementing the `UserInterface` for handling user-related data.
-3. Integrate your authentication class into the application’s routing or middleware.
+1. **Create a User Model:** Implement `UserInterface` to define your user object.
+2. **Create a User Mapper:** Implement `UserMapperInterface` to fetch users and validate credentials.
+3. **Choose an Auth Implementation:** Use `WebAuth` for web applications or `ApiAuth` for APIs.
+4. **Configure Auth Middleware:** Add the `Auth` middleware to your router with appropriate path configurations.
+
+## Example: Web-Based Authentication
+
+```php
+use Fluxoft\Rebar\Auth\WebAuth;
+use Fluxoft\Rebar\Auth\TokenManager;
+use Fluxoft\Rebar\Http\Middleware\Auth;
+use Fluxoft\Rebar\Http\Router;
+use MyApp\Mappers\UserMapper;
+
+// Create Auth Implementation
+$webAuth = new WebAuth(
+    new UserMapper(),
+    new TokenManager(),
+    true
+);
+
+// Add Middleware to Router
+$router = new Router();
+$authMiddleware = new Auth([
+    '/secure' => $webAuth
+]);
+$router->AddMiddleware($authMiddleware);
+
+// Define Routes
+$router->AddRoute('/secure', 'SecureController', 'Index');
+```
 
 ## Best Practices
-- Always use secure, random keys for token signing.
-- Set appropriate token expiration times to balance security and usability.
-- Regularly review and revoke unused tokens to minimize security risks.
+- Use secure, random keys for token signing.
+- Set appropriate expiration times for access and refresh tokens.
+- Store sensitive data (like refresh tokens) securely.
+- Regularly review and revoke unused tokens.
 
-This is a high-level overview. See specific use cases and examples in the [Getting Started Guide](getting-started.md).
+## Advanced Topics
+
+For advanced use cases, you can:
+- Create custom `AuthInterface` implementations for unique authentication workflows.
+- Extend `WebAuth` or `ApiAuth` for additional functionality.
+- Use middleware to apply conditional authentication logic.
+
+For more information, see the [Router Documentation](routing.md).
+
+Next Topic: [Container](container.md)

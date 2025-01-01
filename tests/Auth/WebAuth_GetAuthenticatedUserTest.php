@@ -3,10 +3,7 @@
 namespace Fluxoft\Rebar\Auth;
 
 use Fluxoft\Rebar\Auth\Exceptions\InvalidTokenException;
-use Fluxoft\Rebar\Http\ParameterSet;
-use Fluxoft\Rebar\Http\Request;
 use InvalidArgumentException;
-use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
 // phpcs:disable
@@ -69,37 +66,37 @@ class WebAuth_GetAuthenticatedUserTest extends TestCase {
 
 	public function testGetAuthenticatedUserWithoutUsingSession() {
 		$claims = ['userId' => 1];
-	
+
 		// Mock the TokenManager to decode the token and return claims
 		$this->tokenManagerObserver
 			->expects($this->once())
 			->method('DecodeAccessToken')
 			->with('valid-token')
 			->willReturn($claims);
-	
+
 		// Mock the UserMapper to return a User object
 		$this->userMapperObserver
 			->expects($this->once())
 			->method('GetAuthorizedUserById')
 			->with(1)
 			->willReturn($this->userObserver);
-	
+
 		// Mock Cookies to return valid tokens
 		$this->cookiesParamSet
 			->method('Get')
 			->with('AccessToken')
 			->willReturn('valid-token'); // Simulate valid access token
-	
+
 		// Ensure Session is not called
 		$this->sessionParamSet
 			->expects($this->never())
 			->method('Get');
-	
+
 		$auth = new WebAuth($this->userMapperObserver, $this->tokenManagerObserver, false);
-	
+
 		// Call the method under test
 		$reply = $auth->GetAuthenticatedUser($this->requestObserver);
-	
+
 		// Assert the expected behavior
 		$this->assertTrue($reply->Auth, 'Expected Auth to be true.');
 		$this->assertSame($this->userObserver, $reply->User, 'Expected the User to match.');
@@ -257,7 +254,7 @@ class WebAuth_GetAuthenticatedUserTest extends TestCase {
 	public function testGetAuthenticatedUserFallbackToRefreshToken() {
 		$claims    = ['userId' => 1];
 		$newClaims = ['userId' => 1, 'role' => 'admin'];
-	
+
 		// Simulate no valid AccessToken
 		$this->cookiesParamSet
 			->method('Get')
@@ -270,7 +267,7 @@ class WebAuth_GetAuthenticatedUserTest extends TestCase {
 				}
 				return $default;
 			});
-	
+
 		$this->sessionParamSet
 			->method('Get')
 			->willReturnCallback(function ($key, $default = null) {
@@ -282,14 +279,14 @@ class WebAuth_GetAuthenticatedUserTest extends TestCase {
 				}
 				return $default;
 			});
-	
+
 		// Mock the TokenManager to validate and decode the RefreshToken
 		$this->tokenManagerObserver
 			->expects($this->once())
 			->method('ValidateRefreshToken')
 			->with('valid-refresh-token')
 			->willReturn(true);
-	
+
 		$this->tokenManagerObserver
 			->expects($this->exactly(2))
 			->method('DecodeAccessToken')
@@ -302,31 +299,31 @@ class WebAuth_GetAuthenticatedUserTest extends TestCase {
 				}
 				throw new InvalidArgumentException('Unexpected token: ' . $token);
 			});
-	
+
 		// Mock reissuing a new AccessToken
 		$this->tokenManagerObserver
 			->expects($this->once())
 			->method('GenerateAccessToken')
 			->with($this->userObserver)
 			->willReturn('new-access-token');
-	
+
 		// Extend expiration of RefreshToken
 		$this->tokenManagerObserver
 			->expects($this->once())
 			->method('ExtendRefreshTokenExpiration')
 			->with('valid-refresh-token');
-	
+
 		// Mock the UserMapper to return a User object
 		$this->userMapperObserver
 			->expects($this->once())
 			->method('GetAuthorizedUserById')
 			->with(1)
 			->willReturn($this->userObserver);
-	
+
 		$auth = new WebAuth($this->userMapperObserver, $this->tokenManagerObserver);
-	
+
 		$reply = $auth->GetAuthenticatedUser($this->requestObserver);
-	
+
 		// Assert the expected behavior
 		$this->assertTrue($reply->Auth, 'Expected Auth to be true.');
 		$this->assertSame($this->userObserver, $reply->User, 'Expected the User to match.');
@@ -348,7 +345,7 @@ class WebAuth_GetAuthenticatedUserTest extends TestCase {
 				}
 				return $default;
 			});
-	
+
 		$this->sessionParamSet
 			->method('Get')
 			->willReturnCallback(function ($key, $default = null) {
@@ -360,18 +357,18 @@ class WebAuth_GetAuthenticatedUserTest extends TestCase {
 				}
 				return $default;
 			});
-	
+
 		// Mock the TokenManager to invalidate the RefreshToken
 		$this->tokenManagerObserver
 			->expects($this->once())
 			->method('ValidateRefreshToken')
 			->with('invalid-refresh-token')
 			->willReturn(false);
-	
+
 		$auth = new WebAuth($this->userMapperObserver, $this->tokenManagerObserver);
-	
+
 		$reply = $auth->GetAuthenticatedUser($this->requestObserver);
-	
+
 		// Assert the expected behavior
 		$this->assertFalse($reply->Auth, 'Expected Auth to be false.');
 		$this->assertEquals('Invalid refresh token', $reply->Message, 'Expected the Message to indicate failure.');
@@ -390,29 +387,29 @@ class WebAuth_GetAuthenticatedUserTest extends TestCase {
 				}
 				return $default;
 			});
-	
+
 		// Mock the TokenManager to validate the RefreshToken but fail on decoding
 		$this->tokenManagerObserver
 			->expects($this->once())
 			->method('ValidateRefreshToken')
 			->with('invalid-refresh-token')
 			->willReturn(true);
-	
+
 		$this->tokenManagerObserver
 			->expects($this->once())
 			->method('DecodeAccessToken')
 			->with('invalid-refresh-token')
 			->willThrowException(new InvalidTokenException('Invalid or expired refresh token'));
-	
+
 		// Mock the UserMapper to not be called (since decoding failed)
 		$this->userMapperObserver
 			->expects($this->never())
 			->method('GetAuthorizedUserById');
-	
+
 		$auth = new WebAuth($this->userMapperObserver, $this->tokenManagerObserver);
-	
+
 		$reply = $auth->GetAuthenticatedUser($this->requestObserver);
-	
+
 		// Assert the expected behavior
 		$this->assertFalse($reply->Auth, 'Expected Auth to be false.');
 		$this->assertEquals('Authentication failed.', $reply->Message, 'Expected the Message to indicate failure.');

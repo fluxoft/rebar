@@ -1,134 +1,121 @@
 # Customizing Rebar
 
-Rebar is designed to be a flexible framework that you can adapt to suit your specific needs. This guide provides an overview of ways you can customize Rebar to better fit your application.
+Rebar is designed to be a lightweight and extensible PHP framework. While it provides a solid foundation for building applications, it’s easy to adapt and extend its functionality to fit your unique needs. This guide provides a broad overview of how you can customize Rebar by implementing its various interfaces and extending core features.
 
-## Overview
-Customization in Rebar typically involves:
-- Extending core classes.
-- Overriding or adding new behaviors.
-- Integrating third-party libraries.
+## General Philosophy
+Rebar’s modular design is based on a set of interfaces and loosely coupled components. This means that if there’s a feature or behavior you’d like to add, you can implement the appropriate interface or extend a base class. Rebar will work seamlessly with your custom implementation as long as it adheres to the framework’s expectations.
 
-## Extending Core Classes
-Most of Rebar’s core components are built to be extended. For example:
+### Why Interfaces Matter
+Many core components in Rebar, such as presenters, middleware, and notifiers, are defined by interfaces. By implementing these interfaces, you ensure your custom code integrates cleanly with the framework while maintaining flexibility to extend functionality.
 
-### Extending the `Controller` Class
-You can create custom base controllers by extending Rebar’s `Controller` class. This is useful for adding shared functionality across multiple controllers:
+## Custom Presenters
+Presenters in Rebar handle how responses are formatted and delivered to clients. For example, you might want to add a presenter for a templating engine like Blade. To create a custom presenter, implement the `PresenterInterface`:
 
 ```php
-use Fluxoft\Rebar\Http\Controller;
+namespace App\Presenters;
 
-class BaseController extends Controller {
-    protected function Setup(): void {
-        // Common setup logic for all controllers.
-    }
+use Fluxoft\Rebar\Http\Presenters\PresenterInterface;
 
-    protected function Cleanup(): void {
-        // Common cleanup logic for all controllers.
-    }
+class BladePresenter implements PresenterInterface {
+	private string $templatePath;
+
+	public function __construct(string $templatePath) {
+		$this->templatePath = $templatePath;
+	}
+
+	public function Render(string $template, array $data = []): string {
+		// Integrate Blade rendering logic here
+		return Blade::render($this->templatePath . $template, $data);
+	}
 }
 ```
 
-Then, have your application’s controllers extend `BaseController`:
+Once implemented, you can use your custom presenter anywhere Rebar expects a `PresenterInterface` instance. For example, in your IoC container:
 
 ```php
-class HomeController extends BaseController {
-    public function Index(): string {
-        return 'Welcome to Rebar!';
-    }
-}
+$container['BladePresenter'] = new ContainerDefinition(BladePresenter::class, ['/path/to/templates/']);
 ```
 
-### Customizing the IoC Container
-Rebar’s IoC container can be extended to add custom bindings or functionality:
+## Custom Middleware
+Middleware allows you to add logic that runs during the request lifecycle, such as authentication, logging, or input validation. To create custom middleware, implement the `MiddlewareInterface`:
 
 ```php
-use Fluxoft\Rebar\IoC\Container;
+namespace App\Middleware;
 
-class CustomContainer extends Container {
-    public function BindSingleton(string $interface, $implementation): void {
-        $this->Bind($interface, function() use ($implementation) {
-            static $instance = null;
-            if ($instance === null) {
-                $instance = new $implementation();
-            }
-            return $instance;
-        });
-    }
-}
-```
-
-## Overriding or Adding New Behaviors
-
-### Middleware
-Rebar’s middleware system allows you to inject custom logic into the request lifecycle. To add new middleware, implement the `MiddlewareInterface`:
-
-```php
 use Fluxoft\Rebar\Http\MiddlewareInterface;
 use Fluxoft\Rebar\Http\Request;
 use Fluxoft\Rebar\Http\Response;
 
-class CustomMiddleware implements MiddlewareInterface {
-    public function Process(Request $request, Response $response): Response {
-        // Add custom logic here.
-        return $response;
-    }
+class LoggingMiddleware implements MiddlewareInterface {
+	public function Process(Request $request, Response $response, callable $next): Response {
+		// Log the incoming request
+		Logger::info('Request received', ['path' => $request->Path]);
+
+		// Continue to the next middleware
+		return $next($request, $response);
+	}
 }
 ```
 
-Then, add your middleware to the router or request handling pipeline.
-
-### Custom Data Mappers
-Rebar’s data mappers can be extended to handle custom database logic:
+Add your middleware to the Router:
 
 ```php
+$router->AddMiddleware(new LoggingMiddleware());
+```
+
+## Custom Notifiers
+Rebar’s error-handling system uses `NotifierInterface` implementations to manage how unhandled exceptions and errors are reported. For example, you can create an `EmailNotifier` to send error details via email:
+
+```php
+namespace App\Error\Notifiers;
+
+use Fluxoft\Rebar\Error\NotifierInterface;
+
+class EmailNotifier implements NotifierInterface {
+	public function Notify(\Throwable $t): void {
+		mail('admin@example.com', 'Error Notification', $t->getMessage());
+	}
+}
+```
+
+Register your custom notifier in the error handler:
+
+```php
+ErrorHandler::Register([
+	new EmailNotifier(),
+	new TextNotifier(true),
+]);
+```
+
+## Custom Data Mappers
+If you’re working with a database and need custom logic for interacting with your models, you can extend Rebar’s database mappers. For example, you might add a `CustomUserMapper`:
+
+```php
+namespace App\Mappers;
+
 use Fluxoft\Rebar\Data\Db\Mappers\MySql;
 
 class CustomUserMapper extends MySql {
-    protected array $propertyDbMap = [
-        'Id' => 'id',
-        'Name' => 'name',
-        'Email' => 'email'
-    ];
+	protected array $propertyDbMap = [
+		'Id' => 'id',
+		'Name' => 'name',
+		'Email' => 'email'
+	];
 
-    public function GetUsersByStatus(string $status): array {
-        return $this->GetSet([new Filter('status', '=', $status)]);
-    }
+	public function GetUsersByRole(string $role): array {
+		return $this->GetSet([
+			new Filter('role', '=', $role)
+		]);
+	}
 }
 ```
 
-## Integrating Third-Party Libraries
-
-### Adding a Logger
-Rebar supports PSR-3 logging. To integrate a library like Monolog:
-
-```php
-use Monolog\Logger;
-use Monolog\Handler\StreamHandler;
-
-$logger = new Logger('app');
-$logger->pushHandler(new StreamHandler('/path/to/logfile.log', Logger::DEBUG));
-
-$errorHandler = new Fluxoft\Rebar\ErrorHandler($logger);
-$errorHandler->Enable();
-```
-
-### Using a Template Engine
-Rebar supports template engines like Twig or Smarty. Install the desired library via Composer, then use the corresponding presenter class:
-
-```php
-use Fluxoft\Rebar\Presenters\TwigPresenter;
-
-$presenter = new TwigPresenter('/path/to/templates');
-echo $presenter->Render('template.twig', ['name' => 'Joe']);
-```
-
 ## Best Practices for Customization
-- **Keep It Simple**: Avoid unnecessary complexity when customizing Rebar. Stick to small, well-defined changes.
-- **Follow Standards**: Use PSR standards (e.g., PSR-4 autoloading, PSR-3 logging) to ensure compatibility with other libraries.
-- **Document Your Changes**: Clearly document any customizations for future developers (or your future self).
+- **Follow Interface Contracts**: Ensure your custom classes implement the correct interface and adhere to its expectations.
+- **Keep It Simple**: Avoid unnecessary complexity when adding custom behavior.
+- **Test Your Code**: Write tests for custom components to ensure they work as expected within the framework.
+- **Document Your Changes**: Include clear documentation for customizations so future developers understand their purpose and usage.
 
-## Additional Resources
-- [PSR Standards Documentation](https://www.php-fig.org/psr/)
-- [Rebar GitHub Repository](https://github.com/fluxoft/rebar)
+## When to Contribute Back
+If you’ve built a custom component that might benefit the broader Rebar community, consider submitting a pull request to the [Rebar GitHub repository](https://github.com/fluxoft/rebar). Contributions help make Rebar more versatile and useful for everyone.
 
-For any questions or suggestions, feel free to open an issue on the Rebar GitHub repository.

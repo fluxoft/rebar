@@ -10,8 +10,7 @@
  */
 namespace Fluxoft\Rebar\Http;
 
-use Fluxoft\Rebar\Auth\AuthInterface;
-use Fluxoft\Rebar\Http\Presenters\Debug;
+use Fluxoft\Rebar\Http\Presenters\DebugPresenter;
 use Fluxoft\Rebar\Http\Presenters\Exceptions\InvalidPresenterException;
 use Fluxoft\Rebar\Http\Presenters\PresenterInterface;
 
@@ -19,26 +18,24 @@ abstract class Controller {
 	/**
 	 * The presenter property determines which presenter class
 	 * will be used to render the display.
-	 *
-	 * @var PresenterInterface $presenter
 	 */
-	protected $presenter = null;
+	protected ?PresenterInterface $presenter = null;
+
 	/**
-	 * @var null|string The name of a class implementing PresenterInterface that
+	 * The name of a class implementing PresenterInterface that
 	 * should be used for setting the presenter if no other presenter has been set.
 	 * Either a fully-qualified class name should be given or a Presenter that can be
 	 * found in the \Fluxoft\Rebar\Http\Presenters namespace should be used.
 	 */
-	protected $presenterClass = null;
+	protected ?string $presenterClass = null;
+
 	/**
 	 * The data array holds any values that need to be available to
 	 * be rendered for output.
-	 *
-	 * @var array
 	 */
-	protected $data = [];
+	protected array $data = [];
+
 	/**
-	 * Controller constructor.
 	 * @param Request $request
 	 * @param Response $response
 	 */
@@ -54,22 +51,18 @@ abstract class Controller {
 	 * that to Render.
 	 * @throws InvalidPresenterException If no valid Presenter was set or able to be created.
 	 */
-	public function Display() {
+	public function Display(): void {
 		$this->presenter ??= $this->initializePresenter();
-		if (!(($this->presenter instanceof PresenterInterface))) {
-			throw new InvalidPresenterException('Presenter must implement PresenterInterface.');
-		}
 		$this->presenter->Render($this->response, $this->getData());
 	}
 	protected function initializePresenter(): PresenterInterface {
 		if (isset($this->presenterClass) && class_exists($this->presenterClass)) {
-			$presenter = new $this->presenterClass();
-			if (!($presenter instanceof PresenterInterface)) {
+			if (!is_subclass_of($this->presenterClass, PresenterInterface::class)) {
 				throw new InvalidPresenterException('Presenter must implement PresenterInterface.');
 			}
-			return $presenter;
+			return new $this->presenterClass();
 		}
-		return new Debug();
+		return new DebugPresenter();
 	}
 
 	/**
@@ -78,9 +71,6 @@ abstract class Controller {
 	 * <code>
 	 * $this->set("Key","Value");
 	 * </code>
-	 *
-	 * @param string $var
-	 * @param mixed $val
 	 */
 	protected function set(string $var, mixed $val): void {
 		$this->data[$var] = $val;
@@ -89,8 +79,6 @@ abstract class Controller {
 	/**
 	 * Return the $data array.  Used by presenter classes to
 	 * render the $data in presenter-specific ways.
-	 *
-	 * @return array $data
 	 */
 	protected function getData(): array {
 		return $this->data;

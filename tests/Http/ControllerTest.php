@@ -2,7 +2,7 @@
 
 namespace Fluxoft\Rebar\Http;
 
-use Fluxoft\Rebar\Http\Presenters\Debug;
+use Fluxoft\Rebar\Http\Presenters\DebugPresenter;
 use Fluxoft\Rebar\Http\Presenters\Exceptions\InvalidPresenterException;
 use PHPUnit\Framework\TestCase;
 
@@ -33,7 +33,7 @@ class ControllerTest extends TestCase {
 	 */
 	public function testDisplayWithDefaultPresenter(): void {
 		$controller     = new DummyController($this->request, $this->response);
-		$debugPresenter = $this->createMock(Debug::class);
+		$debugPresenter = $this->createMock(DebugPresenter::class);
 
 		// Mock the Debug presenter behavior
 		$debugPresenter->expects($this->once())
@@ -82,7 +82,7 @@ class ControllerTest extends TestCase {
 		$controller = new DummyController($this->request, $this->response);
 
 		$presenter = $controller->PublicInitializePresenter();
-		$this->assertInstanceOf(Debug::class, $presenter);
+		$this->assertInstanceOf(DebugPresenter::class, $presenter);
 	}
 
 	/**
@@ -90,10 +90,10 @@ class ControllerTest extends TestCase {
 	 */
 	public function testInitializePresenterWithValidPresenterClass(): void {
 		$controller = new DummyController($this->request, $this->response);
-		$controller->SetPresenterClass(Debug::class);
+		$controller->SetPresenterClass(DebugPresenter::class);
 
 		$presenter = $controller->PublicInitializePresenter();
-		$this->assertInstanceOf(Debug::class, $presenter);
+		$this->assertInstanceOf(DebugPresenter::class, $presenter);
 	}
 
 	/**
@@ -109,14 +109,11 @@ class ControllerTest extends TestCase {
 		$controller->PublicInitializePresenter();
 	}
 
-	public function testDisplayWithManuallySetInvalidPresenterThrowsException(): void {
+	public function testManuallySettingInvalidPresenterThrowsTypeError(): void {
+		$this->expectException(\TypeError::class);
+
 		$controller = new DummyController($this->request, $this->response);
-		$controller->SetPresenter(new InvalidPresenter());
-	
-		$this->expectException(InvalidPresenterException::class);
-		$this->expectExceptionMessage('Presenter must implement PresenterInterface.');
-	
-		$controller->Display();
+		$controller->SetPresenter(new InvalidPresenter()); // Triggers TypeError
 	}
 }
 

@@ -42,19 +42,15 @@ trait SettableProperties {
 	 * Override the magic __unset method to handle setting properties to null.
 	 *
 	 * @param $key
-	 * @throws \InvalidArgumentException
 	 */
 	public function __unset($key) {
 		$fnName = "set$key";
 		if (is_callable([$this, $fnName])) {
 			$this->$fnName(null);
-		} elseif (array_key_exists($key, $this->modProperties)) {
+		} elseif (array_key_exists($key, $this->modProperties) || array_key_exists($key, $this->properties)) {
 			unset($this->modProperties[$key]);
 			$this->properties[$key] = null;
-		} elseif (array_key_exists($key, $this->properties)) {
-			$this->properties[$key] = null;
-		} else {
-			throw new \InvalidArgumentException(sprintf('Cannot unset property %s', $key));
 		}
+		// Do nothing if none of the above conditions are met
 	}
 }

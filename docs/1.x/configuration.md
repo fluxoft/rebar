@@ -1,135 +1,201 @@
-# Configuration
+# Configuration Management in Rebar
 
-Rebar provides a lightweight configuration system to manage settings for your application. The configuration system is designed to be simple, flexible, and easy to use.
+The `Config` class in Rebar provides a centralized and flexible way to manage configuration values from multiple sources. It supports merging values from arrays, `.ini` files, `.json` files, `.env` files, and server environment variables, allowing you to adapt your application to different environments (e.g., development, testing, production).
 
 ## Overview
-The `Config` class allows you to:
-- Define application settings in a structured way.
-- Access configuration values throughout your code.
-- Load settings from multiple sources (e.g., arrays, files).
 
-## Key Features
-- **Centralized Configuration**: Manage all your application settings in one place.
-- **Hierarchical Structure**: Use nested arrays or objects to organize configuration data.
-- **Immutable Access**: Retrieve configuration values without modifying them.
+The `Config` class is built to:
+- Load configuration values from various sources.
+- Merge these values in a prioritized order.
+- Provide a unified interface for accessing configuration values.
 
-## Setting Up Configuration
+The `ConfigSourcesLoader` helper class handles loading configurations from specific sources and parsing the data.
 
-### Defining Configuration
-Create a configuration file (e.g., `app/config.php`) to define your settings:
+## Supported Configuration Sources
 
-```php
-return [
-    'database' => [
-        'host' => 'localhost',
-        'port' => 3306,
-        'name' => 'mydb',
-        'user' => 'user',
-        'password' => 'password'
-    ],
-    'app' => [
-        'debug' => true,
-        'timezone' => 'UTC'
-    ]
-];
-```
+The following sources are supported by the `Config` class:
 
-### Loading Configuration
-Use the `Config` class to load your configuration:
+| Source Type | Description |
+|-------------|-------------|
+| `array`     | An associative array of key-value pairs. |
+| `ini`       | A `.ini` file. Supports sections and key-value pairs. |
+| `json`      | A `.json` file. The content must be a valid JSON object. |
+| `dotenv`    | A `.env` file containing key-value pairs (e.g., `KEY=VALUE`). |
+| `env`       | Server environment variables accessed via `$_ENV`. |
+
+## Setting Up the Config Class
+
+To create a `Config` instance, pass an array of sources and their locations:
+
+### Example: Loading Configurations
 
 ```php
 use Fluxoft\Rebar\Config;
 
-$configArray = include 'app/config.php';
-$config = new Config($configArray);
-```
-
-## Accessing Configuration Values
-You can retrieve configuration values using the `Get` method:
-
-```php
-$host = $config->Get('database.host'); // Returns 'localhost'
-$debug = $config->Get('app.debug');    // Returns true
-```
-
-If the key does not exist, `Get` will return `null` by default:
-
-```php
-$nonExistent = $config->Get('nonexistent.key'); // Returns null
-```
-
-You can also provide a default value:
-
-```php
-$nonExistent = $config->Get('nonexistent.key', 'default'); // Returns 'default'
-```
-
-## Best Practices
-
-### Keep Secrets Secure
-Avoid storing sensitive data (e.g., passwords, API keys) directly in your configuration files. Use environment variables or a secrets manager where possible.
-
-### Use a Consistent Structure
-Organize your configuration data hierarchically to make it easier to manage and understand. For example:
-
-```php
-return [
-    'database' => [
-        'host' => 'localhost',
-        'user' => 'user',
-        'password' => 'password'
+$sources = [
+    'array' => [
+        'AppName' => 'RebarApp',
+        'DebugMode' => true
     ],
-    'app' => [
-        'name' => 'MyApp',
-        'debug' => true
+    'ini' => __DIR__ . '/config/settings.ini',
+    'json' => __DIR__ . '/config/settings.json',
+    'dotenv' => __DIR__ . '/.env',
+    'env' => []
+];
+
+$config = new Config($sources);
+
+// Accessing configuration values
+echo $config['AppName']; // Outputs: RebarApp
+```
+
+## How It Works
+
+The `Config` class processes the sources in the order specified in its constructor. Configuration values from later sources override those from earlier ones. This allows you to define defaults in a `.json` or `.ini` file and override them in a `.env` file or environment variables.
+
+### Merging Sources
+
+The configuration merging prioritizes sources in the order they are provided in the `$sources` array. For example, if both a `.json` file and environment variables define a `DB_HOST`, the value from environment variables will take precedence if `env` is processed later.
+
+## Loading Configuration from Specific Sources
+
+Here is how the `ConfigSourcesLoader` processes various source types:
+
+### Array
+```php
+$sources = [
+    'array' => [
+        'DB_HOST' => 'localhost',
+        'DB_PORT' => 3306
     ]
 ];
+$config = new Config($sources);
 ```
 
-### Document Your Configuration
-Provide comments or documentation for each setting to ensure other developers understand its purpose.
-
-## Example: Using Configuration in a Service
-Here’s an example of using configuration settings in a database service:
-
+### INI File
+```ini
+; settings.ini
+[Database]
+DB_HOST = localhost
+DB_PORT = 3306
+```
 ```php
-use Fluxoft\Rebar\Config;
+$sources = [
+    'ini' => __DIR__ . '/config/settings.ini'
+];
+$config = new Config($sources);
+```
 
-$configArray = include 'app/config.php';
-$config = new Config($configArray);
-
-class DatabaseService {
-    private $pdo;
-
-    public function __construct(Config $config) {
-        $dbConfig = $config->Get('database');
-        $dsn = sprintf('mysql:host=%s;dbname=%s', $dbConfig['host'], $dbConfig['name']);
-        $this->pdo = new PDO($dsn, $dbConfig['user'], $dbConfig['password']);
-    }
-
-    public function GetConnection(): PDO {
-        return $this->pdo;
-    }
+### JSON File
+```json
+{
+  "DB_HOST": "localhost",
+  "DB_PORT": 3306
 }
-
-$databaseService = new DatabaseService($config);
-$connection = $databaseService->GetConnection();
 ```
-
-## Advanced Topics
-
-### Extending the Config Class
-You can extend the `Config` class to add custom behavior, such as:
-- Logging missing configuration keys.
-- Automatically loading configuration from multiple files.
-
-### Dynamic Configuration
-Load configuration dynamically based on the environment:
-
 ```php
-$environment = getenv('APP_ENV') ?: 'production';
-$configArray = include "app/config.$environment.php";
-$config = new Config($configArray);
+$sources = [
+    'json' => __DIR__ . '/config/settings.json'
+];
+$config = new Config($sources);
 ```
 
-For more details, see [Customizing Rebar](customizing-rebar.md).
+### .env File
+```
+# .env
+DB_HOST=localhost
+DB_PORT=3306
+```
+```php
+$sources = [
+    'dotenv' => __DIR__ . '/.env'
+];
+$config = new Config($sources);
+```
+
+### Environment Variables
+
+Set environment variables directly in the hosting environment:
+```bash
+export DB_HOST=localhost
+export DB_PORT=3306
+```
+Then access them:
+```php
+$sources = [
+    'env' => []
+];
+$config = new Config($sources);
+```
+
+## Example Use Case: Managing Database Configurations
+
+### Development Environment
+For local development, database credentials can be stored in a `.env` file:
+```
+# .env
+DB_HOST=localhost
+DB_USER=devuser
+DB_PASS=devpass
+```
+
+### Production Environment
+For production, credentials should be stored in environment variables:
+```bash
+export DB_HOST=prod-db-server
+export DB_USER=produser
+export DB_PASS=prodpass
+```
+
+### Unified Configuration Access
+Define your configuration sources:
+```php
+$sources = [
+    'dotenv' => __DIR__ . '/.env',
+    'env' => []
+];
+$config = new Config($sources);
+```
+Use the `Config` object to retrieve database connection details:
+```php
+$dsn = sprintf('mysql:host=%s;dbname=%s', $config['DB_HOST'], $config['DB_NAME']);
+$username = $config['DB_USER'];
+$password = $config['DB_PASS'];
+$pdo = new PDO($dsn, $username, $password);
+```
+
+## Testing vs. Production
+In a testing environment, you can define a separate `.env` file or provide mock configurations using the `array` source:
+
+### Example: Testing Setup
+```php
+$sources = [
+    'array' => [
+        'DB_HOST' => 'localhost',
+        'DB_USER' => 'testuser',
+        'DB_PASS' => 'testpass'
+    ]
+];
+$config = new Config($sources);
+```
+
+In production, simply exclude the `array` source and rely on `.env` files or environment variables.
+
+## Error Handling
+The `Config` class ensures robust error handling:
+- **File Not Found**: Throws an exception if a specified `.ini`, `.json`, or `.env` file does not exist.
+- **Invalid File Content**: Throws an exception for malformed `.json` or `.env` files.
+
+Example:
+```php
+try {
+    $config = new Config(['json' => 'missing-file.json']);
+} catch (FileNotFoundException $e) {
+    echo $e->getMessage();
+}
+```
+
+## Summary
+The `Config` class offers a flexible and unified way to manage configuration values, making it easy to adapt your application to different environments. By leveraging prioritized sources, you can ensure consistency while allowing for environment-specific overrides. Whether in development, testing, or production, the `Config` class simplifies configuration management.
+
+Next Topic: [Error Handling](error-handling.md)

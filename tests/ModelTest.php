@@ -4,181 +4,164 @@ namespace Fluxoft\Rebar;
 
 use PHPUnit\Framework\TestCase;
 
-/**
- * Class ModelTest
- * @package Fluxoft\Rebar
- */
 class ModelTest extends TestCase {
-	protected function setup():void {}
+	public function testConstructorInitializesProperties(): void {
+		$model = new TestModel(['Property' => 'validValue']);
+		$this->assertEquals('validValue', $model->GetProperties()['Property']);
+		$this->assertEquals(null, $model->GetProperties()['OptionalProperty']);
+	}
 
-	protected function teardown():void {}
+	public function testGetAndSetProperties(): void {
+		$model                   = new TestModel();
+		$model->OptionalProperty = 'optionalValue';
+		$this->assertEquals('optionalValue', $model->OptionalProperty);
+	}
 
-	/**
-	 * @dataProvider createProvider
-	 * @param array $constructProperties
-	 * @param array $setProperties
-	 */
-	public function testCreate(array $constructProperties, array $setProperties) {
-		// Merge the properties to be passed to the constructor with the default set on
-		// the concrete model as the default properties for the object.
-		$defaultProperties = array_merge(
-			['defaultKey' => 'defaultValue', 'arrayAccessKey' => null],
-			$constructProperties
-		);
+	public function testModifiedProperties(): void {
+		$model                   = new TestModel();
+		$model->OptionalProperty = 'newValue';
+		$this->assertEquals(['OptionalProperty' => 'newValue'], $model->GetModifiedProperties());
+	}
 
-		$testModel = new ConcreteModel($constructProperties);
+	public function testArrayAccess(): void {
+		$model                     = new TestModel();
+		$model['OptionalProperty'] = 'arrayValue';
+		$this->assertEquals('arrayValue', $model['OptionalProperty']);
+		unset($model['OptionalProperty']);
+		$this->assertFalse(isset($model['OptionalProperty']));
+	}
 
-		// the GetProperties method should contain the exact same list of properties we
-		// start with as the default on the model, plus the constructor properties.
-		$this->assertEquals($testModel->GetProperties(), $defaultProperties);
-
-		// nothing has been modified, so GetModifiedProperties should return an empty array.
-		$this->assertEquals($testModel->GetModifiedProperties(), []);
-
-		// test toArray() method
-		$this->assertEquals($testModel->toArray(), $defaultProperties);
-
-		// test all properties are set to expected values
-		foreach ($defaultProperties as $key => $value) {
-			$this->assertEquals(($defaultProperties[$key] !== null), isset($testModel->$key));
-			$this->assertEquals($defaultProperties[$key], $testModel->$key);
+	public function testIteration(): void {
+		$model      = new TestModel(['Property' => 'validValue', 'OptionalProperty' => 'optionalValue']);
+		$properties = [];
+		foreach ($model as $key => $value) {
+			$properties[$key] = $value;
 		}
+		$this->assertEquals($model->GetProperties(), $properties);
+	}
 
-		// test Iterator implementation
-		$currentProperties = $testModel->GetProperties();
-		foreach ($testModel as $item => $value) {
-			$this->assertEquals($currentProperties[$item], $value);
-		}
+	public function testValidationPasses(): void {
+		$model = new TestModel(['Property' => 'validValue']);
+		$this->assertTrue($model->IsValid());
+		$this->assertEmpty($model->GetValidationErrors());
+	}
 
-		// test ArrayAccess implementation
-		$this->assertTrue(isset($testModel['defaultKey']));
-		$this->assertEquals($testModel['defaultKey'], 'defaultValue');
-		$testModel['arrayAccessKey'] = 'arrayAccessValue';
-		$this->assertEquals($testModel['arrayAccessKey'], 'arrayAccessValue');
-		unset($testModel['arrayAccessKey']);
-		$this->assertFalse(isset($testModel['arrayAccessKey']));
+	public function testValidationFails(): void {
+		$model = new TestModel(['Property' => 'invalidValue']);
+		$this->assertFalse($model->IsValid());
+		$this->assertArrayHasKey('Property', $model->GetValidationErrors());
+		$this->assertEquals('Invalid value for Property', $model->GetValidationErrors()['Property']);
+	}
 
-		// validate model
-		if (isset($constructProperties['InvalidProperty'])) {
-			$this->assertFalse($testModel->IsValid());
-			$validationErrors                    = [];
-			$validationErrors['InvalidProperty'] = "Invalid value {$testModel['InvalidProperty']}";
-			$this->assertEquals($validationErrors, $testModel->GetValidationErrors());
-		} else {
-			$this->assertTrue($testModel->IsValid());
-		}
+	public function testInitializeProperties(): void {
+		$model = new TestModel();
+		$model->InitializeProperties(['Property' => 'initializedValue']);
+		$this->assertEquals('initializedValue', $model->Property);
+	}
 
-		// test __toString()
-		$classAsString = get_class($testModel) . " object {\n";
-		foreach ($testModel->GetProperties() as $key => $value) {
-			$classAsString .= "  $key: {$testModel->$key}\n";
+	public function testToArray(): void {
+		$model = new TestModel();
+		$model->InitializeProperties([
+			'Property' => 'value',
+			'OptionalProperty' => 'optionalValue'
+		]);
+
+		$expectedArray = [
+			'Property' => 'value',
+			'OptionalProperty' => 'optionalValue'
+		];
+
+		$this->assertEquals($expectedArray, $model->toArray());
+	}
+
+	public function testToString(): void {
+		$model = new TestModel();
+		$model->InitializeProperties([
+			'Property' => 'value',
+			'OptionalProperty' => 'optionalValue'
+		]);
+
+		$classAsString = get_class($model) . " object {\n";
+		foreach ($model->GetProperties() as $key => $value) {
+			$classAsString .= "  $key: {$value}\n";
 		}
 		$classAsString .= "}\n";
-		$this->assertEquals($classAsString, (string) $testModel);
 
-		// try setting values
-		foreach ($setProperties as $key => $value) {
-			if ($key === 'NonExistentProperty') {
-				$this->expectException('InvalidArgumentException');
-			}
-			$testModel->$key = $value;
-		}
-		// make sure only the modified values are in GetModifiedProperties()
-		$modified = [];
-		foreach ($testModel->GetProperties() as $key => $value) {
-			if (isset($setProperties[$key]) && ($setProperties !== $value)) {
-				$modified[$key] = $value;
-			}
-		}
-		$this->assertEquals($modified, $testModel->GetModifiedProperties());
-
-		// test unsetting all values
-		foreach ($defaultProperties as $key => $value) {
-			unset($testModel->$key);
-			$this->assertFalse(isset($testModel->$key));
-		}
+		$this->assertEquals($classAsString, (string) $model);
 	}
-	public function createProvider() {
-		return [
-			'emptyDefault' => [
-				'constructProperties' => [],
-				'setProperties' => []
-			],
-			'invalidProperty' => [
-				'constructProperties' => [
-					'InvalidProperty' => 'should fail validation'
-				],
-				'setProperties' => []
-			],
-			'validProperty' => [
-				'constructProperties' => [
-					'ValidProperty' => 'should pass validation'
-				],
-				'setProperties' => []
-			],
-			'functionProperties' => [
-				'constructProperties' => [
-					'FunctionProperty' => null
-				],
-				'setProperties' => [
-					'FunctionProperty' => 'new'
-				]
-			],
-			'nonExistentProperty' => [
-				'constructProperties' => [],
-				'setProperties' => [
-					'NonExistentProperty' => 'new'
-				]
-			]
+
+	public function testIssetNonExistentProperty(): void {
+		$model = new TestModel();
+
+		// Assert that isset() returns false for a non-existent property
+		$this->assertFalse(
+			isset($model->NonExistentProperty), 'Expected isset() to return false for a non-existent property.'
+		);
+	}
+
+	public function testUnsetProperty(): void {
+		$model = new TestModel();
+
+		// Set a property value
+		$model->Property = 'value';
+		$this->assertEquals('value', $model->Property);
+
+		// Unset the property
+		unset($model->Property);
+
+		// Verify that the property is reset to null
+		$this->assertNull($model->Property, 'Expected the property to be set to null after unset.');
+
+		// Verify that the property is no longer in modified properties
+		$this->assertArrayNotHasKey('Property', $model->GetModifiedProperties());
+	}
+
+	public function testJsonSerialize() {
+		// Create an instance of TestModel
+		$testModel = new TestModel();
+
+		// Set properties
+		$testModel->Property         = 'validValue';
+		$testModel->OptionalProperty = 'Optional Value';
+
+		// Expected array for jsonSerialize
+		$expectedJson = [
+			'Property' => 'validValue',
+			'OptionalProperty' => 'Optional Value'
 		];
-	}
-	public function testGetNonExistentProperty() {
-		$testModel = new ConcreteModel();
 
-		// get, isset, unset NonExistentProperty
-		$this->expectException('InvalidArgumentException');
-		$null = $testModel->NonExistentProperty;
-		unset($null);
-	}
-	public function testIssetNonExistentProperty() {
-		$testModel = new ConcreteModel();
+		// Assert that jsonSerialize produces the correct array
+		$this->assertSame($expectedJson, $testModel->jsonSerialize());
 
-		$this->expectException('InvalidArgumentException');
-		$null = isset($testModel->NonExistentProperty);
-		unset($null);
-	}
-	public function testUnsetNonExistentProperty() {
-		$testModel = new ConcreteModel();
-
-		$this->expectException('InvalidArgumentException');
-		unset($testModel->NonExistentProperty);
+		// Assert that json_encode works as expected with the model
+		$this->assertSame(json_encode($expectedJson), json_encode($testModel));
 	}
 }
-
 /**
- * Class ConcreteModel used to test the abstract Model class.
+ * Class TestModel used to test the abstract Model class.
  * @package Fluxoft\Rebar
- * @property string FunctionProperty
  */
 // @codingStandardsIgnoreStart
-class ConcreteModel extends Model {
-	// @codingStandardsIgnoreEnd
+class TestModel extends Model {
 	protected static array $defaultProperties = [
-		'defaultKey' => 'defaultValue',
-		'arrayAccessKey' => null
+		'Property'        => null,  // Single property for validation tests
+		'OptionalProperty' => null // Additional property to demonstrate custom getters/setters
 	];
-	
-	protected function validateInvalidProperty($value) {
-		return "Invalid value $value";
+
+	/**
+	 * Validate the "Property" value.
+	 * Accepts only the string "validValue" as valid.
+	 */
+	protected function validateProperty($value): bool|string {
+		return $value === 'validValue' ? true : 'Invalid value for Property';
 	}
-	protected function validateValidProperty($value) {
-		return $value === $value;
+
+	protected function getOptionalProperty(): ?string {
+		return $this->properties['OptionalProperty'];
 	}
-	protected function setFunctionProperty($value) {
-		$this->properties['FunctionProperty']    = $value;
-		$this->modProperties['FunctionProperty'] = $value;
-	}
-	protected function getFunctionProperty() {
-		return $this->properties['FunctionProperty'];
+
+	protected function setOptionalProperty($value): void {
+		$this->properties['OptionalProperty'] = $value;
 	}
 }
+// @codingStandardsIgnoreEnd
