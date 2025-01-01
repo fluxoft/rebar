@@ -8,7 +8,6 @@ interface NotifierInterface {
 	 * something with it. These classes should be very careful to handle all possible
 	 * exceptions of their own in a graceful way so as not to cause a
 	 * @param \Throwable|\Exception $t
-	 * @return mixed
 	 */
-	public function Notify(\Throwable $t);
+	public function Notify(\Throwable $t): void;
 }

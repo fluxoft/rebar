@@ -8,15 +8,7 @@ namespace Fluxoft\Rebar\Auth;
  * @package Fluxoft\Rebar\Auth
  */
 interface UserInterface {
-	/**
-	 * @return mixed
-	 */
-	public function GetID();
-
-	/**
-	 * Check the given password to see if it matches the User's Password.
-	 * @param $password
-	 * @return bool
-	 */
-	public function IsPasswordValid($password);
+	public function GetId(): mixed;
+	public function GetAuthUsernameProperty(): string;
+	public function IsPasswordValid($password): bool;
 }

@@ -2,6 +2,12 @@
 
 namespace Fluxoft\Rebar\_Traits;
 
+/**
+ * Trait UnsettableProperties
+ * For classes that need to have properties that cannot be set or unset.
+ *
+ * @package Fluxoft\Rebar\_Traits
+ */
 trait UnsettableProperties {
 	/**
 	 * Override the magic __set() method to prevent setting values.

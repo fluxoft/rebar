@@ -2,7 +2,16 @@
 
 namespace Fluxoft\Rebar\_Traits;
 
+/**
+ * Trait GettableProperties
+ * For classes that need to have properties that can be read
+ * (use SettableProperties or UnsettableProperties for write/delete).
+ *
+ * @package Fluxoft\Rebar\_Traits
+ */
 trait GettableProperties {
+	use Properties;
+
 	/**
 	 * Override the magic __get() method to get the value for
 	 * the specified member of the $properties array.  Use a "get[PropertyName]"
@@ -32,7 +41,6 @@ trait GettableProperties {
 	 *
 	 * @param $key
 	 * @return bool
-	 * @throws \InvalidArgumentException
 	 */
 	public function __isset($key) {
 		$fnName = "get$key";
@@ -41,7 +49,8 @@ trait GettableProperties {
 		} elseif (array_key_exists($key, $this->properties)) {
 			return ($this->properties[$key] !== null);
 		} else {
-			throw new \InvalidArgumentException(sprintf('Property %s does not exist', $key));
+			// If the property doesn't exist, it's not set.
+			return false;
 		}
 	}
 }

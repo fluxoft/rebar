@@ -1,0 +1,14 @@
+# phpstan.neon
+parameters:
+    level: 2 # Adjust strictness level from 0 (least strict) to 9 (most strict)
+    paths:
+        - src/ # Analyze your source code
+    bootstrapFiles:
+        - vendor/autoload.php # Ensure Composer autoloader is included
+    excludePaths:
+        # Use regex to exclude specific paths
+        - %currentWorkingDirectory%/tests/* # Exclude test files
+    ignoreErrors:
+        # Suppress specific error patterns (add only if necessary)
+        # Example:
+        # - '#Call to an undefined method#'

@@ -20,7 +20,7 @@ class Session extends ParameterSet {
 	 * @param $key
 	 * @param $value
 	 */
-	public function Set($key, $value) {
+	public function Set($key, $value): void {
 		$this->setSession($key, $value);
 		parent::Set($key, $value);
 	}
@@ -28,24 +28,24 @@ class Session extends ParameterSet {
 	/**
 	 * @param $key
 	 */
-	public function Delete($key) {
+	public function Delete($key): void {
 		$this->unsetSession($key);
 		parent::Delete($key);
 	}
 
 	// @codeCoverageIgnoreStart
-	protected function superGlobalSession() {
+	protected function superGlobalSession(): array {
 		return $_SESSION;
 	}
-	protected function startSession() {
+	protected function startSession(): void {
 		if (session_status() == PHP_SESSION_NONE) {
 			session_start();
 		}
 	}
-	protected function setSession($key, $value) {
+	protected function setSession($key, $value): void {
 		$_SESSION[$key] = $value;
 	}
-	protected function unsetSession($key) {
+	protected function unsetSession($key): void {
 		unset($_SESSION[$key]);
 	}
 	// @codeCoverageIgnoreEnd
