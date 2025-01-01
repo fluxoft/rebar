@@ -2,140 +2,285 @@
 
 namespace Fluxoft\Rebar\Auth\Db;
 
-use Doctrine\DBAL\Connection;
-use Doctrine\DBAL\Statement;
-use Fluxoft\Rebar\Db\MapperFactory;
+use Fluxoft\Rebar\Auth\BaseUser;
+use Fluxoft\Rebar\Auth\UserMapperInterface;
+use Fluxoft\Rebar\Data\Db\MapperFactory;
+use Fluxoft\Rebar\Data\Db\Mappers\GenericSqlMapper;
+use Fluxoft\Rebar\Model;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
 class UserMapperTest extends TestCase {
-	/** @var Connection|MockObject */
-	private $connectionObserver;
-	/** @var Statement|MockObject */
-	private $statementObserver;
-	/** @var ConcreteUserForUserMapperTest|MockObject */
-	private $userModelObserver;
-	/** @var MapperFactory */
-	private $mapperFactory;
+	private $connectionMock;
+	private $statementMock;
 
-	public function setup():void {
-		$this->connectionObserver = $this->getMockBuilder('\Doctrine\DBAL\Connection')
-			->disableOriginalConstructor()
-			->getMock();
-		$this->statementObserver  = $this->getMockBuilder('\Doctrine\DBAL\Statement')
-			->disableOriginalConstructor()
-			->getMock();
-		$this->userModelObserver  = $this->getMockBuilder('\Fluxoft\Rebar\Auth\Db\ConcreteUserForUserMapperTest')
-			->disableOriginalConstructor()
-			->getMock();
+	/** @var ConcreteUserForUserMapperTest */
+	private ConcreteUserForUserMapperTest $userModelObserver;
+	/** @var ConcreteMapperFactoryForUserMapperTest */
+	private ConcreteMapperFactoryForUserMapperTest $mapperFactory;
 
-		$this->mapperFactory = new ConcreteMapperFactoryForUserMapperTest(
-			$this->connectionObserver
-		);
+	public function setup(): void {
+		// Mock PDO connection
+		$this->connectionMock = $this->createMock(\PDO::class);
+
+		// Mock the PDOStatement
+		$this->statementMock = $this->createMock(\PDOStatement::class);
+		$this->statementMock->method('fetch')
+			->willReturn([
+				'Id' => 1,
+				'Email' => 'joe@fluxoft.com',
+				'Password' => password_hash('password', PASSWORD_BCRYPT)
+			]);
+		$this->statementMock->method('execute')
+			->willReturn(true);
+
+		// Mock the prepare method to return the PDOStatement mock
+		$this->connectionMock->method('prepare')
+			->willReturn($this->statementMock);
+
+		// Initialize other dependencies
+		$this->userModelObserver = new ConcreteUserForUserMapperTest();
+		$this->mapperFactory     = $this->getMockBuilder(ConcreteMapperFactoryForUserMapperTest::class)
+			->setConstructorArgs([$this->connectionMock])
+			->getMock();
 	}
 
-	public function tearDown():void {
-		unset($this->userModelObserver);
-		unset($this->statementObserver);
-		unset($this->connectionObserver);
-	}
+	public function testGetAuthorizedUserForUsernameAndPassword() {
+		// Arrange: Set up a valid user to be returned by GetOne
+		$user = new ConcreteUserForUserMapperTest([
+			'Id'       => 1,
+			'Email'    => 'joe@fluxoft.com',
+			'Password' => password_hash('password', PASSWORD_BCRYPT)
+		]);
 
-	/**
-	 * @param User|mixed $returnUser
-	 * @param string $password
-	 * @dataProvider authorizedUserProvider
-	 */
-	public function testGetAuthorizedUserForUsernameAndPassword(
-		$returnUser,
-		string $password
-	) {
-		$userMapper = $this->getMockBuilder('Fluxoft\Rebar\Auth\Db\ConcreteUserMapper')
+		/** @var ConcreteUserMapper|MockObject $mapper */
+		$mapper = $this->getMockBuilder(ConcreteUserMapper::class)
 			->setConstructorArgs([
 				$this->mapperFactory,
 				$this->userModelObserver,
-				$this->connectionObserver
+				$this->connectionMock
 			])
-			->setMethods(['GetOneWhere'])
+			->onlyMethods(['GetOne']) // Mock only the method actually being used
 			->getMock();
 
-		$userMapper
-			->expects($this->once())
-			->method('GetOneWhere')
-			->will($this->returnValue($returnUser));
-		$this->userModelObserver
-			->expects($this->once())
-			->method('GetAuthUsernameProperty')
-			->will($this->returnValue('Username'));
+		// Create the expected Filter
+		$expectedFilter = new \Fluxoft\Rebar\Data\Db\Filter('Email', '=', 'joe@fluxoft.com');
 
-		$validUser = false;
-		if (isset($returnUser)) {
-			if ($returnUser->IsPasswordValid($password)) {
-				$validUser = true;
-			} else {
-				$this->expectException('\Fluxoft\Rebar\Auth\Exceptions\InvalidPasswordException');
-				$this->expectExceptionMessage('Incorrect password');
-			}
-		} else {
-			$this->expectException('\Fluxoft\Rebar\Auth\Exceptions\UserNotFoundException');
-			$this->expectExceptionMessage('User not found');
-		}
+		// Mock the GetOne method to return the user
+		$mapper->expects($this->once())
+			->method('GetOne')
+			->with([$expectedFilter])
+			->willReturn($user);
 
-		$authorizedUser = $userMapper->GetAuthorizedUserForUsernameAndPassword(null, $password);
-		if ($validUser) {
-			$this->assertEquals($returnUser, $authorizedUser);
-		}
-	}
-	public function authorizedUserProvider() {
-		$user           = new ConcreteUserForUserMapperTest();
-		$user->Password = 'password';
-		return [
-			[
-				'returnUser' => null,
-				'password' => 'invalid'
-			],
-			[
-				'returnUser' => $user,
-				'password' => 'invalid'
-			],
-			[
-				'returnUser' => $user,
-				'password' => 'password'
-			]
-		];
+		// Act: Call the method to test
+		$result = $mapper->GetAuthorizedUserForUsernameAndPassword('joe@fluxoft.com', 'password');
+
+		// Assert: Verify the result
+		$this->assertInstanceOf(ConcreteUserForUserMapperTest::class, $result);
+		$this->assertEquals(1, $result->Id);
+		$this->assertEquals('joe@fluxoft.com', $result->Email);
+		$this->assertEquals('********', $result->Password);
 	}
 
 	public function testGetAuthorizedUserById() {
-		$userMapper = $this->getMockBuilder('\Fluxoft\Rebar\Auth\Db\UserMapper')
-			->disableOriginalConstructor()
-			->setMethods(['GetOneById'])
+		// Arrange: Set up a valid user to be returned by GetOneById
+		$user = new ConcreteUserForUserMapperTest([
+			'Id'       => 1,
+			'Email'    => 'joe@fluxoft.com',
+			'Password' => password_hash('password', PASSWORD_BCRYPT)
+		]);
+
+		/** @var ConcreteUserMapper|MockObject $mapper */
+		$mapper = $this->getMockBuilder(ConcreteUserMapper::class)
+			->setConstructorArgs([
+				$this->mapperFactory,
+				$this->userModelObserver,
+				$this->connectionMock
+			])
+			->onlyMethods(['GetOneById'])
 			->getMock();
-		$user       = new ConcreteUserForUserMapperTest();
 
-		$userMapper
-			->expects($this->once())
+		// Mock the GetOneById method to return the user for a valid ID
+		$mapper->expects($this->exactly(2)) // One for valid and one for invalid test case
 			->method('GetOneById')
-			->will($this->returnValue($user));
+			->willReturnCallback(function ($id) use ($user) {
+				return $id === 1 ? $user : null;
+			});
 
-		$authorizedUser = $userMapper->GetAuthorizedUserById(1);
+		// Act & Assert: Test valid ID
+		$result = $mapper->GetAuthorizedUserById(1);
+		$this->assertInstanceOf(ConcreteUserForUserMapperTest::class, $result);
+		$this->assertEquals(1, $result->Id);
+		$this->assertEquals('joe@fluxoft.com', $result->Email);
 
-		$this->assertEquals($authorizedUser, $user);
+		// Act & Assert: Test invalid ID
+		$this->expectException('\Fluxoft\Rebar\Auth\Exceptions\UserNotFoundException');
+		$this->expectExceptionMessage('User not found');
+		$mapper->GetAuthorizedUserById(999);
+	}
+
+	public function testEnforceMapperRequirementsThrowsExceptionForMissingUserMapperInterface() {
+		$this->expectException(\LogicException::class);
+		$this->expectExceptionMessage(sprintf(
+			'The class %s must implement %s to use %s.',
+			DummyUserMapperWithoutUserMapperInterface::class,
+			\Fluxoft\Rebar\Auth\UserMapperInterface::class,
+			\Fluxoft\Rebar\Auth\Db\UserMapperTrait::class
+		));
+
+		$dummy = new DummyUserMapperWithoutUserMapperInterface(
+			$this->mapperFactory,
+			new DummyUserModel(),
+			$this->connectionMock
+		);
+		$dummy->GetAuthorizedUserForUsernameAndPassword('joe@fluxoft.com', 'password');
+	}
+
+	public function testEnforcemapperRequirementsThrowsExceptionForMissingMapperInterface() {
+		$this->expectException(\LogicException::class);
+		$this->expectExceptionMessage(sprintf(
+			'The class %s must implement %s to use %s.',
+			DummyUserMapperWithoutMapperInterface::class,
+			\Fluxoft\Rebar\Data\Db\Mappers\MapperInterface::class,
+			\Fluxoft\Rebar\Auth\Db\UserMapperTrait::class
+		));
+
+		$dummy = new DummyUserMapperWithoutMapperInterface(
+			$this->mapperFactory,
+			new DummyUserModel(),
+			$this->connectionMock
+		);
+		$dummy->GetAuthorizedUserForUsernameAndPassword('joe@fluxoft.com', 'password');
+	}
+
+	public function testEnforceMapperRequirementsThrowsExceptionForInvalidUserModel() {
+		$this->expectException(\LogicException::class);
+		$this->expectExceptionMessage(sprintf(
+			'The class %s must implement %s to use %s.',
+			DummyUserMapperWithoutUserInterface::class,
+			\Fluxoft\Rebar\Auth\UserInterface::class,
+			\Fluxoft\Rebar\Auth\Db\UserMapperTrait::class
+		));
+
+		$dummy = new DummyUserMapperWithoutUserInterface(
+			$this->mapperFactory,
+			new DummyUserModel(),
+			$this->connectionMock
+		);
+		$dummy->GetAuthorizedUserForUsernameAndPassword('joe@fluxoft.com', 'password');
+	}
+
+	public function testGetAuthorizedUserForUsernameAndPasswordThrowsExceptionForInvalidPassword() {
+		$this->expectException(\Fluxoft\Rebar\Auth\Exceptions\InvalidCredentialsException::class);
+		$this->expectExceptionMessage('Incorrect password');
+
+		$user = new ConcreteUserForUserMapperTest([
+			'Id' => 1,
+			'Email' => 'joe@fluxoft.com',
+			'Password' => password_hash('correct_password', PASSWORD_BCRYPT)
+		]);
+
+		/** @var ConcreteUserMapper|MockObject $mapper */
+		$mapper = $this->getMockBuilder(ConcreteUserMapper::class)
+			->setConstructorArgs([
+				$this->mapperFactory,
+				$this->userModelObserver,
+				$this->connectionMock
+			])
+			->onlyMethods(['GetOne'])
+			->getMock();
+
+		$mapper->expects($this->once())
+			->method('GetOne')
+			->willReturn($user);
+
+		$mapper->GetAuthorizedUserForUsernameAndPassword('joe@fluxoft.com', 'wrong_password');
+	}
+
+	public function testGetAuthorizedUserForUsernameAndPasswordThrowsExceptionForUserNotFound() {
+		$this->expectException(\Fluxoft\Rebar\Auth\Exceptions\UserNotFoundException::class);
+		$this->expectExceptionMessage('User not found');
+
+		/** @var ConcreteUserMapper|MockObject $mapper */
+		$mapper = $this->getMockBuilder(ConcreteUserMapper::class)
+			->setConstructorArgs([
+				$this->mapperFactory,
+				$this->userModelObserver,
+				$this->connectionMock
+			])
+			->onlyMethods(['GetOne'])
+			->getMock();
+
+		$mapper->expects($this->once())
+			->method('GetOne')
+			->willReturn(null); // Simulate user not found
+
+		$mapper->GetAuthorizedUserForUsernameAndPassword('nonexistent@fluxoft.com', 'password');
 	}
 }
 
 // @codingStandardsIgnoreStart
-class ConcreteUserMapper extends UserMapper {}
-class ConcreteMapperFactoryForUserMapperTest extends MapperFactory {}
-class ConcreteUserForUserMapperTest extends User {
-	// @codingStandardsIgnoreEnd
-	protected $properties    = [
-		'Id' => 1,
-		'Email' => 'joe@fluxoft.com',
+class ConcreteUserMapper extends GenericSqlMapper implements UserMapperInterface {
+	use UserMapperTrait;
+
+	protected array $propertyDbMap = [
+		'Id'       => 'id',
+		'Email'    => 'email',
 		'Password' => 'password'
 	];
-	protected $propertyDbMap = [
-		'Id' => 'id',
-		'Email' => 'email',
-		'Password' => 'password'
-	];
-	protected $dbTable       = 'users';
+	protected string $dbTable = 'users';
 }
+
+class ConcreteMapperFactoryForUserMapperTest extends MapperFactory {}
+
+class ConcreteUserForUserMapperTest extends BaseUser {
+	protected static array $defaultProperties = [
+		'Id'       => 1,
+		'Email'    => 'joe@fluxoft.com',
+		'Password' => null
+	];
+	protected string $authUsernameProperty = 'Email';
+}
+
+// Dummy class for testing UserMapperTrait behaviors without mocking complexity
+class DummyUserModel extends Model {
+    protected static array $defaultProperties = [
+        'Id'       => null,
+        'Email'    => null,
+        'Password' => null,
+    ];
+}
+
+class DummyUserMapperWithoutUserMapperInterface extends GenericSqlMapper {
+	use UserMapperTrait;
+
+    protected array $propertyDbMap = [
+        'Id'       => 'id',
+        'Email'    => 'email',
+        'Password' => 'password',
+    ];
+    protected string $dbTable = 'users';
+}
+
+class DummyUserMapperWithoutMapperInterface implements UserMapperInterface {
+	use UserMapperTrait;
+
+	protected array $propertyDbMap = [
+		'Id'       => 'id',
+		'Email'    => 'email',
+		'Password' => 'password',
+	];
+	protected string $dbTable = 'users';
+}
+
+class DummyUserMapperWithoutUserInterface extends GenericSqlMapper implements UserMapperInterface {
+    use UserMapperTrait;
+
+    protected array $propertyDbMap = [
+        'Id'       => 'id',
+        'Email'    => 'email',
+        'Password' => 'password',
+    ];
+    protected string $dbTable = 'users';
+}
+// @codingStandardsIgnoreEnd

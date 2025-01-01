@@ -2,6 +2,8 @@
 
 namespace Fluxoft\Rebar\Http;
 
+use Fluxoft\Rebar\Auth\AuthInterface;
+use InvalidArgumentException;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
@@ -83,47 +85,6 @@ class RequestTest extends TestCase {
 				['DeleteParams', $deleteParams],
 				['Input', $input]
 			]);
-
-		/*$this->environmentMock
-			->expects($this->at(0))
-			->method('__get')
-			->with($this->equalTo('Headers'))
-			->will($this->returnValue($headers));
-		$this->environmentMock
-			->expects($this->at(1))
-			->method('__get')
-			->with($this->equalTo('ServerParams'))
-			->will($this->returnValue($serverParams));
-		$this->environmentMock
-			->expects($this->at(2))
-			->method('__get')
-			->with($this->equalTo('GetParams'))
-			->will($this->returnValue($getParams));
-		$this->environmentMock
-			->expects($this->at(3))
-			->method('__get')
-			->with($this->equalTo('PostParams'))
-			->will($this->returnValue($postParams));
-		$this->environmentMock
-			->expects($this->at(4))
-			->method('__get')
-			->with($this->equalTo('PutParams'))
-			->will($this->returnValue($putParams));
-		$this->environmentMock
-			->expects($this->at(5))
-			->method('__get')
-			->with($this->equalTo('PatchParams'))
-			->will($this->returnValue($patchParams));
-		$this->environmentMock
-			->expects($this->at(6))
-			->method('__get')
-			->with($this->equalTo('DeleteParams'))
-			->will($this->returnValue($deleteParams));
-		$this->environmentMock
-			->expects($this->at(7))
-			->method('__get')
-			->with($this->equalTo('Input'))
-			->will($this->returnValue($input));*/
 
 		$this->assertEquals(
 			array_change_key_case($headers),
@@ -819,14 +780,143 @@ class RequestTest extends TestCase {
 				'expectedPath' => '/foo/bar',
 				'expectedRemoteIP' => '24.1.1.1',
 				'expectedBody' => 'simpleGet'
+			],
+			'customHeaderCookiesAndSession' => [
+				'headers' => ['X-Custom-Header' => 'value'],
+				'serverParams' => ['REQUEST_METHOD' => 'GET', 'REMOTE_ADDR' => '1.2.3.4'],
+				'getParams' => [],
+				'postParams' => [],
+				'putParams' => [],
+				'patchParams' => [],
+				'deleteParams' => [],
+				'input' => '',
+				'expectedGetParams' => [],
+				'expectedPostParams' => [],
+				'expectedPutParams' => [],
+				'expectedPatchParams' => [],
+				'expectedDeleteParams' => [],
+				'expectedMethod' => 'GET',
+				'expectedProtocol' => 'http',
+				'expectedHost' => 'localhost',
+				'expectedPort' => '80',
+				'expectedURL' => 'http://localhost',
+				'expectedURI' => '',
+				'expectedPath' => '/',
+				'expectedRemoteIP' => '1.2.3.4',
+				'expectedBody' => '',
+				'expectedSession' => Session::class, // Verifies the Session instantiation
+				'expectedCookies' => Cookies::class // Verifies the Cookies instantiation
 			]
 		];
 	}
 
-	public function testUnsettableProperties() {
+	/**
+	 * @dataProvider unsettablePropertiesProvider
+	 */
+	public function testUnsettableProperties(string $property, $value) {
 		$request = new Request($this->environmentMock);
 
-		$this->expectException('\InvalidArgumentException');
-		$request->Method = '1.1.1.1';
+		$this->expectException(InvalidArgumentException::class);
+		$request->$property = $value;
+	}
+	public function unsettablePropertiesProvider(): array {
+		return [
+			['Method', 'disallowed_input'],
+			['Protocol', 'disallowed_input'],
+			['Host', 'disallowed_input'],
+			['Port', 'disallowed_input'],
+			['URL', 'disallowed_input'],
+			['URI', 'disallowed_input'],
+			['Path', 'disallowed_input'],
+			['RemoteIP', 'disallowed_input'],
+			['RawBody', 'disallowed_input'],
+			['Session', 'disallowed_input'],
+			['Cookies', 'disallowed_input']
+		];
+	}
+
+	public function testGetBodyInitializesRawBody() {
+		$this->environmentMock->method('__get')
+			->willReturnMap([
+				['Input', 'mockedInput']
+			]);
+	
+		$request = new Request($this->environmentMock);
+	
+		$this->assertEquals('mockedInput', $request->Body);
+		$this->assertEquals('mockedInput', $request->RawBody);
+	}
+	public function testSetBodyDoesNotModifyRawBody() {
+		$this->environmentMock->method('__get')
+			->willReturnMap([
+				['Input', 'initialInput']
+			]);
+	
+		$request = new Request($this->environmentMock);
+	
+		$request->Body = 'updatedBody';
+	
+		$this->assertEquals('updatedBody', $request->Body);
+		$this->assertEquals('initialInput', $request->RawBody);
+	}
+
+	public function testSetAuthenticatedUser() {
+		// Create a mock of UserInterface
+		$userMock = $this->createMock(\Fluxoft\Rebar\Auth\UserInterface::class);
+	
+		// Create an instance of the Request
+		$request = new Request($this->environmentMock);
+	
+		// Use Reflection to access the protected method
+		$reflection = new \ReflectionClass($request);
+		$method     = $reflection->getMethod('setAuthenticatedUser');
+		$method->setAccessible(true);
+	
+		// Call the protected method
+		$method->invoke($request, $userMock);
+	
+		// Assert that the property was set correctly
+		$this->assertSame($userMock, $request->AuthenticatedUser);
+	}
+
+	public function testSetAuthInterface() {
+		// Create a mock of AuthInterface
+		$authMock = $this->createMock(AuthInterface::class);
+	
+		// Create an instance of the Request
+		$request = new Request($this->environmentMock);
+	
+		// Use Reflection to access the protected method
+		$reflection = new \ReflectionClass($request);
+		$method     = $reflection->getMethod('setAuth');
+		$method->setAccessible(true);
+	
+		// Call the protected method
+		$method->invoke($request, $authMock);
+	
+		// Assert that the property was set correctly
+		$this->assertSame($authMock, $request->Auth);
+	}
+
+	/** @runInSeparateProcess */
+	public function testSessionProperty() {
+		$request = new Request($this->environmentMock);
+	
+		$session = $request->Session;
+	
+		$this->assertInstanceOf(Session::class, $session);
+	}
+
+	public function testCookiesProperty() {
+		$this->environmentMock->method('__get')
+			->willReturnMap([
+				['CookieSettings', []]
+			]);
+
+		$request = new Request($this->environmentMock);
+	
+		$cookies = $request->Cookies;
+	
+		$this->assertInstanceOf(Cookies::class, $cookies);
 	}
 }

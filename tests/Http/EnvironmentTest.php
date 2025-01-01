@@ -2,6 +2,7 @@
 
 namespace Fluxoft\Rebar\Http;
 
+use Fluxoft\Rebar\Http\Exceptions\EnvironmentException;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -41,6 +42,7 @@ class EnvironmentTest extends TestCase {
 		// properties should not be settable
 		$this->expectException('InvalidArgumentException');
 		$this->expectExceptionMessage('Read-only object.');
+		/** @disregard */
 		$environment->ServerParams = ['foo' => 'bar'];
 	}
 	public function testServerParamsNotUnsettable() {
@@ -57,6 +59,7 @@ class EnvironmentTest extends TestCase {
 		// properties should not be settable
 		$this->expectException('InvalidArgumentException');
 		$this->expectExceptionMessage('Read-only object.');
+		/** @disregard */
 		$environment->GetParams = ['foo' => 'bar'];
 	}
 	public function testGetParamsNotUnsettable() {
@@ -73,6 +76,7 @@ class EnvironmentTest extends TestCase {
 		// properties should not be settable
 		$this->expectException('InvalidArgumentException');
 		$this->expectExceptionMessage('Read-only object.');
+		/** @disregard */
 		$environment->PostParams = ['foo' => 'bar'];
 	}
 	public function testPostParamsNotUnsettable() {
@@ -89,6 +93,7 @@ class EnvironmentTest extends TestCase {
 		// properties should not be settable
 		$this->expectException('InvalidArgumentException');
 		$this->expectExceptionMessage('Read-only object.');
+		/** @disregard */
 		$environment->PutParams = ['foo' => 'bar'];
 	}
 	public function testPutParamsNotUnsettable() {
@@ -105,6 +110,7 @@ class EnvironmentTest extends TestCase {
 		// properties should not be settable
 		$this->expectException('InvalidArgumentException');
 		$this->expectExceptionMessage('Read-only object.');
+		/** @disregard */
 		$environment->PatchParams = ['foo' => 'bar'];
 	}
 	public function testPatchParamsNotUnsettable() {
@@ -121,6 +127,7 @@ class EnvironmentTest extends TestCase {
 		// properties should not be settable
 		$this->expectException('InvalidArgumentException');
 		$this->expectExceptionMessage('Read-only object.');
+		/** @disregard */
 		$environment->DeleteParams = ['foo' => 'bar'];
 	}
 	public function testDeleteParamsNotUnsettable() {
@@ -137,6 +144,7 @@ class EnvironmentTest extends TestCase {
 		// properties should not be settable
 		$this->expectException('InvalidArgumentException');
 		$this->expectExceptionMessage('Read-only object.');
+		/** @disregard */
 		$environment->Headers = ['foo' => 'bar'];
 	}
 	public function testHeadersNotUnsettable() {
@@ -153,6 +161,7 @@ class EnvironmentTest extends TestCase {
 		// properties should not be settable
 		$this->expectException('InvalidArgumentException');
 		$this->expectExceptionMessage('Read-only object.');
+		/** @disregard */
 		$environment->Input = ['foo' => 'bar'];
 	}
 	public function testInputNotUnsettable() {
@@ -399,6 +408,18 @@ class EnvironmentTest extends TestCase {
 				'serverGlobal' => [],
 				'expectedHeaders' => []
 			],
+			'contentHeaders' => [
+				'serverGlobal' => [
+					'CONTENT_TYPE' => 'application/json',
+					'CONTENT_LENGTH' => '123',
+					'CONTENT_MD5' => 'd41d8cd98f00b204e9800998ecf8427e'
+				],
+				'expectedHeaders' => [
+					'Content-Type' => 'application/json',
+					'Content-Length' => '123',
+					'Content-Md5' => 'd41d8cd98f00b204e9800998ecf8427e'
+				]
+			],
 			'fullHeaders' => [
 				'serverGlobal' => [
 					'REDIRECT_STATUS' => '200',
@@ -494,6 +515,109 @@ class EnvironmentTest extends TestCase {
 			]
 		];
 	}
+
+	public function testSetCookieSettingsWithValidSettings(): void {
+		/** @var MockableEnvironment $environment */
+		$environment = MockableEnvironment::GetInstance();
+		$environment->Reset();
+
+		$validSettings = [
+			'expires' => time() + 3600,
+			'path' => '/test',
+			'domain' => 'example.com',
+			'secure' => true,
+			'httponly' => false
+		];
+
+		$environment->SetCookieSettings($validSettings);
+
+		$expectedSettings = array_merge($environment->GetDefaultCookieSettings(), $validSettings);
+		$this->assertSame($expectedSettings, $environment->CookieSettings);
+	}
+
+	public function testSetCookieSettingsWithUnexpectedKeysThrowsException(): void {
+		/** @var MockableEnvironment $environment */
+		$environment = MockableEnvironment::GetInstance();
+		$environment->Reset();
+
+		$invalidSettings = [
+			'invalidKey' => 'value'
+		];
+
+		$this->expectException(EnvironmentException::class);
+		$this->expectExceptionMessage('Unexpected cookie settings: invalidKey');
+
+		$environment->SetCookieSettings($invalidSettings);
+	}
+
+	public function testConfigureDefaultCookieSettings(): void {
+		/** @var MockableEnvironment $environment */
+		$environment = MockableEnvironment::GetInstance();
+
+		// Test with "localhost"
+		$environment->Reset();
+		$environment->SetServerGlobal(['HTTP_HOST' => 'localhost']);
+		$environment->PublicConfigureDefaultCookieSettings();
+		$this->assertEquals(
+			'localhost',
+			$environment->GetDefaultCookieSettings()['domain'],
+			'Failed asserting that "localhost" is set correctly as domain.'
+		);
+		$this->assertFalse(
+			$environment->GetDefaultCookieSettings()['secure'],
+			'Failed asserting that "secure" is false when no HTTPS is present.'
+		);
+
+		// Test with "localhost:8000"
+		$environment->Reset();
+		$environment->SetServerGlobal(['HTTP_HOST' => 'localhost:8000']);
+		$environment->PublicConfigureDefaultCookieSettings();
+		$this->assertEquals(
+			'localhost',
+			$environment->GetDefaultCookieSettings()['domain'],
+			'Failed asserting that "localhost" is extracted correctly from "localhost:8000".'
+		);
+		$this->assertFalse(
+			$environment->GetDefaultCookieSettings()['secure'],
+			'Failed asserting that "secure" is false when no HTTPS is present.'
+		);
+
+		// Test with HTTPS enabled
+		$environment->Reset();
+		$environment->SetServerGlobal(['HTTP_HOST' => 'localhost', 'HTTPS' => 'on']);
+		$environment->PublicConfigureDefaultCookieSettings();
+		$this->assertTrue(
+			$environment->GetDefaultCookieSettings()['secure'],
+			'Failed asserting that "secure" is true when HTTPS is present.'
+		);
+
+		// Test with HTTPS disabled
+		$environment->Reset();
+		$environment->SetServerGlobal(['HTTP_HOST' => 'localhost', 'HTTPS' => 'off']);
+		$environment->PublicConfigureDefaultCookieSettings();
+		$this->assertFalse(
+			$environment->GetDefaultCookieSettings()['secure'],
+			'Failed asserting that "secure" is false when HTTPS is explicitly off.'
+		);
+
+		// Test with "X-Forwarded-Proto" for HTTPS
+		$environment->Reset();
+		$environment->SetServerGlobal(['HTTP_HOST' => 'localhost', 'HTTP_X_FORWARDED_PROTO' => 'https']);
+		$environment->PublicConfigureDefaultCookieSettings();
+		$this->assertTrue(
+			$environment->GetDefaultCookieSettings()['secure'],
+			'Failed asserting that "secure" is true when X-Forwarded-Proto is "https".'
+		);
+
+		// Test with "X-Forwarded-Proto" for HTTP
+		$environment->Reset();
+		$environment->SetServerGlobal(['HTTP_HOST' => 'localhost', 'HTTP_X_FORWARDED_PROTO' => 'http']);
+		$environment->PublicConfigureDefaultCookieSettings();
+		$this->assertFalse(
+			$environment->GetDefaultCookieSettings()['secure'],
+			'Failed asserting that "secure" is false when X-Forwarded-Proto is "http".'
+		);
+	}
 }
 
 // @codingStandardsIgnoreStart
@@ -501,13 +625,15 @@ class MockableEnvironment extends Environment {
 	// @codingStandardsIgnoreEnd
 
 	public function Reset() {
-		$this->serverParams = null;
-		$this->postParams   = null;
-		$this->putParams    = null;
-		$this->patchParams  = null;
-		$this->deleteParams = null;
-		$this->headers      = null;
-		$this->input        = null;
+		// reset the values of the properties to nulls
+		$this->properties['ServerParams'] = null;
+		$this->properties['GetParams']    = null;
+		$this->properties['PostParams']   = null;
+		$this->properties['PutParams']    = null;
+		$this->properties['PatchParams']  = null;
+		$this->properties['DeleteParams'] = null;
+		$this->properties['Headers']      = null;
+		$this->properties['Input']        = null;
 	}
 
 	private $serverGlobal = [];
@@ -522,7 +648,7 @@ class MockableEnvironment extends Environment {
 	public function SetPostGlobal(array $postParams) {
 		$this->postGlobal = $postParams;
 	}
-	private $rawInput;
+	private $rawInput = '';
 	public function SetRawInput($input) {
 		$this->rawInput = $input;
 	}
@@ -544,5 +670,15 @@ class MockableEnvironment extends Environment {
 	 */
 	protected function getRawInput() {
 		return $this->rawInput;
+	}
+
+	// public method to call configureDefaultCookieSettings:
+	public function PublicConfigureDefaultCookieSettings(): void {
+		$this->configureDefaultCookieSettings();
+	}
+
+	// public getter for defaultCookieSettings
+	public function GetDefaultCookieSettings(): array {
+		return $this->defaultCookieSettings;
 	}
 }

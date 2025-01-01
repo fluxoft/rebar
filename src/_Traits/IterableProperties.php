@@ -2,7 +2,15 @@
 
 namespace Fluxoft\Rebar\_Traits;
 
+/**
+ * Trait IterableProperties
+ * For classes that need to have properties that can be iterated over.
+ * 
+ * @package Fluxoft\Rebar\_Traits
+ */
 trait IterableProperties {
+	use Properties;
+
 	// Iterator interface implementation.
 	private int $position = 0;
 	public function rewind(): void {

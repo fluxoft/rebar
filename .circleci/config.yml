@@ -21,23 +21,23 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key: dependency-cache-{{ checksum "composer.lock" }}
+          key: dependency-cache-{{ checksum "composer.json" }}
       - run:
           name: "composer install"
           command: "composer install --prefer-dist --no-interaction"
       - save_cache:
-          key: dependency-cache-{{ checksum "composer.lock" }}
+          key: dependency-cache-{{ checksum "composer.json" }}
           paths:
             - ./vendor
       - run:
-          name: "PHP CodeSniffer: Source"
-          command: "vendor/bin/phpcs --standard=ruleset.xml src/"
-      - run:
-          name: "PHP CodeSniffer: Tests"
-          command: "vendor/bin/phpcs --standard=ruleset.xml tests/"
+          name: "PHP CodeSniffer"
+          command: "vendor/bin/phpcs --standard=ruleset.xml src/ tests/"
       - run:
           name: "PHPUnit"
           command: "phpdbg -qrr vendor/bin/phpunit -c phpunit.xml.dist"
+      - run:
+          name: "PHPStan"
+          command: "vendor/bin/phpstan analyse"
       - php-coveralls/upload:
           clover-path: '${CLOVER_PATH}'
           json-path: '${JSON_PATH}'

@@ -1,4 +1,5 @@
 <?php
+
 namespace Fluxoft\Rebar\Http;
 
 use Fluxoft\Rebar\_Traits\ArrayAccessibleProperties;
@@ -11,14 +12,21 @@ use Fluxoft\Rebar\Http\Exceptions\EnvironmentException;
 /**
  * Class Environment
  * @package Fluxoft\Rebar\Http
- * @property array ServerParams
- * @property array GetParams
- * @property array PostParams
- * @property array PutParams
- * @property array PatchParams
- * @property array DeleteParams
- * @property array Headers
- * @property string Input
+ * @property-read array  $ServerParams This is the $_SERVER superglobal
+ * @property-read array  $GetParams This is the $_GET superglobal
+ * @property-read array  $PostParams This is the $_POST superglobal
+ * @property-read array  $PutParams This is the $_POST superglobal, but only if the request method is PUT
+ * @property-read array  $PatchParams This is the $_POST superglobal, but only if the request method is PATCH
+ * @property-read array  $DeleteParams This is the $_POST superglobal, but only if the request method is DELETE
+ * @property-read array  $Headers This is an array of all headers sent in the request
+ * @property-read string $Input This is the raw input from the request
+ * @property      array  $CookieSettings This is an array of settings for cookies, valid keys are:
+ *  - expires: The expiration time of the cookie. Default is 0 (session cookie)
+ *  - path: The path on the server in which the cookie will be available on. Default is '/'
+ *  - domain: The (sub)domain that the cookie is available to. Default is the host of the server
+ *  - secure: Indicates that the cookie should only be transmitted over a secure HTTPS connection
+ *  - httponly: When TRUE the cookie will be made accessible only through the HTTP protocol
+ * @method void SetCookieSettings(array $settings) Set the cookie settings. Valid keys are same as CookieSettings
  */
 class Environment implements \ArrayAccess, \Iterator {
 	use GettableProperties;
@@ -27,127 +35,147 @@ class Environment implements \ArrayAccess, \Iterator {
 	use ArrayAccessibleProperties;
 	use StringableProperties;
 
-	/** @var array */
-	protected $properties = [
-		'ServerParams' => [],
-		'GetParams' => [],
-		'PostParams' => [],
-		'PutParams' => [],
-		'PatchParams' => [],
-		'DeleteParams' => [],
-		'Headers' => [],
-		'Input' => ''
-	];
-
 	/**
 	 * @var \Fluxoft\Rebar\Http\Environment
 	 */
 	protected static $environment = null;
 
-	public static function GetInstance() {
+	public static function GetInstance(): Environment {
 		if (is_null(static::$environment)) {
 			static::$environment = new static();
 		}
 		return static::$environment;
 	}
-	public function __clone() {
+	public function __clone(): void {
 		throw new EnvironmentException('Cloning not allowed.');
 	}
-	private function __construct() {}
+	final private function __construct() {
+		$this->configureDefaultCookieSettings();
+	}
 
-	/** @var array */
-	protected $serverParams = null;
-	protected function getServerParams() {
-		if (!isset($this->serverParams)) {
-			$this->serverParams = $this->superGlobalServer();
+	protected array $defaultCookieSettings = [
+		'expires'  => 0, // Default to session cookies
+		'path'     => '/', // Default to root path
+		'domain'   => null, // Will be dynamically set in the constructor
+		'secure'   => null, // Will be dynamically set in the constructor
+		'httponly' => true // Default to HTTP-only cookies for security
+	];
+	protected function configureDefaultCookieSettings(): void {
+		$serverParams = array_change_key_case($this->ServerParams, CASE_LOWER);
+
+		$httpHost = $serverParams['http_host'] ?? null;
+		if ($httpHost) {
+			$this->defaultCookieSettings['domain'] = explode(':', $httpHost)[0];
+		} else {
+			$this->defaultCookieSettings['domain'] = null;
 		}
-		return $this->serverParams;
+		$this->defaultCookieSettings['secure'] =
+			(isset($serverParams['https']) && strtolower($serverParams['https']) !== 'off') ||
+			(isset($serverParams['http_x_forwarded_proto']) && strtolower($serverParams['http_x_forwarded_proto']) === 'https');
+		$this->properties['CookieSettings']    = $this->defaultCookieSettings;
 	}
-	/** @var array */
-	protected $getParams = null;
-	protected function getGetParams() {
-		if (!isset($this->getParams)) {
-			$this->getParams = $this->superGlobalGet();
+
+	protected function getServerParams(): array {
+		if (!isset($this->properties['ServerParams'])) {
+			$this->properties['ServerParams'] = $this->superGlobalServer();
 		}
-		return $this->getParams;
+		return $this->properties['ServerParams'];
 	}
-	/** @var array */
-	protected $postParams = null;
-	protected function getPostParams() {
-		if (!isset($this->postParams)) {
+	protected function getGetParams(): array {
+		if (!isset($this->properties['GetParams'])) {
+			$this->properties['GetParams'] = $this->superGlobalGet();
+		}
+		return $this->properties['GetParams'];
+	}
+	protected function getPostParams(): array {
+		if (!isset($this->properties['PostParams'])) {
 			if (isset($this->ServerParams['REQUEST_METHOD']) &&
 				strtoupper($this->ServerParams['REQUEST_METHOD']) === 'POST' &&
 				!isset($this->Headers['X-Http-Method-Override'])
 			) {
-				$this->postParams = $this->superGlobalPost();
+				$this->properties['PostParams'] = $this->superGlobalPost();
 			} elseif (isset($this->Headers['X-Http-Method-Override']) &&
 				strtoupper($this->Headers['X-Http-Method-Override']) === 'POST'
 			) {
-				$this->postParams = $this->superGlobalPost();
+				$this->properties['PostParams'] = $this->superGlobalPost();
 			} else {
-				$this->postParams = [];
+				$this->properties['PostParams'] = [];
 			}
 		}
-		return $this->postParams;
+		return $this->properties['PostParams'];
 	}
-	/** @var array */
-	protected $putParams = null;
-	protected function getPutParams() {
-		if (!isset($this->putParams)) {
+	protected function getPutParams(): array {
+		if (!isset($this->properties['PutParams'])) {
 			if (isset($this->Headers['X-Http-Method-Override']) &&
 				strtoupper($this->Headers['X-Http-Method-Override']) === 'PUT'
 			) {
-				$this->putParams = $this->superGlobalPost();
+				$this->properties['PutParams'] = $this->superGlobalPost();
 			} else {
-				$this->putParams = [];
+				$this->properties['PutParams'] = [];
 			}
 		}
-		return $this->putParams;
+		return $this->properties['PutParams'];
 	}
-	/** @var array */
-	protected $patchParams = null;
-	protected function getPatchParams() {
-		if (!isset($this->patchParams)) {
+	protected function getPatchParams(): array {
+		if (!isset($this->properties['PatchParams'])) {
 			if (isset($this->Headers['X-Http-Method-Override']) &&
 				strtoupper($this->Headers['X-Http-Method-Override']) === 'PATCH'
 			) {
-				$this->patchParams = $this->superGlobalPost();
+				$this->properties['PatchParams'] = $this->superGlobalPost();
 			} else {
-				$this->patchParams = [];
+				$this->properties['PatchParams'] = [];
 			}
 		}
-		return $this->patchParams;
+		return $this->properties['PatchParams'];
 	}
-	/** @var array */
-	protected $deleteParams = null;
-	protected function getDeleteParams() {
-		if (!isset($this->deleteParams)) {
+	protected function getDeleteParams(): array {
+		if (!isset($this->properties['DeleteParams'])) {
 			if (isset($this->Headers['X-Http-Method-Override']) &&
 				strtoupper($this->Headers['X-Http-Method-Override']) === 'DELETE'
 			) {
-				$this->deleteParams = $this->superGlobalPost();
+				$this->properties['DeleteParams'] = $this->superGlobalPost();
 			} else {
-				$this->deleteParams = [];
+				$this->properties['DeleteParams'] = [];
 			}
 		}
-		return $this->deleteParams;
+		return $this->properties['DeleteParams'];
 	}
-	/** @var array */
-	protected $headers = null;
-	protected function getHeaders() {
-		if (!isset($this->headers)) {
-			$this->headers = $this->getAllHeaders();
+	protected function getHeaders(): array {
+		if (!isset($this->properties['Headers'])) {
+			$this->properties['Headers'] = $this->getAllHeaders();
 		}
-		return $this->headers;
+		return $this->properties['Headers'];
 	}
-	/** @var string */
-	protected $input = null;
-	protected function getInput() {
-		if (!isset($this->input)) {
-			$this->input = $this->getRawInput();
+	protected function getInput(): string {
+		if (!isset($this->properties['Input'])) {
+			$this->properties['Input'] = $this->getRawInput();
 		}
-		return $this->input;
+		return $this->properties['Input'];
 	}
+
+	// CookieSettings
+	public function SetCookieSettings(array $settings): void {
+		$this->properties['CookieSettings'] = $this->validateCookieSettings($settings);
+	}
+	protected function validateCookieSettings(array $settings): array {
+		$validated = [];
+		foreach ($this->defaultCookieSettings as $key => $value) {
+			if (isset($settings[$key])) {
+				$validated[$key] = $settings[$key];
+			} else {
+				$validated[$key] = $value;
+			}
+		}
+
+		// Detect unexpected keys and throw an exception
+		$unexpectedKeys = array_diff(array_keys($settings), array_keys($this->defaultCookieSettings));
+		if (count($unexpectedKeys) > 0) {
+			throw new EnvironmentException('Unexpected cookie settings: ' . implode(', ', $unexpectedKeys));
+		}
+
+		return $validated;
+	}
+
 
 	/**
 	 * @return string

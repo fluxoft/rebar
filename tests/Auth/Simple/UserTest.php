@@ -2,8 +2,9 @@
 
 namespace Fluxoft\Rebar\Auth\Simple;
 
-use Fluxoft\Rebar\Auth\Simple\User;
+use Fluxoft\Rebar\Auth\Exceptions\InvalidCredentialsException;
 use PHPUnit\Framework\TestCase;
+use TypeError;
 
 class UserTest extends TestCase {
 	/**
@@ -13,32 +14,24 @@ class UserTest extends TestCase {
 	 * @dataProvider constructorProvider
 	 */
 	public function testUser($id, $username, $password) {
-		$validUser = false;
-		if (isset($id) &&
-			isset($username) &&
-			isset($password)
-		) {
-			if (!is_int($id)) {
-				$this->expectException('\Fluxoft\Rebar\Auth\Exceptions\InvalidUserException');
-				$this->expectExceptionMessage('The Id must be an integer.');
-			} elseif (!is_string($username) || strlen($username) === 0) {
-				$this->expectException('\Fluxoft\Rebar\Auth\Exceptions\InvalidUserException');
-				$this->expectExceptionMessage('The Username must be a non-zero length string');
-			} elseif (!is_string($password) || strlen($password) === 0) {
-				$this->expectException('\Fluxoft\Rebar\Auth\Exceptions\InvalidUserException');
-				$this->expectExceptionMessage('The Password must be a non-zero length string');
-			} else {
-				$validUser = true;
-			}
-		} else {
-			$this->expectException('\Fluxoft\Rebar\Auth\Exceptions\InvalidUserException');
-			$this->expectExceptionMessage('User must be initialized with ID, Username, and Password properties');
+		$isValidUser = is_int($id)
+			&& is_string($username) && strlen($username) > 0
+			&& is_string($password) && strlen($password) > 0;
+
+		if (!is_int($id)) {
+			$this->expectException(TypeError::class);
+		} elseif (is_null($username) || strlen($username) < 1) {
+			$this->expectException(InvalidCredentialsException::class);
+		} elseif (strlen($password) < 1) {
+			$this->expectException(InvalidCredentialsException::class);
+		} elseif (!$isValidUser) {
+			$this->expectException(InvalidCredentialsException::class);
 		}
 
 		$user = new User($id, $username, $password);
 
-		if ($validUser) {
-			$this->assertEquals($id, $user->Id);
+		if ($isValidUser) {
+			$this->assertEquals($id, $user->GetId());
 			$this->assertEquals($username, $user->Username);
 			$this->assertEquals('********', $user->Password);
 			$this->assertTrue($user->IsPasswordValid($password));
@@ -46,41 +39,27 @@ class UserTest extends TestCase {
 	}
 	public function constructorProvider() {
 		return [
-			[
-				'id' => null,
-				'username' => null,
-				'password' => null
-			],
-			[
-				'id' => 'foo',
-				'username' => 'foo',
-				'password' => 'foo',
-			],
-			[
-				'id' => 0,
-				'username' => false,
-				'password' => 'foo'
-			],
-			[
-				'id' => 0,
-				'username' => '',
-				'password' => 'foo'
-			],
-			[
-				'id' => 0,
-				'username' => 'foo',
-				'password' => false
-			],
-			[
-				'id' => 0,
-				'username' => 'foo',
-				'password' => ''
-			],
-			[
-				'id' => 0,
-				'username' => 'foo',
-				'password' => 'bar'
-			]
+			// Invalid cases
+			[null, null, null],          // Invalid: All null
+			['foo', 'foo', 'foo'],       // Invalid: ID is string
+			[0, false, 'foo'],           // Invalid: Username is not a string
+			[0, '', 'foo'],              // Invalid: Username is empty
+			[0, 'foo', false],           // Invalid: Password is not a string
+			[0, 'foo', ''],              // Invalid: Password is empty
+			// Valid case
+			[1, 'foo', 'bar'],           // Valid
 		];
+	}
+
+	public function testHashPassword() {
+		$user = new User(1, 'foo', 'bar');
+		$hash = password_hash('bar', PASSWORD_DEFAULT);
+		$this->assertTrue(password_verify('bar', $hash));
+		$this->assertTrue($user->IsPasswordValid('bar'));
+	}
+
+	public function testGetAuthUsernameProperty() {
+		$user = new User(1, 'foo', 'bar');
+		$this->assertEquals('Username', $user->GetAuthUsernameProperty());
 	}
 }

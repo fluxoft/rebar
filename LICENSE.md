@@ -3,7 +3,7 @@ LICENSE
 
 Rebar is released under the MIT License:
 
-> Copyright (c) 2014 Joe Hart
+> Copyright (c) 2014-2025 Joe Hart and contributors
 >
 > Permission is hereby granted, free of charge, to any person obtaining
 > a copy of this software and associated documentation files (the

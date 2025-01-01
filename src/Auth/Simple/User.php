@@ -2,80 +2,64 @@
 
 namespace Fluxoft\Rebar\Auth\Simple;
 
-use Fluxoft\Rebar\Auth\Exceptions\InvalidUserException;
+use Fluxoft\Rebar\Auth\Exceptions\InvalidCredentialsException;
 use Fluxoft\Rebar\Auth\UserInterface;
 use Fluxoft\Rebar\Model;
 
 /**
  * Class User
  * @package Fluxoft\Rebar\Auth\Users\Simple
- * @property int Id
- * @property string Username
- * @property string Password
+ * @property int    $Id
+ * @property string $Username
+ * @property string $Password
  */
 class User extends Model implements UserInterface {
-	protected $properties = [
-		'Id' => null,
-		'Username' => null,
-		'Password' => null
+	protected static array $defaultProperties = [
+		'Id'	   => 0,
+		'Username' => '',
+		'Password' => ''
 	];
+	public function __construct(int $id, string $username, string $password) {
+		parent::__construct([
+			'Id'	   => $id,
+			'Username' => $username
+		]);
+		$this->Password = $password;
 
-	/**
-	 * @param int $id
-	 * @param $username
-	 * @param $password
-	 * @throws InvalidUserException
-	 */
-	public function __construct($id, $username, $password) {
-		if (isset($id) &&
-			isset($username) &&
-			isset($password)
-		) {
-			if (!is_int($id)) {
-				throw new InvalidUserException('The Id must be an integer.');
-			} elseif (!is_string($username) || strlen($username) === 0) {
-				throw new InvalidUserException('The Username must be a non-zero length string');
-			} elseif (!is_string($password) || strlen($password) === 0) {
-				throw new InvalidUserException('The Password must be a non-zero length string');
-			} else {
-				parent::__construct([
-					'Id' => $id,
-					'Username' => $username,
-					'Password' => $password
-				]);
-			}
-		} else {
-			throw new InvalidUserException('User must be initialized with ID, Username, and Password properties');
+		if (!$this->IsValid()) {
+			throw new InvalidCredentialsException('Invalid User properties: '.implode(', ', $this->GetValidationErrors()));
 		}
 	}
 
-	/**
-	 * @return int
-	 */
-	public function GetID() {
+	// UserInterface implementation
+	public function GetId(): mixed {
 		return $this->properties['Id'];
 	}
-
-	/**
-	 * @return string
-	 */
-	public function GetUsername() {
-		return $this->properties['Username'];
+	public function GetAuthUsernameProperty(): string {
+		return 'Username';
+	}
+	public function IsPasswordValid($password): bool {
+		return password_verify($password, $this->properties['Password']);
 	}
 
-	/**
-	 * @return string
-	 */
-	public function GetPassword() {
+	protected function validateUsername(string $value): bool|string {
+		if (strlen($value) < 1) {
+			return 'Username must be at least 1 character long.';
+		}
+		return true;
+	}
+
+	// password getter/setter (stored as a hash, but returned as a string with asterisks for obfuscation)
+	protected function getPassword(): string {
 		return '********';
 	}
-
-	/**
-	 * Check the given password to see if it matches the User's Password.
-	 * @param $password
-	 * @return bool
-	 */
-	public function IsPasswordValid($password) {
-		return $this->properties['Password'] === $password;
+	protected function setPassword(string $password): void {
+		if (strlen($password) < 1) {
+			throw new InvalidCredentialsException('Password must be at least 1 character long.');
+		}
+		$this->properties['Password'] = $this->hashPassword($password);
+	}
+	protected function hashPassword(string $password): string {
+		return password_hash($password, PASSWORD_DEFAULT);
 	}
 }
