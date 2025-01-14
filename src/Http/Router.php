@@ -121,11 +121,6 @@ class Router {
 			$response->AddHeader('Content-Type', 'text/plain');
 			$response->Body = "Route not found\n" . $e->getMessage();
 			$response->Send();
-		} catch (AuthenticationException $e) {
-			$response->Status = 401;
-			$response->AddHeader('Content-Type', 'text/plain');
-			$response->Body = "Authentication error\n" . $e->getMessage();
-			$response->Send();
 		}
 	}
 
@@ -195,7 +190,7 @@ class Router {
 		call_user_func_array([$controller, $method], $params);
 	}
 
-	protected function getRoute($path) {
+	protected function getRoute(string $path) {
 		$routeParts = [];
 
 		// First try to resolve using explicit Route definitions
