@@ -125,7 +125,7 @@ abstract class AbstractRestController extends Controller {
 
 		$this->response->Status = $status;
 		foreach ($responseData as $key => $value) {
-			$this->set($key, $value);
+			$this->response->AddData($key, $value);
 		}
 	}
 }

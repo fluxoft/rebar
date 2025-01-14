@@ -3,14 +3,13 @@
 namespace Fluxoft\Rebar\Http\Presenters;
 
 use Fluxoft\Rebar\Exceptions\PropertyNotFoundException;
-use Fluxoft\Rebar\Http\Response;
 
 /**
  * Class Phtml
  *
  * This presenter can be used to present using PHTML-style templates.
  * It's a bad idea and I don't think anyone should actually use this
- * (use Twig or Smarty or some actual template engine instead), but
+ * (use Twig or Pug or some actual template engine instead), but
  * it can be helpful when migrating a site that might already have a
  * lot of these types of templates, so they don't all have to be
  * transitioned at one time.
@@ -20,19 +19,25 @@ use Fluxoft\Rebar\Http\Response;
  * @property string $Template
  */
 class PhtmlPresenter implements PresenterInterface {
+	/**
+	 * PhtmlPresenter constructor.
+	 * @param string $templatePath The path to the templates.
+	 * @param string $template The default template file to use.
+	 * @param string $layout The layout file to use.
+	 */
 	public function __construct(
-		private readonly string $templatePath,
-		private string $template = '/default.phtml',
-		private string $layout = ''
+		protected readonly string $templatePath,
+		protected string $template = '/default.phtml',
+		protected string $layout = ''
 	) {}
 
 	/**
-	 * Render the given data using the specified template or layout.
+	 * Transform the given data into the desired output format.
 	 *
-	 * @param Response $response The HTTP response to be updated.
 	 * @param array $data The data to be rendered in the template.
+	 * @return array{body: string, status: int, headers: array<string, string>}
 	 */
-	public function Render(Response $response, array $data): void {
+	public function Format(array $data): array {
 		// make the data set available to the template as $rebarTemplateData
 		// to hopefully avoid naming collisions
 		$rebarTemplateData = $data;
@@ -41,30 +46,32 @@ class PhtmlPresenter implements PresenterInterface {
 			// this can be used in a layout template to include the template
 			// in the appropriate place on the page
 			$rebarPageTemplate = $this->template;
-			$include           = $this->templatePath.$this->layout;
+			$include           = $this->templatePath . $this->layout;
 
 			// Pass both variables for the layout template to use
 			$output = $this->includeTemplate($include, compact('rebarTemplateData', 'rebarPageTemplate'));
 		} else {
-			$include = $this->templatePath.$this->template;
+			$include = $this->templatePath . $this->template;
 
 			// Pass only $rebarTemplateData for the template to use
 			$output = $this->includeTemplate($include, compact('rebarTemplateData'));
 		}
-		if ($this->fileExists($include)) {
-			$response->AddHeader('Content-Type', 'text/html');
-			$response->Body   = $output;
-			$response->Status = 200;
-			$response->Send();
-		} else {
-			$response->AddHeader('Content-Type', 'text/plain');
-			$response->Status = 404;
-			$response->Body   = 'Template not found.';
-			$response->Send();
-		}
 
-		unset($rebarTemplateData);
-		unset($rebarPageTemplate);
+		if ($this->fileExists($include)) {
+			// Successful rendering
+			return [
+				'body' => $output,
+				'status' => 200,
+				'headers' => ['Content-Type' => 'text/html']
+			];
+		} else {
+			// Template not found
+			return [
+				'body' => 'Template not found.',
+				'status' => 404,
+				'headers' => ['Content-Type' => 'text/plain']
+			];
+		}
 	}
 
 	/**

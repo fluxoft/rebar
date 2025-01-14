@@ -7,19 +7,6 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
 class JsonPresenterTest extends TestCase {
-	/** @var MockObject|Response */
-	private $responseObserver;
-
-	protected function setup():void {
-		$this->responseObserver = $this->getMockBuilder(Response::class)
-			->disableOriginalConstructor()
-			->getMock();
-	}
-
-	protected function teardown():void {
-		unset($this->responseObserver);
-	}
-
 	/**
 	 * @param array $data
 	 * @param string|null $callback If set and a non-empty string, the JSON will be wrapped in a callback in the output,
@@ -27,9 +14,9 @@ class JsonPresenterTest extends TestCase {
 	 *                              to kick it old school. JSONP uses the text/javascript content type, as opposed to the
 	 *                              more modern application/json content type.
 	 * @param string $expectedJson
-	 * @dataProvider renderProvider
+	 * @dataProvider formatProvider
 	 */
-	public function testRender(array $data, ?string $callback, string $expectedJson): void {
+	public function testFormat(array $data, ?string $callback, string $expectedJson): void {
 		$presenter = new JsonPresenter($callback);
 
 		if ($callback !== null) {
@@ -40,22 +27,13 @@ class JsonPresenterTest extends TestCase {
 			$expectedBody = $expectedJson;
 		}
 
-		$this->responseObserver
-			->expects($this->once())
-			->method('AddHeader')
-			->with('Content-type', $expectedType);
-		$this->responseObserver
-			->expects($this->once())
-			->method('__set')
-			->with(
-				$this->equalTo('Body'),
-				$this->equalTo($expectedBody)
-			);
-
-		$presenter->Render($this->responseObserver, $data);
+		$formatted = $presenter->Format($data);
+		$this->assertEquals($expectedBody, $formatted['body']);
+		$this->assertEquals(200, $formatted['status']);
+		$this->assertEquals(['Content-type' => $expectedType], $formatted['headers']);
 	}
 
-	public function renderProvider(): array {
+	public function formatProvider(): array {
 		$simpleObject              = new \stdClass();
 		$simpleObject->propertyOne = "valueOne";
 		$simpleObject->propertyTwo = "valueTwo";
@@ -152,44 +130,21 @@ class JsonPresenterTest extends TestCase {
 		$expectedType = 'text/javascript;charset=utf-8';
 		$expectedBody = 'mixed(' . $expectedJson . ');';
 
-		$this->responseObserver
-			->expects($this->once())
-			->method('AddHeader')
-			->with('Content-type', $expectedType);
-
-		$this->responseObserver
-			->expects($this->once())
-			->method('__set')
-			->with(
-				$this->equalTo('Body'),
-				$this->equalTo($expectedBody)
-			);
-
-		$presenter->Render($this->responseObserver, $data);
+		$formatted = $presenter->Format($data);
+		$this->assertEquals($expectedBody, $formatted['body']);
+		$this->assertEquals(200, $formatted['status']);
+		$this->assertEquals(['Content-type' => $expectedType], $formatted['headers']);
 	}
 
 	public function testJsonEncodingException(): void {
 		$data = ['invalid' => "\xB1\x31"]; // Invalid UTF-8 sequence to force JsonException
 
-		/** @var MockObject|Response $response */
-		$response = $this->createMock(Response::class);
-
-		$response->expects($this->once())
-			->method('AddHeader')
-			->with('Content-type', 'application/json;charset=utf-8');
-
-		$response->expects($this->exactly(2))
-			->method('__set')
-			->willReturnMap([
-				['Status', 500],
-				['Body', '{"error":"JSON encoding failed"}']
-			]);
-
-		$response->expects($this->once())
-			->method('Send');
-
 		$presenter = new JsonPresenter();
-		$presenter->Render($response, $data);
+		$formatted = $presenter->Format($data);
+
+		$this->assertEquals('{"error":"JSON encoding failed"}', $formatted['body']);
+		$this->assertEquals(500, $formatted['status']);
+		$this->assertEquals(['Content-type' => 'application/json;charset=utf-8'], $formatted['headers']);
 
 		// No exception expected here since it is handled inside the method.
 	}
