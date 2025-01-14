@@ -102,16 +102,31 @@ class Router {
 	 * @throws RouterException
 	 * @throws AuthenticationException
 	 */
-	public function Route(Request $request, Response $response) {
-		$this->processMiddleware($request, $response);
+	public function Route(Request $request, Response $response): void {
+		try {
+			$this->processMiddleware($request, $response);
 
-		$route = $this->getRoute($request->Path);
+			$route = $this->getRoute($request->Path);
 
-		// Instantiate controller
-		$controller = $this->instantiateController($route['controller'], $request, $response);
+			// Instantiate controller
+			$controller = $this->instantiateController($route['controller'], $request, $response);
 
-		// Invoke lifecycle and action
-		$this->invokeAction($controller, $route['action'], $route['url']);
+			// Invoke lifecycle and action
+			$this->invokeAction($controller, $route['action'], $route['url']);
+
+			// Send the response using the data that the controller should have set.
+			$response->Send();
+		} catch (RouterException $e) {
+			$response->Status = 404;
+			$response->AddHeader('Content-Type', 'text/plain');
+			$response->Body = "Route not found\n" . $e->getMessage();
+			$response->Send();
+		} catch (AuthenticationException $e) {
+			$response->Status = 401;
+			$response->AddHeader('Content-Type', 'text/plain');
+			$response->Body = "Authentication error\n" . $e->getMessage();
+			$response->Send();
+		}
 	}
 
 	protected function instantiateController(string $controllerClass, Request $request, Response $response): Controller {
@@ -146,8 +161,6 @@ class Router {
 		if (method_exists($controller, 'Cleanup')) {
 			$this->callControllerMethodWithParams($controller, 'Cleanup', $this->CleanupArgs);
 		}
-
-		$controller->Display();
 	}
 
 	/** Setter for ControllerNamespace property that will trim any leading or trailing backslashes.

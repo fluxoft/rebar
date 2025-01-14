@@ -3,6 +3,8 @@ namespace Fluxoft\Rebar\Http;
 
 use Fluxoft\Rebar\_Traits\GettableProperties;
 use Fluxoft\Rebar\_Traits\SettableProperties;
+use Fluxoft\Rebar\Http\Presenters\DebugPresenter;
+use Fluxoft\Rebar\Http\Presenters\PresenterInterface;
 use InvalidArgumentException;
 
 /**
@@ -12,10 +14,17 @@ use InvalidArgumentException;
  * @property string $StatusMessage
  * @property string $Body
  * @property array  $Headers
+ * @property ?PresenterInterface $Presenter
  */
 class Response {
 	use GettableProperties;
 	use SettableProperties;
+
+	/**
+	 * For storing the data that will be passed to the Presenter
+	 * @var array
+	 */
+	protected array $data = [];
 
 	protected $messages = [
 		// Informational 1xx
@@ -91,38 +100,63 @@ class Response {
 		511 => 'Network Authentication Required'
 	];
 
-
 	public function __construct(
 		int $status = 200,
 		string $body = '',
-		array $headers = ['Content-type' => 'text/html']
+		array $headers = []
 	) {
 		$this->properties['Status']        = $status;
 		$this->properties['StatusMessage'] = null;
 		$this->properties['Body']          = $body;
-		$this->properties['Headers']       = $headers;
+		$this->properties['Presenter']     = null;
+
+		// Set headers using AddHeader for normalization
+		$this->AddHeader('Content-Type', 'text/html');
+		foreach ($headers as $type => $content) {
+			$this->AddHeader($type, $content);
+		}
 	}
 
 	public function AddHeader(string $type, string $content): void {
-		$this->properties['Headers'][$type] = $content;
+		// normalize to lowercase here to prevent duplicate headers
+		$normalizedType = strtolower($type);
+
+		$this->properties['Headers'][$normalizedType] = $content;
+	}
+
+	/**
+	 * Add data to the array that will be passed to the Presenter for rendering the response
+	 * @param string $key
+	 * @param mixed $value
+	 */
+	public function AddData(string $key, mixed $value): void {
+		$this->data[$key] = $value;
+	}
+	public function GetData(): array {
+		return $this->data;
+	}
+	public function ClearData(): void {
+		$this->data = [];
 	}
 
 	/**
 	 * @codeCoverageIgnore
 	 */
 	public function Send(): void {
-		header($this->getHttpHeader($this->properties['Status']));
-		foreach ($this->properties['Headers'] as $type => $content) {
-			header("$type: $content");
+		// Use the presenter to format the response
+		$formatted    = $this->Presenter->Format($this->data);
+		$this->Body   = $formatted['body'];
+		$this->Status = $formatted['status'];
+		foreach ($formatted['headers'] as $type => $content) {
+			$this->AddHeader($type, $content);
 		}
-		echo $this->properties['Body'];
-		exit;
+		$this->sendResponse();
 	}
 
 	public function Halt(int $status, string $body, ?string $message = null): void {
-		$this->properties['Status'] = $status;
-		$this->properties['Body']   = $body;
-		if (isset($message)) {
+		$this->Status = $status;
+		$this->Body   = $body;
+		if ($message !== null) {
 			$this->StatusMessage = $message;
 		}
 		$this->Send();
@@ -132,7 +166,20 @@ class Response {
 		$this->properties['Status'] = ($permanent) ? 301 : 302;
 		$this->AddHeader('Location', $location);
 		$this->properties['Body'] = '';
-		$this->Send();
+		$this->sendResponse();
+	}
+
+	/**
+	 * @codeCoverageIgnore
+	 */
+	protected function sendResponse(): void {
+		header($this->getHttpHeader($this->properties['Status']));
+		foreach ($this->properties['Headers'] as $type => $content) {
+			$formattedType = ucwords($type, '-');
+			header("$formattedType: $content");
+		}
+		echo $this->properties['Body'];
+		exit; // stop processing any time a response is sent
 	}
 
 	protected function getHttpHeader(int $status): string {
@@ -157,5 +204,16 @@ class Response {
 	// do now allow setting Headers directly
 	protected function setHeaders(): void {
 		throw new InvalidArgumentException('Headers is read-only');
+	}
+
+	protected function setPresenter(PresenterInterface $presenter): void {
+		$this->properties['Presenter'] = $presenter;
+	}
+
+	protected function getPresenter(): PresenterInterface {
+		if ($this->properties['Presenter'] === null) {
+			$this->properties['Presenter'] = new DebugPresenter(); // if no Presenter has been set, use the DebugPresenter
+		}
+		return $this->properties['Presenter'];
 	}
 }

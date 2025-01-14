@@ -8,25 +8,8 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
 class PhtmlPresenterTest extends TestCase {
-	/** @var MockObject|Response */
-	private $responseObserver;
-
-	protected function setup():void {
-		$this->responseObserver = $this->getMockBuilder('Fluxoft\Rebar\Http\Response')
-			->disableOriginalConstructor()
-			->getMock();
-	}
-
-	protected function teardown():void {
-		unset($this->responseObserver);
-	}
-
-	public function testRenderLayout() {
+	public function testRenderWithLayout() {
 		$presenter = new PhtmlMock('templatePath/');
-
-		$data = [
-			'foo' => 'bar'
-		];
 
 		$presenter->Layout   = 'layout.phtml';
 		$presenter->Template = 'template.phtml';
@@ -35,16 +18,17 @@ class PhtmlPresenterTest extends TestCase {
 
 		$expectedInclude = 'templatePath/layout.phtml';
 
-		$presenter->Render($this->responseObserver, $data);
+		$formatted = $presenter->Format([]);
 
 		$this->assertEquals($expectedInclude, $presenter->GetIncluded());
+		$this->assertEquals('layout.phtml', $presenter->Layout);
+		$this->assertEquals('template.phtml', $presenter->Template);
+		$this->assertEquals(200, $formatted['status']);
+		$this->assertEquals(['Content-Type' => 'text/html'], $formatted['headers']);
+		$this->assertEquals('', $formatted['body']);
 	}
-	public function testRenderTemplate() {
+	public function testRenderWitoutLayout() {
 		$presenter = new PhtmlMock('templatePath/');
-
-		$data = [
-			'foo' => 'bar'
-		];
 
 		$presenter->Layout   = '';
 		$presenter->Template = 'template.phtml';
@@ -53,9 +37,14 @@ class PhtmlPresenterTest extends TestCase {
 
 		$expectedInclude = 'templatePath/template.phtml';
 
-		$presenter->Render($this->responseObserver, $data);
+		$formatted = $presenter->Format([]);
 
 		$this->assertEquals($expectedInclude, $presenter->GetIncluded());
+		$this->assertEquals('', $presenter->Layout);
+		$this->assertEquals('template.phtml', $presenter->Template);
+		$this->assertEquals(200, $formatted['status']);
+		$this->assertEquals(['Content-Type' => 'text/html'], $formatted['headers']);
+		$this->assertEquals('', $formatted['body']);
 	}
 	public function testSetNonExistentProperty() {
 		$presenter = new PhtmlMock('templatePath/');
@@ -79,19 +68,10 @@ class PhtmlPresenterTest extends TestCase {
 
 		$presenter->SetExists(false);
 
-		$this->responseObserver
-			->expects($this->once())
-			->method('AddHeader')
-			->with('Content-Type', 'text/plain');
-		$this->responseObserver
-			->expects($this->any())
-			->method('__set')
-			->willReturnMap([
-				['Status', 404],
-				['Body', 'Template not found.']
-			]);
-
-		$presenter->Render($this->responseObserver, []);
+		$formatted = $presenter->Format([]);
+		$this->assertEquals(404, $formatted['status']);
+		$this->assertEquals(['Content-Type' => 'text/plain'], $formatted['headers']);
+		$this->assertEquals('Template not found.', $formatted['body']);
 	}
 }
 
