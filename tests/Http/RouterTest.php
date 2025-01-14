@@ -446,6 +446,34 @@ class RouterTest extends TestCase {
 
 		$router->PublicCallControllerMethodWithParams($controllerMock, 'Action1', ['param1', 'param2']);
 	}
+
+	public function testRouteHandlesRouterException() {
+		$router = new TestRouterGetRouteThrowsException('\\App\\Controllers');
+
+		// Mock request and response
+		$this->requestObserver
+			->method('__get')
+			->with('Path')
+			->willReturn('/invalid/path');
+
+		$this->responseObserver
+			->expects($this->once())
+			->method('AddHeader')
+			->with('Content-Type', 'text/plain');
+
+		$this->responseObserver
+			->expects($this->exactly(2))
+			->method('__set')
+			->willReturnCallback(function ($key, $value) {
+				if ($key === 'Status') {
+					$this->assertEquals(404, $value);
+				} elseif ($key === 'Body') {
+					$this->assertStringContainsString('Route not found', $value);
+				}
+			});
+
+		$router->Route($this->requestObserver, $this->responseObserver);
+	}
 }
 
 // TestRouter with public access to protected methods
@@ -480,6 +508,14 @@ class TestRouter extends Router {
 	}
 	public function PublicInvokeAction(Controller $controller, string $action, array $params): void {
 		$this->invokeAction($controller, $action, $params);
+	}
+}
+
+// TestRouter with overridden route method
+class TestRouterGetRouteThrowsException extends Router {
+	protected function getRoute(string $path) {
+		echo "calling TestRouterGetRouteThrowsException::getRoute\n";
+		throw new RouterException('Route not found', 404);
 	}
 }
 

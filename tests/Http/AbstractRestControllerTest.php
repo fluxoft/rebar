@@ -28,7 +28,7 @@ class AbstractRestControllerTest extends TestCase {
 		// use a real Response object so we can check the status
 		$this->responseMock = new Response();
 
-		$this->controller = new ConcreteRestController($this->requestMock, $this->responseMock, $this->serviceMock);
+		$this->controller = new ConcreteRestController($this->requestMock, $this->responseMock);
 
 		// Initialize the controller's service
 		/** @var MockObject|Container */
@@ -252,7 +252,7 @@ class ConcreteRestController extends AbstractRestController {
 	}
 	// expose the controller's $data property for testing
 	public function GetData(): array {
-		return $this->data;
+		return $this->response->GetData();
 	}
 }
 class MockService implements ServiceInterface {

@@ -9,22 +9,16 @@ use PHPUnit\Framework\TestCase;
 use Twig\Environment;
 
 class TwigPresenterTest extends TestCase {
-	/** @var Response|MockObject */
-	private $responseObserver;
 	/** @var MockObject|Environment */
 	private $twigObserver;
 
 	protected function setup():void {
-		$this->responseObserver = $this->getMockBuilder('\Fluxoft\Rebar\Http\Response')
-			->disableOriginalConstructor()
-			->getMock();
-		$this->twigObserver     = $this->getMockBuilder('\Twig\Environment')
+		$this->twigObserver = $this->getMockBuilder('\Twig\Environment')
 			->disableOriginalConstructor()
 			->getMock();
 	}
 
 	protected function teardown():void {
-		unset($this->responseObserver);
 		unset($this->twigObserver);
 	}
 
@@ -32,47 +26,96 @@ class TwigPresenterTest extends TestCase {
 	 * @param $template
 	 * @param $layout
 	 * @param $data
-	 * @dataProvider renderProvider
+	 * @dataProvider formatProvider
 	 */
-	public function testRender($template, $layout, $data) {
+	public function testFormat($template, $data) {
 		$presenter = new TwigPresenter(
 			$this->twigObserver
 		);
 
 		$presenter->Template = $template;
-		$presenter->Layout   = $layout;
 		$this->assertEquals($template, $presenter->Template);
-		$this->assertEquals($layout, $presenter->Layout);
 
-		if (strlen($layout)) {
-			$data['pageTemplate'] = $template;
-			$renderTemplate       = $layout;
-		} else {
-			$renderTemplate = $template;
-		}
+		$renderTemplate = $template;
 		$this->twigObserver
 			->expects($this->once())
 			->method('render')
 			->with(
 				$renderTemplate,
 				$data
-			);
+			)
+			->willReturn('rendered template');
 
-		$presenter->Render($this->responseObserver, $data);
+		$formatted = $presenter->Format($data);
+		$this->assertEquals('rendered template', $formatted['body']);
+		$this->assertEquals(200, $formatted['status']);
+		$this->assertEquals(['Content-Type' => 'text/html'], $formatted['headers']);
 	}
-	public function renderProvider() {
+	public function formatProvider() {
 		return [
 			'noLayout' => [
 				'template' => 'template.html',
-				'layout' => '',
 				'data' => []
 			],
 			'withLayout' => [
 				'template' => 'template.html',
-				'layout' => 'layout.html',
 				'data' => []
 			]
 		];
+	}
+	public function testFormatTemplateNotFound() {
+		$presenter = new TwigPresenter(
+			$this->twigObserver
+		);
+
+		$presenter->Template = 'template.html';
+		$this->assertEquals('template.html', $presenter->Template);
+
+		$this->twigObserver
+			->expects($this->once())
+			->method('render')
+			->willThrowException(new \Twig\Error\LoaderError('Template not found'));
+
+		$formatted = $presenter->Format([]);
+		$this->assertEquals('Template not found: template.html', $formatted['body']);
+		$this->assertEquals(404, $formatted['status']);
+		$this->assertEquals(['Content-Type' => 'text/plain'], $formatted['headers']);
+	}
+	public function testFormatTemplateSyntaxError() {
+		$presenter = new TwigPresenter(
+			$this->twigObserver
+		);
+
+		$presenter->Template = 'template.html';
+		$this->assertEquals('template.html', $presenter->Template);
+
+		$this->twigObserver
+			->expects($this->once())
+			->method('render')
+			->willThrowException(new \Twig\Error\SyntaxError('Template syntax error'));
+
+		$formatted = $presenter->Format([]);
+		$this->assertEquals('Template syntax error.', $formatted['body']);
+		$this->assertEquals(500, $formatted['status']);
+		$this->assertEquals(['Content-Type' => 'text/plain'], $formatted['headers']);
+	}
+	public function testFormatTemplateRuntimeError() {
+		$presenter = new TwigPresenter(
+			$this->twigObserver
+		);
+
+		$presenter->Template = 'template.html';
+		$this->assertEquals('template.html', $presenter->Template);
+
+		$this->twigObserver
+			->expects($this->once())
+			->method('render')
+			->willThrowException(new \Twig\Error\RuntimeError('Template runtime error'));
+
+		$formatted = $presenter->Format([]);
+		$this->assertEquals('Template runtime error.', $formatted['body']);
+		$this->assertEquals(500, $formatted['status']);
+		$this->assertEquals(['Content-Type' => 'text/plain'], $formatted['headers']);
 	}
 	public function testSetNonExistentProperty() {
 		$presenter = new TwigPresenter(
