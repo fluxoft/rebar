@@ -8,6 +8,7 @@ use App\ValidClass;
 use Fluxoft\Rebar\Auth\Basic;
 use Fluxoft\Rebar\Exceptions\RouterException;
 use Fluxoft\Rebar\Http\Middleware\MiddlewareInterface;
+use Fluxoft\Rebar\Http\Presenters\PresenterInterface;
 use Fluxoft\Rebar\Http\Request;
 use Fluxoft\Rebar\Http\Response;
 use Fluxoft\Rebar\Http\Route;
@@ -474,6 +475,102 @@ class RouterTest extends TestCase {
 
 		$router->Route($this->requestObserver, $this->responseObserver);
 	}
+
+	public function testAddPresenters() {
+		$router = new TestRouter('\\App\\Controllers');
+
+		$presenter1 = $this->createMock(PresenterInterface::class);
+		$presenter2 = $this->createMock(PresenterInterface::class);
+
+		$router->AddPresenters([
+			'/api' => $presenter1,
+			'/' => $presenter2
+		]);
+
+		$this->assertCount(2, $router->GetPresenters());
+		$this->assertSame($presenter1, $router->GetPresenters()['/api']);
+		$this->assertSame($presenter2, $router->GetPresenters()['/']);
+	}
+
+	public function testAddPresenter() {
+		$router = new TestRouter('\\App\\Controllers');
+
+		/** @var PresenterInterface|MockObject $presenter */
+		$presenter = $this->createMock(PresenterInterface::class);
+
+		$router->AddPresenter('/api', $presenter);
+
+		$this->assertCount(1, $router->GetPresenters());
+		$this->assertSame($presenter, $router->GetPresenters()['/api']);
+	}
+
+	public function testAssignPresenterBasedOnPath() {
+		$router = new TestRouter('\\App\\Controllers');
+
+		$presenter1 = $this->createMock(PresenterInterface::class);
+		$presenter2 = $this->createMock(PresenterInterface::class);
+
+		$router->AddPresenters([
+			'/api' => $presenter1,
+			'/' => $presenter2
+		]);
+
+		$this->requestObserver
+			->method('__get')
+			->with('Path')
+			->willReturn('/api/resource');
+
+		$this->responseObserver
+			->expects($this->exactly(3))
+			->method('__set')
+			->willReturnCallback(function ($key, $value) use ($presenter1) {
+				if ($key === 'Presenter') {
+					$this->assertSame($presenter1, $value);
+				} elseif ($key === 'Status') {
+					$this->assertEquals(404, $value);
+				} elseif ($key === 'Body') {
+					$this->assertStringContainsString('Route not found', $value);
+				} else {
+					$this->fail('Unexpected key: ' . $key);
+				}
+			});
+
+		$router->Route($this->requestObserver, $this->responseObserver);
+	}
+
+	public function testPresenterMatchingOrder() {
+		$router = new TestRouter('\\App\\Controllers');
+
+		$specificPresenter = $this->createMock(PresenterInterface::class);
+		$generalPresenter  = $this->createMock(PresenterInterface::class);
+
+		$router->AddPresenters([
+			'/api/resource' => $specificPresenter,
+			'/api' => $generalPresenter
+		]);
+
+		$this->requestObserver
+			->method('__get')
+			->with('Path')
+			->willReturn('/api/resource/extra');
+
+		$this->responseObserver
+			->expects($this->exactly(3))
+			->method('__set')
+			->willReturnCallback(function ($key, $value) use ($specificPresenter) {
+				if ($key === 'Presenter') {
+					$this->assertSame($specificPresenter, $value);
+				} elseif ($key === 'Status') {
+					$this->assertEquals(404, $value);
+				} elseif ($key === 'Body') {
+					$this->assertStringContainsString('Route not found', $value);
+				} else {
+					$this->fail('Unexpected key: ' . $key);
+				}
+			});
+
+		$router->Route($this->requestObserver, $this->responseObserver);
+	}
 }
 
 // TestRouter with public access to protected methods
@@ -481,6 +578,9 @@ class RouterTest extends TestCase {
 class TestRouter extends Router {
 	public function GetRoutes() {
 		return $this->routes;
+	}
+	public function GetPresenters() {
+		return $this->presenters;
 	}
 	public function GetMiddlewareStack() {
 		return $this->middlewareStack;
