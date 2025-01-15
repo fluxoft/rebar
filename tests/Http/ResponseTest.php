@@ -2,42 +2,95 @@
 
 namespace Fluxoft\Rebar\Http;
 
+use Fluxoft\Rebar\Http\Presenters\PresenterInterface;
 use PHPUnit\Framework\TestCase;
 
 class ResponseTest extends TestCase {
 	public function testDefaultSend() {
-		$mockResponse = new MockResponse();
+		$mockResponse            = new MockResponse();
+		$testPresenter           = new TestPresenter();
+		$mockResponse->Presenter = $testPresenter;
+
+		$testPresenter->SetBody('Test Presenter');
 
 		$expectedSent = [
 			'headers' => [
 				$mockResponse->ExposeGetHttpHeader(200),
-				'Content-type: text/html'
+				'Content-Type: text/html'
 			],
-			'body' => ''
+			'body' => 'Test Presenter'
 		];
 		$mockResponse->Send();
 		$this->assertEquals($expectedSent, $mockResponse->GetSent());
 	}
 
-	public function testAddHeader() {
+	public function testDefaultPresenter() {
 		$mockResponse = new MockResponse();
 
+		$expectedBody  = "*** The page's data set: ***\n\n";
+		$expectedBody .= '';
+		$expectedBody .= "\n****************************\n";
+		$expectedSent  = [
+			'headers' => [
+				$mockResponse->ExposeGetHttpHeader(200),
+				'Content-Type: text/plain'
+			],
+			'body' => $expectedBody
+		];
+
+		$mockResponse->Send();
+		$this->assertEquals($expectedSent, $mockResponse->GetSent());
+	}
+
+	public function testCustomConstructor() {
+		$mockResponse            = new MockResponse(404, 'Not Found', ['Content-Type' => 'text/plain', 'X-Test' => 'Test']);
+		$testPresenter           = new TestPresenter();
+		$mockResponse->Presenter = $testPresenter;
+
+		$testPresenter->SetBody('Not Found');
+		$testPresenter->SetStatus(404);
+		$testPresenter->SetHeaders($mockResponse->Headers);
+
+		$expectedSent = [
+			'headers' => [
+				$mockResponse->ExposeGetHttpHeader(404),
+				'Content-Type: text/plain',
+				'X-Test: Test'
+			],
+			'body' => 'Not Found'
+		];
+		$mockResponse->Send();
+
+		$this->assertEquals($expectedSent, $mockResponse->GetSent());
+	}
+
+	public function testAddHeader() {
+		$mockResponse            = new MockResponse();
+		$testPresenter           = new TestPresenter();
+		$mockResponse->Presenter = $testPresenter;
+
+		$testPresenter->SetBody('Test Presenter');
 		$mockResponse->AddHeader('foo', 'bar');
 
 		$expectedSent = [
 			'headers' => [
 				$mockResponse->ExposeGetHttpHeader(200),
-				'Content-type: text/html',
-				'foo: bar'
+				'Content-Type: text/html',
+				'Foo: bar'
 			],
-			'body' => ''
+			'body' => 'Test Presenter'
 		];
 		$mockResponse->Send();
 		$this->assertEquals($expectedSent, $mockResponse->GetSent());
 	}
 
 	public function testGetSetStatusAndBody() {
-		$mockResponse = new MockResponse();
+		$mockResponse            = new MockResponse();
+		$testPresenter           = new TestPresenter();
+		$mockResponse->Presenter = $testPresenter;
+
+		$testPresenter->SetStatus(410);
+		$testPresenter->SetBody('Ain\'t Nevuh Comin\' Back');
 
 		$mockResponse->Status        = 410;
 		$mockResponse->StatusMessage = 'It Gone Bruh';
@@ -49,7 +102,7 @@ class ResponseTest extends TestCase {
 		$expectedSent = [
 			'headers' => [
 				$mockResponse->ExposeGetHttpHeader(410),
-				'Content-type: text/html'
+				'Content-Type: text/html'
 			],
 			'body' => 'Ain\'t Nevuh Comin\' Back'
 		];
@@ -94,28 +147,38 @@ class ResponseTest extends TestCase {
 		);
 	}
 	public function testHalt() {
-		$mockResponse = new MockResponse();
+		$mockResponse            = new MockResponse();
+		$testPresenter           = new TestPresenter();
+		$mockResponse->Presenter = $testPresenter;
+
+		$testPresenter->SetBody('It gone...');
+		$testPresenter->SetStatus(404);
 
 		$expectedSent = [
 			'headers' => [
 				$mockResponse->ExposeGetHttpHeader(404),
-				'Content-type: text/html'
+				'Content-Type: text/html'
 			],
 			'body' => 'It gone...'
 		];
-		
+
 		$mockResponse->Halt(404, 'It gone...');
 		$this->assertEquals($expectedSent, $mockResponse->GetSent());
 	}
 	public function testHaltWithMessage() {
-		$mockResponse = new MockResponse();
+		$mockResponse            = new MockResponse();
+		$testPresenter           = new TestPresenter();
+		$mockResponse->Presenter = $testPresenter;
+
+		$testPresenter->SetBody('It gone...');
+		$testPresenter->SetStatus(404);
 
 		$mockResponse->StatusMessage = 'Like so missing'; // set this here so that it matches when we check the sent headers
 
 		$expectedSent = [
 			'headers' => [
 				$mockResponse->ExposeGetHttpHeader(404),
-				'Content-type: text/html'
+				'Content-Type: text/html'
 			],
 			'body' => 'It gone...'
 		];
@@ -129,7 +192,7 @@ class ResponseTest extends TestCase {
 		$expectedSent = [
 			'headers' => [
 				$mockResponse->ExposeGetHttpHeader(302),
-				'Content-type: text/html',
+				'Content-Type: text/html',
 				'Location: /someplaceElse'
 			],
 			'body' => ''
@@ -144,7 +207,7 @@ class ResponseTest extends TestCase {
 		$expectedSent = [
 			'headers' => [
 				$mockResponse->ExposeGetHttpHeader(301),
-				'Content-type: text/html',
+				'Content-Type: text/html',
 				'Location: /someplaceElse'
 			],
 			'body' => ''
@@ -155,28 +218,64 @@ class ResponseTest extends TestCase {
 	}
 	public function testSetHeadersThrowsException() {
 		$mockResponse = new MockResponse();
-	
+
 		$this->expectException(\InvalidArgumentException::class);
 		$this->expectExceptionMessage('Headers is read-only');
-	
-		$mockResponse->Headers = ['Content-type' => 'application/json'];
-	}	
+
+		$mockResponse->Headers = ['Content-Type' => 'application/json'];
+	}
+
+	public function testGetSetClearData() {
+		$mockResponse = new MockResponse();
+
+		$mockResponse->AddData('foo', 'bar');
+		$mockResponse->AddData('baz', 'qux');
+		$this->assertEquals(['foo' => 'bar', 'baz' => 'qux'], $mockResponse->GetData());
+
+		$mockResponse->ClearData();
+		$this->assertEquals([], $mockResponse->GetData());
+	}
+}
+
+// @codingStandardsIgnoreStart
+class TestPresenter implements PresenterInterface {
+	// @codingStandardsIgnoreEnd
+	private string $body;
+	public function SetBody(string $body) {
+		$this->body = $body;
+	}
+	private int $status = 200;
+	public function SetStatus(int $status) {
+		$this->status = $status;
+	}
+	private array $headers = ['Content-Type' => 'text/html'];
+	public function SetHeaders(array $headers) {
+		$this->headers = $headers;
+	}
+	public function Format(array $data): array {
+		unset($data); // Unused
+		return [
+			'body' => $this->body,
+			'status' => $this->status,
+			'headers' => $this->headers
+		];
+	}
 }
 
 // @codingStandardsIgnoreStart
 class MockResponse extends Response {
 	// @codingStandardsIgnoreEnd
-
 	public function ExposeGetHttpHeader($status) {
 		return $this->getHttpHeader($status);
 	}
 
 	private $sent = null;
-	public function Send(): void {
+	protected function sendResponse(): void {
 		$headers   = [];
 		$headers[] = $this->getHttpHeader($this->Status);
 		foreach ($this->Headers as $type => $content) {
-			$headers[] = "$type: $content";
+			$formattedType = ucwords($type, '-');
+			$headers[]     = "$formattedType: $content";
 		}
 		$this->sent = [
 			'headers' => $headers,

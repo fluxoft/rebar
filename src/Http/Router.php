@@ -6,6 +6,7 @@ use Fluxoft\Rebar\_Traits\SettableProperties;
 use Fluxoft\Rebar\Exceptions\AuthenticationException;
 use Fluxoft\Rebar\Exceptions\RouterException;
 use Fluxoft\Rebar\Http\Middleware\MiddlewareInterface;
+use Fluxoft\Rebar\Http\Presenters\PresenterInterface;
 
 /**
  * Class Router
@@ -30,6 +31,8 @@ class Router {
 	protected $middlewareStack = []; // Existing middlewareStack property
 
 	protected int $maxDepth = 6;
+
+	protected array $presenters;
 
 	/**
 	 * @param string $controllerNamespace The namespace where this app's controllers are found.
@@ -70,6 +73,17 @@ class Router {
 		$this->routes[] = $route;
 	}
 
+	public function AddPresenters(array $presenters) {
+		foreach ($presenters as $path => $presenter) {
+			$this->AddPresenter($path, $presenter);
+		}
+	}
+	public function AddPresenter(string $path, PresenterInterface $presenter) {
+		$this->presenters[$path] = $presenter;
+		// krsort the presenters so that the most specific paths are checked first
+		krsort($this->presenters);
+	}
+
 	public function AddMiddleware(MiddlewareInterface $middleware) {
 		$this->middlewareStack[] = $middleware;
 	}
@@ -102,16 +116,38 @@ class Router {
 	 * @throws RouterException
 	 * @throws AuthenticationException
 	 */
-	public function Route(Request $request, Response $response) {
-		$this->processMiddleware($request, $response);
+	public function Route(Request $request, Response $response): void {
+		try {
+			$path = $request->Path;
 
-		$route = $this->getRoute($request->Path);
+			// Set the appropriate presenter for the request
+			if (!empty($this->presenters)) {
+				foreach ($this->presenters as $routePath => $presenter) {
+					if (str_starts_with($path, $routePath)) {
+						$response->Presenter = $presenter;
+						break;
+					}
+				}
+			}
 
-		// Instantiate controller
-		$controller = $this->instantiateController($route['controller'], $request, $response);
+			$this->processMiddleware($request, $response);
 
-		// Invoke lifecycle and action
-		$this->invokeAction($controller, $route['action'], $route['url']);
+			$route = $this->getRoute($path);
+
+			// Instantiate controller
+			$controller = $this->instantiateController($route['controller'], $request, $response);
+
+			// Invoke lifecycle and action
+			$this->invokeAction($controller, $route['action'], $route['url']);
+
+			// Send the response using the data that the controller should have set.
+			$response->Send();
+		} catch (RouterException $e) {
+			$response->Status = 404;
+			$response->AddHeader('Content-Type', 'text/plain');
+			$response->Body = "Route not found\n" . $e->getMessage();
+			$response->Send();
+		}
 	}
 
 	protected function instantiateController(string $controllerClass, Request $request, Response $response): Controller {
@@ -146,8 +182,6 @@ class Router {
 		if (method_exists($controller, 'Cleanup')) {
 			$this->callControllerMethodWithParams($controller, 'Cleanup', $this->CleanupArgs);
 		}
-
-		$controller->Display();
 	}
 
 	/** Setter for ControllerNamespace property that will trim any leading or trailing backslashes.
@@ -182,7 +216,7 @@ class Router {
 		call_user_func_array([$controller, $method], $params);
 	}
 
-	protected function getRoute($path) {
+	protected function getRoute(string $path) {
 		$routeParts = [];
 
 		// First try to resolve using explicit Route definitions

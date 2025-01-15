@@ -7,45 +7,23 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
 class DebugPresenterTest extends TestCase {
-	/** @var MockObject|Response */
-	private $responseObserver;
-
-	protected function setup():void {
-		$this->responseObserver = $this->getMockBuilder('Fluxoft\Rebar\Http\Response')
-			->disableOriginalConstructor()
-			->getMock();
-	}
-
-	protected function teardown():void {
-		unset($this->responseObserver);
-	}
-
 	/**
 	 * @param $data
-	 * @dataProvider renderProvider
+	 * @dataProvider formatProvider
 	 */
-	public function testRender($data) {
+	public function testFormat($data) {
 		$presenter = new DebugMock();
 
 		$expectedBody  = "*** The page's data set: ***\n\n";
 		$expectedBody .= $presenter->PublicRenderData($data);
 		$expectedBody .= "\n****************************\n";
 
-		$this->responseObserver
-			->expects($this->once())
-			->method('AddHeader')
-			->with('Content-type', 'text/plain');
-		$this->responseObserver
-			->expects($this->once())
-			->method('__set')
-			->with(
-				$this->EqualTo('Body'),
-				$this->EqualTo($expectedBody)
-			);
-
-		$presenter->Render($this->responseObserver, $data);
+		$formatted = $presenter->Format($data);
+		$this->assertEquals($expectedBody, $formatted['body']);
+		$this->assertEquals(200, $formatted['status']);
+		$this->assertEquals(['Content-type' => 'text/plain'], $formatted['headers']);
 	}
-	public function renderProvider() {
+	public function formatProvider() {
 		$simpleObject              = new \stdClass();
 		$simpleObject->propertyOne = "valueOne";
 		$simpleObject->propertyTwo = "valueTwo";
