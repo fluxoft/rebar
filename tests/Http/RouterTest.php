@@ -614,7 +614,6 @@ class TestRouter extends Router {
 // TestRouter with overridden route method
 class TestRouterGetRouteThrowsException extends Router {
 	protected function getRoute(string $path) {
-		echo "calling TestRouterGetRouteThrowsException::getRoute\n";
 		throw new RouterException('Route not found', 404);
 	}
 }
