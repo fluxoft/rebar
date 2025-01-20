@@ -98,6 +98,50 @@ class ConfigTest extends TestCase {
 		// Attempt to access Config without initializing it
 		Config::Instance()['some_setting'];
 	}
+
+	public function testMergePropertiesWithNestedArray(): void {
+		$configSourcesLoader = new ConfigSourcesLoaderProxy_ConfigTest();
+		$configSourcesLoader::setMockData('LoadArray', [
+			'app' => [
+				'env' => 'staging',
+				'name' => 'RebarBase',
+				'debug' => false,
+				'database' => [
+					'host' => 'localhost',
+					'port' => 3306
+				]
+			]
+		]);
+		$configSourcesLoader::setMockData('LoadJson', [
+			'app' => [
+				'env' => 'production',
+				'database' => [
+					'port' => 5432,
+					'user' => 'dbuser'
+				]
+			]
+		]);
+
+		$config = Config::Instance(
+			['array' => ['app' => ['env' => 'staging']], 'json' => '/mock/path/config.json'],
+			$configSourcesLoader
+		);
+
+		$expected = [
+			'app' => [
+				'env' => 'production', // Overwritten by JSON
+				'name' => 'RebarBase', // Kept from array
+				'debug' => false, // Kept from array
+				'database' => [
+					'host' => 'localhost', // Kept from array
+					'port' => 5432, // Overwritten by JSON
+					'user' => 'dbuser' // Added by JSON
+				]
+			]
+		];
+	
+		$this->assertEquals($expected, $config->ToArray());
+	}
 }
 
 // @codingStandardsIgnoreStart

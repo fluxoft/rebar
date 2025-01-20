@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.1.1] - 2025-01-20
+### Fixed
+- Fixed issue with `Config` class where nested arrays were replaced instead of merged when multiple configuration sources were loaded. Arrays are now merged recursively rather than shallow-merged.
+
 ## [1.1.0] - 2025-01-15
 ### Deprecated
 - `Controller::set()` has been deprecated. Use `$this->response->SetData()` instead.
@@ -55,6 +59,7 @@ Unlike [0.24.0], this isn't just a release candidate for masochists. It's ready 
 - This version marked the final "beta" release before stabilizing for 1.0.0.
 - Numerous features were explored, tested, and refined leading up to this release.
 
+[1.1.1]: https://github.com/fluxoft/rebar/releases/tag/1.1.1
 [1.1.0]: https://github.com/fluxoft/rebar/releases/tag/1.1.0
 [1.0.0]: https://github.com/fluxoft/rebar/releases/tag/1.0.0
 [0.25.3]: https://github.com/fluxoft/rebar/releases/tag/0.25.3
