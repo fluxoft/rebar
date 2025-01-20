@@ -57,6 +57,16 @@ The `Config` class processes the sources in the order specified in its construct
 
 The configuration merging prioritizes sources in the order they are provided in the `$sources` array. For example, if both a `.json` file and environment variables define a `DB_HOST`, the value from environment variables will take precedence if `env` is processed later.
 
+### Merging Sources
+
+The `Config` class processes configuration sources in the order they are specified in the `$sources` array. Starting from version `1.1.1`, sources are merged recursively.
+
+#### Updated Behavior
+
+In prior versions, the `Config` class used `array_merge()` for merging, which replaced entire arrays when duplicate keys were encountered. As of version `1.1.1`, it uses `array_replace_recursive()`, ensuring that nested arrays are merged key by key. This allows configuration sources to override specific nested keys without affecting unrelated values.
+
+This change improves flexibility while maintaining backward compatibility.
+
 ## Loading Configuration from Specific Sources
 
 Here is how the `ConfigSourcesLoader` processes various source types:

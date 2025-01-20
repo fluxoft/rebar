@@ -103,6 +103,6 @@ class Config implements \ArrayAccess {
 	}
 
 	private function mergeProperties(array $newProperties): void {
-		$this->properties = array_merge($this->properties, $newProperties);
+		$this->properties = array_replace_recursive($this->properties, $newProperties);
 	}
 }
