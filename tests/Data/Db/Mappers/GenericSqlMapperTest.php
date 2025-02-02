@@ -685,6 +685,105 @@ class GenericSqlMapperTest extends TestCase {
 					]);
 				}
 			],
+			// New test cases for NULL handling
+			'Filter with IS NULL' => [
+				'filters' => [new Filter('Password', 'IS', null)],
+				'sort' => [],
+				'joins' => [],
+				'page' => 1,
+				'pageSize' => 10,
+				'expectedQuery' => [
+					'sql' => 'SELECT users.id AS Id, users.username AS Username, users.password AS Password, users.created_date AS CreatedDate ' .
+							 'FROM users WHERE users.password IS NULL LIMIT 10 OFFSET 0',
+					'params' => []
+				],
+				'expectedExceptionClass' => null,
+				'expectedExceptionMessage' => null
+			],
+			'Filter with IS NOT NULL' => [
+				'filters' => [new Filter('Password', 'IS NOT', null)],
+				'sort' => [],
+				'joins' => [],
+				'page' => 1,
+				'pageSize' => 10,
+				'expectedQuery' => [
+					'sql' => 'SELECT users.id AS Id, users.username AS Username, users.password AS Password, users.created_date AS CreatedDate ' .
+							 'FROM users WHERE users.password IS NOT NULL LIMIT 10 OFFSET 0',
+					'params' => []
+				],
+				'expectedExceptionClass' => null,
+				'expectedExceptionMessage' => null
+			],
+			'Filter with = NULL' => [
+				'filters' => [new Filter('Password', '=', null)],
+				'sort' => [],
+				'joins' => [],
+				'page' => 1,
+				'pageSize' => 10,
+				'expectedQuery' => [
+					'sql' => 'SELECT users.id AS Id, users.username AS Username, users.password AS Password, users.created_date AS CreatedDate ' .
+							 'FROM users WHERE users.password IS NULL LIMIT 10 OFFSET 0',
+					'params' => []
+				],
+				'expectedExceptionClass' => null,
+				'expectedExceptionMessage' => null
+			],
+			'Filter with != NULL' => [
+				'filters' => [new Filter('Password', '!=', null)],
+				'sort' => [],
+				'joins' => [],
+				'page' => 1,
+				'pageSize' => 10,
+				'expectedQuery' => [
+					'sql' => 'SELECT users.id AS Id, users.username AS Username, users.password AS Password, users.created_date AS CreatedDate ' .
+							 'FROM users WHERE users.password IS NOT NULL LIMIT 10 OFFSET 0',
+					'params' => []
+				],
+				'expectedExceptionClass' => null,
+				'expectedExceptionMessage' => null
+			],
+			'Filter with <> NULL' => [
+				'filters' => [new Filter('Password', '<>', null)],
+				'sort' => [],
+				'joins' => [],
+				'page' => 1,
+				'pageSize' => 10,
+				'expectedQuery' => [
+					'sql' => 'SELECT users.id AS Id, users.username AS Username, users.password AS Password, users.created_date AS CreatedDate ' .
+							 'FROM users WHERE users.password IS NOT NULL LIMIT 10 OFFSET 0',
+					'params' => []
+				],
+				'expectedExceptionClass' => null,
+				'expectedExceptionMessage' => null
+			],
+			'Multiple filters with NULL' => [
+				'filters' => [
+					new Filter('Password', 'IS', null),
+					new Filter('Username', '=', 'testuser')
+				],
+				'sort' => [],
+				'joins' => [],
+				'page' => 1,
+				'pageSize' => 10,
+				'expectedQuery' => [
+					'sql' => 'SELECT users.id AS Id, users.username AS Username, users.password AS Password, users.created_date AS CreatedDate ' .
+							 'FROM users WHERE users.password IS NULL AND users.username = :Username LIMIT 10 OFFSET 0',
+					'params' => [':Username' => 'testuser']
+				],
+				'expectedExceptionClass' => null,
+				'expectedExceptionMessage' => null
+			],
+			// New test case for invalid operator with NULL
+			'Invalid operator with NULL value' => [
+				'filters' => [new Filter('CreatedDate', '<', null)],
+				'sort' => [],
+				'joins' => [],
+				'page' => 1,
+				'pageSize' => 10,
+				'expectedQuery' => [],
+				'expectedExceptionClass' => MapperException::class,
+				'expectedExceptionMessage' => 'Invalid operator for NULL value: <',
+			],
 
 			// Add more edge cases as needed
 		];
