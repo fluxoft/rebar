@@ -748,6 +748,29 @@ abstract class GenericSqlMapper implements MapperInterface {
 			? $this->quoteIdentifier($this->dbTable . '.' . $this->propertyDbMap[$filter->Property]->Column)
 			: $this->quoteIdentifier($filter->Property);
 
+		// Handle NULL values
+		if ($filter->Value === null) {
+			switch (strtoupper($filter->Operator)) {
+				case 'IS': // @codeCoverageIgnore
+				case '=': // @codeCoverageIgnore
+					$filterSql = 'IS NULL';
+					break;
+				case 'IS NOT': // @codeCoverageIgnore
+				case '!=': // @codeCoverageIgnore
+				case '<>': // @codeCoverageIgnore
+					$filterSql = 'IS NOT NULL';
+					break;
+				default:
+					throw new MapperException("Invalid operator for NULL value: {$filter->Operator}");
+			}
+			return [
+				'column' => $column,
+				'filter' => $filterSql,
+				'params' => $params
+			];
+		}
+
+		// Other special case handling
 		switch (strtoupper($filter->Operator)) {
 			case 'IN': // @codeCoverageIgnore
 				$placeholders = [];
@@ -779,7 +802,6 @@ abstract class GenericSqlMapper implements MapperInterface {
 			'params' => $params
 		];
 	}
-
 
 	protected function combineWhereFilters(array $whereFilters): string {
 		if (!empty($whereFilters)) {

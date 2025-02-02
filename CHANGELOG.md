@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.1.2] - 2025-02-01
+### Fixed
+- Fixed issue with mapper classes where comparisons to null values needs special handling. When creating a
+query that includes a null comparison, the filter SQL is written as "IS NULL" or "IS NOT NULL" and the null
+parameter is not included in the params. This specifically fixes an issue that arose while checking for a
+null value for a property when used with Postgres, but this is a more correct handling of null comparisons
+across the board now.
+
 ## [1.1.1] - 2025-01-20
 ### Fixed
 - Fixed issue with `Config` class where nested arrays were replaced instead of merged when multiple configuration sources were loaded. Arrays are now merged recursively rather than shallow-merged.
@@ -59,6 +67,7 @@ Unlike [0.24.0], this isn't just a release candidate for masochists. It's ready 
 - This version marked the final "beta" release before stabilizing for 1.0.0.
 - Numerous features were explored, tested, and refined leading up to this release.
 
+[1.1.2]: https://github.com/fluxoft/rebar/releases/tag/1.1.2
 [1.1.1]: https://github.com/fluxoft/rebar/releases/tag/1.1.1
 [1.1.0]: https://github.com/fluxoft/rebar/releases/tag/1.1.0
 [1.0.0]: https://github.com/fluxoft/rebar/releases/tag/1.0.0
