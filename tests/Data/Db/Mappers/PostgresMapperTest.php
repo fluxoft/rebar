@@ -37,7 +37,12 @@ class PostgresMapperTest extends TestCase {
 	/**
 	 * @dataProvider formatValueForInsertProvider
 	 */
-	public function testFormatValueForInsert(string $type, mixed $value, mixed $expected, string $exceptionMessage = null) {
+	public function testFormatValueForInsert(
+		string $type,
+		mixed $value,
+		mixed $expected,
+		string $exceptionMessage = null
+	) {
 		/** @var MapperFactory $mapperFactory */
 		$mapperFactory = $this->getMockBuilder(MapperFactory::class)
 			->disableOriginalConstructor()
