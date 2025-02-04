@@ -30,8 +30,23 @@ abstract class PostgresMapper extends GenericSqlMapper {
 	 * @return mixed
 	 */
 	protected function formatValueForInsert(string $type, mixed $value): mixed {
-		if (is_string($value)) {
-			// Attempt to parse strings into DateTime objects and reformat
+		// Handle DateTime objects directly
+		if ($value instanceof \DateTime) {
+			switch ($type) {
+				case 'datetime': // @codeCoverageIgnore
+					return $value->format('Y-m-d H:i:s');
+				case 'date': // @codeCoverageIgnore
+					return $value->format('Y-m-d');
+				case 'time': // @codeCoverageIgnore
+					return $value->format('H:i:s');
+				default:
+					// If the type is not a date/time type, use the base class logic
+					return parent::formatValueForInsert($type, $value);
+			}
+		}
+
+		// Attempt to parse strings into DateTime objects and reformat
+		if (in_array($type, ['datetime', 'date', 'time']) && is_string($value)) {
 			$dateTime = \DateTime::createFromFormat('Y-m-d H:i:s', $value) ?:
 						\DateTime::createFromFormat('Y-m-d', $value) ?:
 						\DateTime::createFromFormat('H:i:s', $value) ?:
