@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.1.3] - 2025-02-03
+### Fixed
+- Enhance PostgresMapper to propertly handle DateTime objects directly and improve test coverage for
+date/time formatting
+
 ## [1.1.2] - 2025-02-01
 ### Fixed
 - Fixed issue with mapper classes where comparisons to null values needs special handling. When creating a
@@ -67,6 +72,7 @@ Unlike [0.24.0], this isn't just a release candidate for masochists. It's ready 
 - This version marked the final "beta" release before stabilizing for 1.0.0.
 - Numerous features were explored, tested, and refined leading up to this release.
 
+[1.1.3]: https://github.com/fluxoft/rebar/releases/tag/1.1.3
 [1.1.2]: https://github.com/fluxoft/rebar/releases/tag/1.1.2
 [1.1.1]: https://github.com/fluxoft/rebar/releases/tag/1.1.1
 [1.1.0]: https://github.com/fluxoft/rebar/releases/tag/1.1.0
