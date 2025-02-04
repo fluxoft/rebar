@@ -37,7 +37,12 @@ class PostgresMapperTest extends TestCase {
 	/**
 	 * @dataProvider formatValueForInsertProvider
 	 */
-	public function testFormatValueForInsert(string $type, mixed $value, mixed $expected) {
+	public function testFormatValueForInsert(
+		string $type,
+		mixed $value,
+		mixed $expected,
+		string $exceptionMessage = null
+	) {
 		/** @var MapperFactory $mapperFactory */
 		$mapperFactory = $this->getMockBuilder(MapperFactory::class)
 			->disableOriginalConstructor()
@@ -59,7 +64,11 @@ class PostgresMapperTest extends TestCase {
 
 		if ($expected === 'InvalidArgumentException') {
 			$this->expectException(\InvalidArgumentException::class);
-			$this->expectExceptionMessage("Invalid date/time format for value '$value'");
+			if ($exceptionMessage) {
+				$this->expectExceptionMessage($exceptionMessage);
+			} else {
+				$this->expectExceptionMessage("Invalid date/time format for value '$value'");
+			}
 		}
 
 		$actual = $postgres->PublicFormatValueForInsert($type, $value);
@@ -92,6 +101,37 @@ class PostgresMapperTest extends TestCase {
 				'type'     => 'datetime',
 				'value'    => new \DateTime('2024-12-31 15:30:00'),
 				'expected' => '2024-12-31 15:30:00'
+			],
+			'DateTime object for date type' => [
+				'type'     => 'date',
+				'value'    => new \DateTime('2024-12-31 15:30:00'),
+				'expected' => '2024-12-31'
+			],
+			'DateTime object for time type' => [
+				'type'     => 'time',
+				'value'    => new \DateTime('2024-12-31 15:30:00'),
+				'expected' => '15:30:00'
+			],
+			'DateTime object for non-date/time type' => [
+				'type'     => 'varchar',
+				'value'    => new \DateTime('2024-12-31 15:30:00'),
+				'expected' => 'InvalidArgumentException',
+				'exceptionMessage' => 'Cannot format DateTime object as type: varchar'
+			],
+			'Invalid date string' => [
+				'type'     => 'date',
+				'value'    => 'invalid-date',
+				'expected' => 'InvalidArgumentException'
+			],
+			'Invalid time string' => [
+				'type'     => 'time',
+				'value'    => 'invalid-time',
+				'expected' => 'InvalidArgumentException'
+			],
+			'Non-date/time string for non-date/time type' => [
+				'type'     => 'varchar',
+				'value'    => 'TheQuickBrownFixJumpsOverTheLazyDog',
+				'expected' => 'TheQuickBrownFixJumpsOverTheLazyDog'
 			]
 		];
 	}
